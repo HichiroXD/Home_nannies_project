@@ -14,7 +14,7 @@ from .views import (
 )
 
 urlpatterns = [
-    path('', BookingListCreateView.as_view(), name='booking-list'),
+    path('booking/', BookingListCreateView.as_view(), name='booking-list'),
     path('<int:pk>/', BookingDetailView.as_view(), name='booking-detail'),
     path('<int:pk>/accept/', accept_booking, name='booking-accept'),
     path('<int:pk>/reject/', reject_booking, name='booking-reject'),

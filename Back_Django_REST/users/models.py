@@ -11,3 +11,11 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.username} ({self.role})"
+    
+    class Meta:
+        verbose_name = "Usuario"
+        verbose_name_plural = "Usuarios"
+        ordering = ["username"]
+# Modelo de usuario personalizado con roles
+# Nombres legibles en el admin
+# Ordenar usuarios por nombre de usuario

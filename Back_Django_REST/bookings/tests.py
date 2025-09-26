@@ -18,6 +18,8 @@ class Booking(models.Model):
             ("pending", "Pendiente"),
             ("confirmed", "Confirmada"),
             ("cancelled", "Cancelada"),
+            ("rejected", "Rechazada"),
+            ("completed", "Completada"),
         ],
         default="pending",
     )
@@ -38,3 +40,40 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"Reserva {self.id} - {self.parent} con {self.nanny} ({self.status})"
+    
+class Availability(models.Model):
+    nanny = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="availabilities"
+    )
+    day = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("nanny", "day", "start_time", "end_time")
+        ordering = ["day", "start_time"]
+
+    def __str__(self):
+        return f"{self.nanny} disponible el {self.day} de {self.start_time} a {self.end_time}"
+    
+class Notification(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notifications"
+    )
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Notif → {self.user.username}: {self.message[:40]}..."
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Notificación"
+        verbose_name_plural = "Notificaciones"

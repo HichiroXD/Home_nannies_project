@@ -21,11 +21,11 @@ class Booking(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
 
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Reserva {self.id} - {self.parent.username} con {self.nanny.username} ({self.status})"
 
-    
 class Availability(models.Model):
     nanny = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -54,6 +54,11 @@ class Notification(models.Model):
     message = models.TextField()
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Notif → {self.user.username}: {self.message[:40]}..."
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Notificación"
+        verbose_name_plural = "Notificaciones"

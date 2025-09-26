@@ -8,8 +8,8 @@ class BookingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Booking
-        fields = ['id', 'parent', 'nanny', 'date', 'status', 'created_at']
-        read_only_fields = ['status', 'created_at']
+        fields = "__all__"
+        read_only_fields = ["status", "created_at"]
 
     def validate_nanny(self, value):
         if value.role != "nanny":
@@ -186,5 +186,3 @@ class NotificationDetailView(generics.RetrieveDestroyAPIView):
     
     def perform_destroy(self, instance):
         instance.delete()
-
-

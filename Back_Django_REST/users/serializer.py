@@ -31,3 +31,33 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'role']
+        read_only_fields = ['id', 'username', 'email', 'role']
+
+    def validate_email(self, value):
+        user = self.instance
+        if User.objects.exclude(pk=user.pk).filter(email=value).exists():
+            raise serializers.ValidationError("Este email ya está en uso")
+        return value
+    
+    def validate_username(self, value):
+        user = self.instance
+        if User.objects.exclude(pk=user.pk).filter(username=value).exists():
+            raise serializers.ValidationError("Este nombre de usuario ya está en uso")
+        return value
+    
+    def validate(self, data):
+        value = super().validate(data)
+        if 'role' in data:
+            raise serializers.ValidationError("No puedes cambiar tu rol")
+        return value
+    
+    def update(self, instance, validated_data):
+        instance.email = validated_data.get('email', instance.email)
+        instance.username = validated_data.get('username', instance.username)
+        instance.save()
+        return instance
