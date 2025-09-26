@@ -6,6 +6,11 @@ from .views import (
     reject_booking,
     cancel_booking,
     complete_booking,
+    AvailabilityListCreateView,
+    AvailabilityDetailView,
+    NotificationListView,
+    NotificationDetailView,
+    
 )
 
 urlpatterns = [
@@ -15,4 +20,8 @@ urlpatterns = [
     path('<int:pk>/reject/', reject_booking, name='booking-reject'),
     path('<int:pk>/cancel/', cancel_booking, name='booking-cancel'),
     path('<int:pk>/complete/', complete_booking, name='booking-complete'),
+    path('availabilities/', AvailabilityListCreateView.as_view(), name='availability-list'),
+    path('availabilities/<int:pk>/', AvailabilityDetailView.as_view(), name='availability-detail'),
+    path('notifications/', NotificationListView.as_view(), name='notification-list'),
+    path('notifications/<int:pk>/', NotificationDetailView.as_view(), name='notification-detail'),
 ]

@@ -1,5 +1,7 @@
-from rest_framework import serializers
-from .models import Booking
+from rest_framework import serializers, permissions, status, generics
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from .models import Booking, Availability, Notification
 
 class BookingSerializer(serializers.ModelSerializer):
     parent = serializers.ReadOnlyField(source="parent.id")  # se toma del usuario autenticado
@@ -44,3 +46,145 @@ class BookingSerializer(serializers.ModelSerializer):
             'role': instance.nanny.role,
         }
         return representation
+
+class AvailabilitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Availability
+        fields = "__all__"
+        read_only_fields = ["nanny"]
+
+    def validate(self, data):
+        if data["start_time"] >= data["end_time"]:
+            raise serializers.ValidationError("La hora de inicio debe ser menor a la de fin.")
+
+        # Evitar traslapes con disponibilidad existente
+        qs = Availability.objects.filter(
+            nanny=self.context["request"].user,
+            day=data["day"],
+            start_time__lt=data["end_time"],
+            end_time__gt=data["start_time"]
+        )
+        if qs.exists():
+            raise serializers.ValidationError("Ya existe disponibilidad en este rango.")
+        return data
+    
+    def create(self, validated_data):
+        validated_data["nanny"] = self.context["request"].user
+        return super().create(validated_data)
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["nanny"] = {
+            "id": instance.nanny.id,
+            "username": instance.nanny.username,
+            "email": instance.nanny.email,
+            "role": instance.nanny.role,
+        }
+        return representation
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = "__all__"
+        read_only_fields = ["user", "created_at"]
+
+    def create(self, validated_data):
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["user"] = {
+            "id": instance.user.id,
+            "username": instance.user.username,
+            "email": instance.user.email,
+            "role": instance.user.role,
+        }
+        return representation
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def accept_booking(request, pk):
+    try:
+        booking = Booking.objects.get(pk=pk, nanny=request.user)
+    except Booking.DoesNotExist:
+        return Response({"error": "Reserva no encontrada o no autorizada."},
+                        status=status.HTTP_404_NOT_FOUND)
+
+    booking.status = "confirmed"
+    booking.save()
+    return Response({"message": "Reserva aceptada"}, status=200)
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def reject_booking(request, pk):
+    try:
+        booking = Booking.objects.get(pk=pk, nanny=request.user)
+    except Booking.DoesNotExist:
+        return Response({"error": "Reserva no encontrada o no autorizada."},
+                        status=status.HTTP_404_NOT_FOUND)
+
+    booking.status = "rejected"
+    booking.save()
+    return Response({"message": "Reserva rechazada"}, status=200)
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def cancel_booking(request, pk):
+    try:
+        booking = Booking.objects.get(pk=pk, parent=request.user)
+    except Booking.DoesNotExist:
+        return Response({"error": "Reserva no encontrada o no autorizada."},
+                        status=status.HTTP_404_NOT_FOUND)
+
+    booking.status = "cancelled"
+    booking.save()
+    return Response({"message": "Reserva cancelada"}, status=200)
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def complete_booking(request, pk):
+    try:
+        booking = Booking.objects.get(pk=pk, nanny=request.user)
+    except Booking.DoesNotExist:
+        return Response({"error": "Reserva no encontrada o no autorizada."},
+                        status=status.HTTP_404_NOT_FOUND)
+
+    booking.status = "completed"
+    booking.save()
+    return Response({"message": "Reserva completada"}, status=200)
+
+class AvailabilityListCreateView(generics.ListCreateAPIView):
+    serializer_class = AvailabilitySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Availability.objects.filter(nanny=self.request.user)
+    
+class AvailabilityDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = AvailabilitySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Availability.objects.filter(nanny=self.request.user)
+    
+    def perform_update(self, serializer):
+        serializer.save(nanny=self.request.user)
+
+class NotificationListView(generics.ListAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+    
+class NotificationDetailView(generics.RetrieveDestroyAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user)
+    
+    def perform_destroy(self, instance):
+        instance.delete()
+
+

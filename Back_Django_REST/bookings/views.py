@@ -1,8 +1,8 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from .models import Booking
-from .serializer import BookingSerializer
+from .models import Booking, Availability, Notification
+from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer
 
 class BookingListCreateView(generics.ListCreateAPIView):
     queryset = Booking.objects.all()
@@ -10,15 +10,19 @@ class BookingListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        # El padre crea la reserva
-        serializer.save(parent=self.request.user)
+        booking = serializer.save(parent=self.request.user)
+        # 🔔 Crear notificación para la niñera
+        Notification.objects.create(
+            user=booking.nanny,
+            message=f"Tienes una nueva solicitud de reserva de {self.request.user.username} "
+                    f"para el {booking.start_time} - {booking.end_time}."
+        )
 
 
 class BookingDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
-
 
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
@@ -73,11 +77,58 @@ def complete_booking(request, pk):
     booking.save()
     return Response({"message": "Reserva completada"}, status=200)
 
-# --- IGNORE ---
+class AvailabilityListCreateView(generics.ListCreateAPIView):
+    serializer_class = AvailabilitySerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-# from .views import BookingList
-# urlpatterns = [
-#     path('', BookingList.as_view(), name='booking-list'),
-# ]
+    def get_queryset(self):
+        return Availability.objects.filter(nanny=self.request.user)
 
-# --- IGNORE ---
+    def perform_create(self, serializer):
+        serializer.save(nanny=self.request.user)
+
+class AvailabilityDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = AvailabilitySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Availability.objects.filter(nanny=self.request.user)
+    
+    def perform_update(self, serializer):
+        serializer.save(nanny=self.request.user)
+
+    def perform_destroy(self, instance):
+        instance.delete()
+
+# Asegurarse de que solo la nanny propietaria pueda actualizar o eliminar su disponibilidad
+    def get_object(self):
+        obj = super().get_object()
+        if obj.nanny != self.request.user:
+            raise permissions.PermissionDenied("No tienes permiso para acceder a esta disponibilidad.")
+        return obj
+    
+class NotificationListView(generics.ListAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return self.request.user.notifications.all().order_by('-created_at')
+    
+class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return self.request.user.notifications.all()
+    
+    def get_object(self):
+        obj = super().get_object()
+        if obj.user != self.request.user:
+            raise permissions.PermissionDenied("No tienes permiso para acceder a esta notificación.")
+        return obj
+    
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.delete()
