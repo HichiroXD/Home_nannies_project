@@ -1,8 +1,9 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
+from drf_spectacular.utils import extend_schema
 from .models import Booking, Availability, Notification
-from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer
+from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer, BookingDetailView, EmptySerializer
 
 class BookingListCreateView(generics.ListCreateAPIView):
     queryset = Booking.objects.all()
@@ -20,7 +21,7 @@ class BookingListCreateView(generics.ListCreateAPIView):
 
 class BookingDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Booking.objects.all()
-    serializer_class = BookingSerializer
+    serializer_class = BookingDetailView
     permission_classes = [permissions.IsAuthenticated]
 
 class AvailabilityListCreateView(generics.ListCreateAPIView):
@@ -79,6 +80,7 @@ class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         instance.delete()
 
+@extend_schema(request=EmptySerializer, responses=EmptySerializer)
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def accept_booking(request, pk):
@@ -98,6 +100,7 @@ def accept_booking(request, pk):
     )
     return Response({"message": "Reserva aceptada"}, status=200)
 
+@extend_schema(request=EmptySerializer, responses=EmptySerializer)
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def reject_booking(request, pk):
@@ -117,6 +120,7 @@ def reject_booking(request, pk):
     )
     return Response({"message": "Reserva rechazada"}, status=200)
 
+@extend_schema(request=EmptySerializer, responses=EmptySerializer)
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def cancel_booking(request, pk):
@@ -136,6 +140,7 @@ def cancel_booking(request, pk):
     )
     return Response({"message": "Reserva cancelada"}, status=200)
 
+@extend_schema(request=EmptySerializer, responses=EmptySerializer)
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def complete_booking(request, pk):

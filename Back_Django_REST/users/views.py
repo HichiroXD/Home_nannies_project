@@ -13,6 +13,7 @@ class RegisterView(generics.CreateAPIView):
 
 # Perfil del usuario autenticado
 class UserMeView(APIView):
+    serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):

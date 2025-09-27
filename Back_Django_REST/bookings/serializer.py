@@ -1,4 +1,4 @@
-from rest_framework import serializers, permissions, status, generics
+from rest_framework import serializers, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from .models import Booking, Availability, Notification
@@ -46,6 +46,53 @@ class BookingSerializer(serializers.ModelSerializer):
             'role': instance.nanny.role,
         }
         return representation
+
+class BookingDetailView(serializers.ModelSerializer):
+    parent = serializers.ReadOnlyField(source="parent.id")  # se toma del usuario autenticado
+
+    class Meta:
+        model = Booking
+        fields = "__all__"
+        read_only_fields = ["created_at"]
+
+    def validate_nanny(self, value):
+        if value.role != "nanny":
+            raise serializers.ValidationError("El usuario seleccionado no es una niñera")
+        return value
+    
+    def validate_date(self, value):
+        from django.utils import timezone
+        if value <= timezone.now():
+            raise serializers.ValidationError("La fecha debe ser futura")
+        return value
+    
+    def create(self, validated_data):
+        return Booking.objects.create(**validated_data)
+    
+    def update(self, instance, validated_data):
+        instance.date = validated_data.get('date', instance.date)
+        instance.status = validated_data.get('status', instance.status)
+        instance.save()
+        return instance
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['parent'] = {
+            'id': instance.parent.id,
+            'username': instance.parent.username,
+            'email': instance.parent.email,
+            'role': instance.parent.role,
+        }
+        representation['nanny'] = {
+            'id': instance.nanny.id,
+            'username': instance.nanny.username,
+            'email': instance.nanny.email,
+            'role': instance.nanny.role,
+        }
+        return representation
+
+class EmptySerializer(serializers.Serializer):
+    pass
 
 class AvailabilitySerializer(serializers.ModelSerializer):
     class Meta:
@@ -153,36 +200,3 @@ def complete_booking(request, pk):
     booking.save()
     return Response({"message": "Reserva completada"}, status=200)
 
-class AvailabilityListCreateView(generics.ListCreateAPIView):
-    serializer_class = AvailabilitySerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Availability.objects.filter(nanny=self.request.user)
-    
-class AvailabilityDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = AvailabilitySerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Availability.objects.filter(nanny=self.request.user)
-    
-    def perform_update(self, serializer):
-        serializer.save(nanny=self.request.user)
-
-class NotificationListView(generics.ListAPIView):
-    serializer_class = NotificationSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
-    
-class NotificationDetailView(generics.RetrieveDestroyAPIView):
-    serializer_class = NotificationSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user)
-    
-    def perform_destroy(self, instance):
-        instance.delete()
