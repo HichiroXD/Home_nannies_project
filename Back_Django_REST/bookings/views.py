@@ -15,7 +15,19 @@ class BookingViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(parent=self.request.user)
 
-# BookingListCreateView removed for consistency; use BookingViewSet for booking operations.
+class BookingListCreateView(generics.ListCreateAPIView):
+    queryset = Booking.objects.all()
+    serializer_class = BookingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        booking = serializer.save(parent=self.request.user)
+        # 🔔 Crear notificación para la niñera
+        Notification.objects.create(
+            user=booking.nanny,
+            message=f"Tienes una nueva solicitud de reserva de {self.request.user.username} "
+                    f"para el {booking.start_time} - {booking.end_time}."
+        )
 
 class BookingDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Booking.objects.all()

@@ -6,7 +6,7 @@ const API = axios.create({
 
 // Interceptor para incluir token en cada petición
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access");
+  const token = localStorage.getItem("access_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -15,5 +15,7 @@ API.interceptors.request.use((config) => {
 
 export default API;
 
-// import registerUser from userApi.js to avoid duplication
-export { registerUser } from "./userApi";
+export const registerUser = async (userData) => {
+  const res = await API.post("/users/register/", userData);
+  return res.data;
+};
