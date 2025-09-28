@@ -1,23 +1,21 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from drf_spectacular.utils import extend_schema
 from .models import Booking, Availability, Notification
 from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer, BookingDetailView, EmptySerializer
 
-class BookingListCreateView(generics.ListCreateAPIView):
-    queryset = Booking.objects.all()
+class BookingViewSet(viewsets.ModelViewSet):
     serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        return Booking.objects.filter(parent=self.request.user)
+    
     def perform_create(self, serializer):
-        booking = serializer.save(parent=self.request.user)
-        # 🔔 Crear notificación para la niñera
-        Notification.objects.create(
-            user=booking.nanny,
-            message=f"Tienes una nueva solicitud de reserva de {self.request.user.username} "
-                    f"para el {booking.start_time} - {booking.end_time}."
-        )
+        serializer.save(parent=self.request.user)
+
+# BookingListCreateView removed for consistency; use BookingViewSet for booking operations.
 
 class BookingDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Booking.objects.all()

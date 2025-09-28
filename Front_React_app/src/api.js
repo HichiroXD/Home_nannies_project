@@ -1,11 +1,10 @@
 import axios from "axios";
 
-// Dirección del backend (cambia en producción)
 const API = axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: process.env.REACT_APP_API_URL,
 });
 
-// Interceptor para agregar token automáticamente
+// Interceptor para incluir token en cada petición
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("access");
   if (token) {
@@ -15,3 +14,6 @@ API.interceptors.request.use((config) => {
 });
 
 export default API;
+
+// import registerUser from userApi.js to avoid duplication
+export { registerUser } from "./userApi";

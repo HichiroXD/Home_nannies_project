@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Crear instancia base de Axios
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:3000/api",
+  baseURL: process.env.REACT_APP_API_URL || "http://localhost:8000/api",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -29,7 +29,7 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("accessToken");
     if (token) {
-      config.headers.Authorization = Bearer ${token};
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -49,7 +49,7 @@ api.interceptors.response.use(
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            originalRequest.headers.Authorization = Bearer ${token};
+            originalRequest.headers.Authorization = `Bearer ${token}`;
             return api(originalRequest);
           })
           .catch((err) => Promise.reject(err));
@@ -59,18 +59,19 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem("refreshToken");
+        const refreshToken = localStorage.getItem("refresh");
 
+        // SimpleJWT espera { refresh: ... }
         const { data } = await axios.post(
-          ${process.env.REACT_APP_API_URL}/auth/refresh,
-          { refreshToken }
+          `${process.env.REACT_APP_API_URL || "http://localhost:8000/api"}/token/refresh/`,
+          { refresh: refreshToken }
         );
 
-        const newAccessToken = data.accessToken;
+        const newAccessToken = data.access;
 
         localStorage.setItem("accessToken", newAccessToken);
 
-        api.defaults.headers.common.Authorization = Bearer ${newAccessToken};
+        api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
         processQueue(null, newAccessToken);
 
         return api(originalRequest);
@@ -88,4 +89,4 @@ api.interceptors.response.use(
   }
 );
 
-export default api;
+export default api;

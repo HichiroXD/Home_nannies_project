@@ -10,7 +10,6 @@ from .views import (
     AvailabilityDetailView,
     NotificationListView,
     NotificationDetailView,
-    
 )
 
 urlpatterns = [
