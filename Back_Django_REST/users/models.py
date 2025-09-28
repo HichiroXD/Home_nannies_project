@@ -10,6 +10,7 @@ class User(AbstractUser):
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='parent')
     is_verified = models.BooleanField(default=False) # Verificación de email
     pending_verification = models.BooleanField(default=True) # Pendiente de verificación
+    is_active = models.BooleanField(default=True) # Activo/inactivo
 
     def __str__(self):
         return f"{self.username} ({self.role})"
