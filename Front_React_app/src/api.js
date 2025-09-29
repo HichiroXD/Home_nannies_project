@@ -1,7 +1,25 @@
-import axios from "axios";
+import axiosInstance from "./services/axiosInstance";
 
-const API = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/",
-});
+// Registro
+export const registerUser = (userData) =>
+  axiosInstance.post("/users/register/", userData);
 
-export default API;
+// Login (no pasa por axiosInstance porque aún no tienes token)
+export const loginUser = async (username, password) => {
+  const res = await axiosInstance.post("/token/", { username, password });
+  // guardar tokens
+  localStorage.setItem("access", res.data.access);
+  localStorage.setItem("refresh", res.data.refresh);
+  return res.data;
+};
+
+// Perfil
+export const getProfile = () =>
+  axiosInstance.get("/users/me/");
+
+// Reservas
+export const getBookings = () =>
+  axiosInstance.get("/bookings/");
+
+export const createBooking = (booking) =>
+  axiosInstance.post("/bookings/", booking);

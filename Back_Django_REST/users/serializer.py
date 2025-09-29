@@ -8,9 +8,20 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["id", "username", "email", "role", "is_verified"]
         read_only_fields = ["id", "is_verified"]
 
+
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True, min_length=10, validators=[validate_password])
-    password2 = serializers.CharField(write_only=True, required=True)  # confirmación
+    password = serializers.CharField(
+        write_only=True, required=True, min_length=10,
+        validators=[validate_password]
+    )
+    password2 = serializers.CharField(
+        write_only=True, required=True
+    )
+    role = serializers.ChoiceField(
+        choices=User.ROLE_CHOICES,
+        required=False,
+        default="parent"   # 👈 Valor por defecto si no se manda
+    )
 
     class Meta:
         model = User
@@ -23,16 +34,21 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password2')
+        role = validated_data.get('role', 'parent')  # 👈 fallback si viene vacío
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
-            role=validated_data['role'],
+            role=role,
             password=validated_data['password']
         )
         return user
 
+
 class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "username", "email", "role", "is_verified", "pending_verification", "date_joined", "last_login"]
+        fields = [
+            "id", "username", "email", "role", "is_verified",
+            "pending_verification", "date_joined", "last_login"
+        ]
         read_only_fields = fields

@@ -152,9 +152,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS settings
 # https://pypi.org/project/django-cors-headers/
 
-CORS_ALLOW_ORIGINS = [
-    "http://localhost:3000", # React dev server
-    # "http://dominio.com", # Agrega otros dominios permitidos aqui
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://172.16.157.119:3000",  # tu frontend actual
 ]
 
 # Configuración de usuario personalizado

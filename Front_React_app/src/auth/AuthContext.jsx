@@ -1,46 +1,51 @@
 import React, { createContext, useState, useEffect } from "react";
-import API from "../api";
+import { registerUser, loginUser, getProfile } from "../api";  // 👈 named imports
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  const login = async (username, password) => {
-    const res = await API.post("token/", { username, password });
-    localStorage.setItem("access", res.data.access);
-    localStorage.setItem("refresh", res.data.refresh);
-    await fetchUser();
-  };
-
-  const register = async (data) => {
-    await API.post("users/register/", data);
-  };
-
-  const fetchUser = async () => {
-    const token = localStorage.getItem("access");
-    if (!token) return;
+  // Registro
+  const register = async (userData) => {
     try {
-      const res = await API.get("users/me/", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUser(res.data);
-    } catch {
-      setUser(null);
+      const response = await registerUser(userData);  // 👈 ya no usamos API
+      setUser(response.user);
+      localStorage.setItem("token", response.token);
+    } catch (error) {
+      console.error("Error al registrar:", error);
+      throw error;
     }
   };
 
-  const logout = () => {
-    localStorage.clear();
-    setUser(null);
+  // Login
+  const login = async (credentials) => {
+    try {
+      const response = await loginUser(credentials);  // 👈 ya no usamos API
+      setUser(response.user);
+      localStorage.setItem("token", response.token);
+    } catch (error) {
+      console.error("Error al iniciar sesión:", error);
+      throw error;
+    }
+  };
+
+  // Obtener perfil
+  const fetchProfile = async () => {
+    try {
+      const response = await getProfile();  // 👈 ya no usamos API
+      setUser(response.user);
+    } catch (error) {
+      console.error("Error al obtener perfil:", error);
+    }
   };
 
   useEffect(() => {
-    fetchUser();
+    fetchProfile();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, register, login }}>
       {children}
     </AuthContext.Provider>
   );
