@@ -105,18 +105,14 @@ function Login() {
               Iniciar sesión
             </button>
           </form>
-          <form className="mt-8 mx-auto max-w-xs" onSubmit={handleSubmit}>
-            {/* ...inputs... */}
-            
-            <div className="mt-4 text-center">
-              <a
-                href="/forgot-password"
-                className="text-indigo-600 hover:underline text-sm"
-              >
-                ¿Olvidaste tu contraseña?
-              </a>
-            </div>
-          </form>
+          <div className="mt-4 text-center">
+            <a
+              href="/forgot-password"
+              className="text-indigo-600 hover:underline text-sm"
+            >
+              ¿Olvidaste tu contraseña?
+            </a>
+          </div>
         </div>
       </div>
     </div>
