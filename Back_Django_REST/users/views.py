@@ -11,6 +11,19 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
+    # funcion Create para ver en consola los datos recibidos y errores
+    def create(self, request, *args, **kwargs):
+        print("Datos recibidos en registro:", request.data)
+
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            self.perform_create(serializer)
+            print("Usuario creado:", serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            print("Errores de validación:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+
 # Perfil del usuario autenticado
 class UserMeView(APIView):
     serializer_class = UserSerializer
