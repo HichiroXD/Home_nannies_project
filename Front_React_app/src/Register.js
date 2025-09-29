@@ -3,13 +3,70 @@ import { registerUser } from "./userApi";
 
 function Register() {
   const [form, setForm] = useState({ username: "", email: "", password: "" });
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmError, setConfirmError] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const validateEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const validatePassword = (password) => {
+    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{10,}$/.test(password);
+  };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+
+    if (submitted) {
+      if (name === "email") {
+        setEmailError(validateEmail(value) ? "" : "Email no válido");
+      }
+      if (name === "password") {
+        setPasswordError(
+          validatePassword(value)
+            ? ""
+            : "La contraseña debe tener al menos 10 caracteres, una mayúscula, una minúscula y un número"
+        );
+        setConfirmError(
+          confirmPassword && value !== confirmPassword
+            ? "Las contraseñas no coinciden"
+            : ""
+        );
+      }
+    }
+  };
+
+  const handleConfirmPasswordChange = (e) => {
+    setConfirmPassword(e.target.value);
+    if (submitted) {
+      setConfirmError(
+        form.password !== e.target.value ? "Las contraseñas no coinciden" : ""
+      );
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitted(true);
+
+    const emailValid = validateEmail(form.email);
+    const passwordValid = validatePassword(form.password);
+    const confirmValid = form.password === confirmPassword;
+
+    setEmailError(emailValid ? "" : "Email no válido");
+    setPasswordError(
+      passwordValid
+        ? ""
+        : "La contraseña debe tener al menos 10 caracteres, una mayúscula, una minúscula y un número"
+    );
+    setConfirmError(confirmValid ? "" : "Las contraseñas no coinciden");
+
+    if (!emailValid || !passwordValid || !confirmValid) return;
+
     try {
       const data = await registerUser(form);
       console.log("Usuario registrado:", data);
@@ -21,10 +78,12 @@ function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 flex justify-center">
-      <div className="max-w-screen-xl m-0 sm:m-10 bg-white shadow sm:rounded-lg flex justify-center flex-1">
+    <div className="min-h-screen bg-pink-200 text-gray-900 flex justify-center">
+      <div className="max-w-screen-xl m-0 sm:m-40 bg-white shadow sm:rounded-lg flex justify-center flex-1">
         <div className="lg:w-1/2 xl:w-5/12 p-6 sm:p-12">
-          <h1 className="text-2xl xl:text-3xl font-extrabold text-center">Regístrate</h1>
+          <h1 className="text-2xl xl:text-3xl font-bold text-center">
+            Regístrate
+          </h1>
           <form className="mt-8 mx-auto max-w-xs" onSubmit={handleSubmit}>
             <input
               className="w-full px-8 py-4 rounded-lg bg-gray-100 border border-gray-200 mt-5"
@@ -44,6 +103,9 @@ function Register() {
               onChange={handleChange}
               required
             />
+            {submitted && emailError && (
+              <div className="text-red-500 text-sm mt-1">{emailError}</div>
+            )}
             <input
               className="w-full px-8 py-4 rounded-lg bg-gray-100 border border-gray-200 mt-5"
               type="password"
@@ -53,9 +115,25 @@ function Register() {
               onChange={handleChange}
               required
             />
+            {submitted && passwordError && (
+              <div className="text-red-500 text-sm mt-1">{passwordError}</div>
+            )}
+            <input
+              className="w-full px-8 py-4 rounded-lg bg-gray-100 border border-gray-200 mt-5"
+              type="password"
+              name="confirmPassword"
+              placeholder="Confirmar contraseña"
+              value={confirmPassword}
+              onChange={handleConfirmPasswordChange}
+              required
+            />
+            {submitted && confirmError && (
+              <div className="text-red-500 text-sm mt-1">{confirmError}</div>
+            )}
             <button
               type="submit"
               className="mt-5 tracking-wide font-semibold bg-indigo-500 text-white w-full py-4 rounded-lg hover:bg-indigo-700"
+              disabled={!!emailError || !!passwordError || !!confirmError}
             >
               Registro
             </button>
