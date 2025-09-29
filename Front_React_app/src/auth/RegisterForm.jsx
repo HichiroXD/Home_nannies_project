@@ -10,7 +10,7 @@ function RegisterForm() {
     email: "",
     password: "",
     password2: "",
-    role: "",
+    role: "parent",
   });
 
   const handleChange = (e) =>
