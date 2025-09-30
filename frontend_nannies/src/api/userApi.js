@@ -3,7 +3,7 @@ import API from "./api";
 
 // Registrar usuario
 export const registerUser = async (userData) => {
-  const response = await API.post("/users/register", userData);
+  const response = await API.post("/users/register/", userData);
   return response.data;
 };
 // Login de usuario
@@ -13,6 +13,6 @@ export const loginUser = async (username, password) => {
 };
 // Ejemplo: obtener perfil
 export const getProfile = async () => {
-  const response = await API.get("/profile");
+  const response = await API.get("/profile/");
   return response.data;
 };

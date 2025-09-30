@@ -3,8 +3,7 @@ import { registerUser } from "../api/userApi"; // ajusta la ruta según tu estru
 
 function Register() {
   // Estado del formulario
-  const [form, setForm] = useState({ username: "", email: "", password: "" });
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [form, setForm] = useState({ username: "", email: "", password: "", password2: "" });
 
   // Estados de validación
   const [emailError, setEmailError] = useState("");
@@ -35,20 +34,18 @@ function Register() {
             : "La contraseña debe tener al menos 10 caracteres, una mayúscula, una minúscula y un número"
         );
         setConfirmError(
-          confirmPassword && value !== confirmPassword
+          form.password2 && value !== form.password2
             ? "Las contraseñas no coinciden"
             : ""
         );
       }
-    }
-  };
-
-  const handleConfirmPasswordChange = (e) => {
-    setConfirmPassword(e.target.value);
-    if (submitted) {
-      setConfirmError(
-        form.password !== e.target.value ? "Las contraseñas no coinciden" : ""
-      );
+      if (name === "password2") {
+        setConfirmError(
+          form.password && value !== form.password
+            ? "Las contraseñas no coinciden"
+            : ""
+        );
+      }
     }
   };
 
@@ -59,7 +56,7 @@ function Register() {
 
     const emailValid = validateEmail(form.email);
     const passwordValid = validatePassword(form.password);
-    const confirmValid = form.password === confirmPassword;
+    const confirmValid = form.password === form.password2;
 
     setEmailError(emailValid ? "" : "Email no válido");
     setPasswordError(
@@ -133,10 +130,10 @@ function Register() {
             <input
               className="w-full px-8 py-4 rounded-lg bg-gray-100 border border-gray-200 mt-5"
               type="password"
-              name="confirmPassword"
+              name="password2"
               placeholder="Confirmar contraseña"
-              value={confirmPassword}
-              onChange={handleConfirmPasswordChange}
+              value={form.password2}
+              onChange={handleChange}
               required
             />
             {submitted && confirmError && (

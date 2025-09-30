@@ -4,13 +4,8 @@ from rest_framework.views import APIView
 from .models import User
 from .serializer import RegisterSerializer, UserSerializer, UserListSerializer, LoginSerializer
 from rest_framework.permissions import IsAdminUser
-from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, login
-from rest_framework import views, status, permissions
-from rest_framework.response import Response
-from django.contrib.auth import authenticate
-from rest_framework.authtoken.models import Token
 from .serializer import LoginSerializer
 
 # Vista para registrar nuevos usuarios
@@ -60,7 +55,7 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAdminUser]
 
 class LoginView(views.APIView):
-    permission_classes = [permissions.AllowAny]   # 👈 IMPORTANTE
+    permission_classes = [permissions.AllowAny]   # IMPORTANTE
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)

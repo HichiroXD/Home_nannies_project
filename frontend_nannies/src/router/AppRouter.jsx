@@ -8,11 +8,11 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         {/* Ruta de login */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/login/" element={<Login />} />
 
         {/* Ruta de registro */}
-        <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/register/" element={<Register />} />
+        <Route path="/dashboard/" element={<Dashboard />} />
 
         {/* Ruta por defecto (redirigir a login si no existe) */}
         <Route path="*" element={<Login />} />
