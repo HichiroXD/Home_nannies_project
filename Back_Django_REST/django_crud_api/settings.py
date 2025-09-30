@@ -42,6 +42,7 @@ INSTALLED_APPS = [
 
     # Terceros
     'rest_framework',
+    'rest_framework.authtoken',
     'rest_framework_simplejwt',
     'drf_spectacular',
 
@@ -54,6 +55,8 @@ INSTALLED_APPS = [
 # Configuración REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
@@ -61,6 +64,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -95,7 +99,8 @@ WSGI_APPLICATION = 'django_crud_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# settings.py en Django
+# settings.py en Django 
+# TODO > Cambiar las credenciales a un .env por seguridad
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',

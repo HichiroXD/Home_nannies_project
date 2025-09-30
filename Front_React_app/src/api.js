@@ -6,7 +6,7 @@ export const registerUser = (userData) =>
 
 // Login (no pasa por axiosInstance porque aún no tienes token)
 export const loginUser = async (username, password) => {
-  const res = await axiosInstance.post("/token/", { username, password });
+  const res = await axiosInstance.post("/users/login/", { username, password });
   // guardar tokens
   localStorage.setItem("access", res.data.access);
   localStorage.setItem("refresh", res.data.refresh);

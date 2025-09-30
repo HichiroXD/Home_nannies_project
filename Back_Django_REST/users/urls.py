@@ -4,7 +4,7 @@ from .views import RegisterView, UserMeView, UserListView, UserDetailView, Login
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('me/', UserMeView.as_view(), name='user-detail'),
-    path("login/", LoginView.as_view(), name="login"),  
+    path("login/", LoginView.as_view(), name="login"),
 
     # Administración de usuarios (solo para administradores)
     path("admin/users/", UserListView.as_view(), name="admin-user-list"),

@@ -6,6 +6,12 @@ from .serializer import RegisterSerializer, UserSerializer, UserListSerializer, 
 from rest_framework.permissions import IsAdminUser
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate, login
+from rest_framework import views, status, permissions
+from rest_framework.response import Response
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
+from .serializer import LoginSerializer
 
 # Vista para registrar nuevos usuarios
 class RegisterView(generics.CreateAPIView):
@@ -54,6 +60,8 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAdminUser]
 
 class LoginView(views.APIView):
+    permission_classes = [permissions.AllowAny]   # 👈 IMPORTANTE
+
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -64,7 +72,10 @@ class LoginView(views.APIView):
         )
 
         if user is None:
-            return Response({"detail": "Credenciales inválidas"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"detail": "Credenciales inválidas"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
         token, created = Token.objects.get_or_create(user=user)
         return Response({"token": token.key, "username": user.username})
