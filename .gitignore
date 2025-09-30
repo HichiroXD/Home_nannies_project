@@ -1,1 +1,31 @@
-/Front_React_app/node_modules/
+# Django backend
+*.pyc
+__pycache__/
+db.sqlite3
+.env
+*.log
+/staticfiles/
+media/
+
+# Entorno virtual
+venv/
+.env/
+
+# React frontend
+node_modules/
+build/
+dist/
+
+# Configuración de editores
+.vscode/
+.idea/
+*.swp
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Ignorar todas las migraciones
+*/migrations/
+!*/migrations/__init__.py
+
