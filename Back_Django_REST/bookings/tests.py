@@ -1,79 +1,58 @@
-from django.db import models
-from django.conf import settings
+from django.test import TestCase
+from django.contrib.auth import get_user_model
 from django.utils import timezone
-from django.core.exceptions import ValidationError
+from .models import Booking, Availability, Notification
+from datetime import timedelta
 
+User = get_user_model()
 
-class Booking(models.Model):
-    parent = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="bookings_made"
-    )
-    nanny = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="bookings_received"
-    )
-    date = models.DateTimeField()
-    status = models.CharField(
-        max_length=20,
-        choices=[
-            ("pending", "Pendiente"),
-            ("confirmed", "Confirmada"),
-            ("cancelled", "Cancelada"),
-            ("rejected", "Rechazada"),
-            ("completed", "Completada"),
-        ],
-        default="pending",
-    )
+class BookingModelTests(TestCase):
+    def setUp(self):
+        self.parent = User.objects.create_user(username="parent", password="1234", role="parent")
+        self.nanny = User.objects.create_user(username="nanny", password="1234", role="nanny")
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    def test_create_valid_booking(self):
+        booking = Booking.objects.create(
+            parent=self.parent,
+            nanny=self.nanny,
+            start_time=timezone.now() + timedelta(hours=1),
+            end_time=timezone.now() + timedelta(hours=2),
+            status="pending"
+        )
+        self.assertEqual(booking.status, "pending")
+        self.assertEqual(str(booking), f"Reserva {booking.id} - {self.parent.username} con {self.nanny.username} ({booking.status})")
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["parent", "nanny", "date"], name="unique_booking"
+    def test_booking_cannot_be_in_past(self):
+        with self.assertRaises(Exception):
+            Booking.objects.create(
+                parent=self.parent,
+                nanny=self.nanny,
+                start_time=timezone.now() - timedelta(hours=2),
+                end_time=timezone.now() - timedelta(hours=1),
+                status="pending"
             )
-        ]
 
-    def clean(self):
-        # Evita reservas con fecha en el pasado
-        if self.date < timezone.now():
-            raise ValidationError("La fecha de la reserva no puede estar en el pasado.")
+class AvailabilityModelTests(TestCase):
+    def setUp(self):
+        self.nanny = User.objects.create_user(username="nanny", password="1234", role="nanny")
 
-    def __str__(self):
-        return f"Reserva {self.id} - {self.parent} con {self.nanny} ({self.status})"
-    
-class Availability(models.Model):
-    nanny = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="availabilities"
-    )
-    day = models.DateField()
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+    def test_availability_creation(self):
+        availability = Availability.objects.create(
+            nanny=self.nanny,
+            day=timezone.now().date(),
+            start_time="09:00:00",
+            end_time="12:00:00"
+        )
+        self.assertEqual(str(availability), f"{self.nanny} disponible el {availability.day} de 09:00:00 a 12:00:00")
 
-    created_at = models.DateTimeField(auto_now_add=True)
+class NotificationModelTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="1234")
 
-    class Meta:
-        unique_together = ("nanny", "day", "start_time", "end_time")
-        ordering = ["day", "start_time"]
-
-    def __str__(self):
-        return f"{self.nanny} disponible el {self.day} de {self.start_time} a {self.end_time}"
-    
-class Notification(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="notifications"
-    )
-    message = models.TextField()
-    is_read = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"Notif → {self.user.username}: {self.message[:40]}..."
-    class Meta:
-        ordering = ["-created_at"]
-        verbose_name = "Notificación"
-        verbose_name_plural = "Notificaciones"
+    def test_notification_creation(self):
+        notif = Notification.objects.create(
+            user=self.user,
+            message="Nueva reserva creada"
+        )
+        self.assertFalse(notif.is_read)
+        self.assertIn("Nueva reserva", notif.message)

@@ -27,6 +27,29 @@ class RegisterView(generics.CreateAPIView):
             print("Errores de validación:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
+# Vista para login de usuarios
+class LoginView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = LoginSerializer  
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = authenticate(
+            username=serializer.validated_data["username"],
+            password=serializer.validated_data["password"]
+        )
+
+        if user is None:
+            return Response(
+                {"detail": "Credenciales inválidas"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({"token": token.key, "username": user.username})
+
 # Perfil del usuario autenticado
 class UserMeView(APIView):
     serializer_class = UserSerializer
@@ -53,24 +76,3 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAdminUser]
-
-class LoginView(views.APIView):
-    permission_classes = [permissions.AllowAny]   # IMPORTANTE
-
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        user = authenticate(
-            username=serializer.validated_data["username"],
-            password=serializer.validated_data["password"]
-        )
-
-        if user is None:
-            return Response(
-                {"detail": "Credenciales inválidas"},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({"token": token.key, "username": user.username})

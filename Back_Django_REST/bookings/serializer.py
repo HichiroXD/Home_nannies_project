@@ -1,99 +1,72 @@
-from rest_framework import serializers, permissions, status
-from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework import serializers
 from .models import Booking, Availability, Notification
+from django.utils import timezone
 
+# --- Booking ---
 class BookingSerializer(serializers.ModelSerializer):
-    parent = serializers.ReadOnlyField(source="parent.id")  # se toma del usuario autenticado
+    parent = serializers.ReadOnlyField(source="parent.id")
 
     class Meta:
         model = Booking
         fields = "__all__"
-        read_only_fields = ["status", "created_at"]
+        read_only_fields = ["status", "created_at", "updated_at", "parent"]
 
-    def validate_nanny(self, value):
-        if value.role != "nanny":
-            raise serializers.ValidationError("El usuario seleccionado no es una niñera")
-        return value
-    
-    def validate_date(self, value):
-        from django.utils import timezone
-        if value <= timezone.now():
-            raise serializers.ValidationError("La fecha debe ser futura")
-        return value
-    
-    def create(self, validated_data):
-        return Booking.objects.create(**validated_data)
-    
-    def update(self, instance, validated_data):
-        instance.date = validated_data.get('date', instance.date)
-        instance.status = validated_data.get('status', instance.status)
-        instance.save()
-        return instance
-    
+    def validate(self, data):
+        start = data.get("start_time", None)
+        end = data.get("end_time", None)
+        nanny = data.get("nanny", None)
+
+        if start and end and start >= end:
+            raise serializers.ValidationError("La hora de inicio debe ser menor que la hora de fin.")
+
+        if start and start <= timezone.now():
+            raise serializers.ValidationError("La fecha y hora de inicio debe ser futura.")
+
+        if nanny and nanny.role != "nanny":
+            raise serializers.ValidationError("El usuario seleccionado no es una niñera.")
+
+        # Verificar disponibilidad de la niñera
+        if start and end and nanny:
+            availability_qs = Availability.objects.filter(
+                nanny=nanny,
+                day=start.date(),
+                start_time__lte=start.time(),
+                end_time__gte=end.time(),
+            )
+            if not availability_qs.exists():
+                raise serializers.ValidationError("La niñera no tiene disponibilidad en este horario.")
+
+            # Verificar choques con otras reservas confirmadas
+            overlap_qs = Booking.objects.filter(
+                nanny=nanny,
+                status="confirmed",
+                start_time__lt=end,
+                end_time__gt=start,
+            ).exclude(pk=self.instance.pk if self.instance else None)
+
+            if overlap_qs.exists():
+                raise serializers.ValidationError("La niñera ya tiene una reserva confirmada en ese rango.")
+
+        return data
+
     def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['parent'] = {
-            'id': instance.parent.id,
-            'username': instance.parent.username,
-            'email': instance.parent.email,
-            'role': instance.parent.role,
+        rep = super().to_representation(instance)
+        rep["parent"] = {
+            "id": instance.parent.id,
+            "username": instance.parent.username,
+            "email": instance.parent.email,
+            "role": instance.parent.role,
         }
-        representation['nanny'] = {
-            'id': instance.nanny.id,
-            'username': instance.nanny.username,
-            'email': instance.nanny.email,
-            'role': instance.nanny.role,
+        rep["nanny"] = {
+            "id": instance.nanny.id,
+            "username": instance.nanny.username,
+            "email": instance.nanny.email,
+            "role": instance.nanny.role,
         }
-        return representation
+        return rep
 
-class BookingDetailView(serializers.ModelSerializer):
-    parent = serializers.ReadOnlyField(source="parent.id")  # se toma del usuario autenticado
 
-    class Meta:
-        model = Booking
-        fields = "__all__"
-        read_only_fields = ["created_at"]
-
-    def validate_nanny(self, value):
-        if value.role != "nanny":
-            raise serializers.ValidationError("El usuario seleccionado no es una niñera")
-        return value
-    
-    def validate_date(self, value):
-        from django.utils import timezone
-        if value <= timezone.now():
-            raise serializers.ValidationError("La fecha debe ser futura")
-        return value
-    
-    def create(self, validated_data):
-        return Booking.objects.create(**validated_data)
-    
-    def update(self, instance, validated_data):
-        instance.date = validated_data.get('date', instance.date)
-        instance.status = validated_data.get('status', instance.status)
-        instance.save()
-        return instance
-    
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['parent'] = {
-            'id': instance.parent.id,
-            'username': instance.parent.username,
-            'email': instance.parent.email,
-            'role': instance.parent.role,
-        }
-        representation['nanny'] = {
-            'id': instance.nanny.id,
-            'username': instance.nanny.username,
-            'email': instance.nanny.email,
-            'role': instance.nanny.role,
-        }
-        return representation
-
-class EmptySerializer(serializers.Serializer):
-    pass
-
+# --- Availability ---
 class AvailabilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Availability
@@ -104,7 +77,6 @@ class AvailabilitySerializer(serializers.ModelSerializer):
         if data["start_time"] >= data["end_time"]:
             raise serializers.ValidationError("La hora de inicio debe ser menor a la de fin.")
 
-        # Evitar traslapes con disponibilidad existente
         qs = Availability.objects.filter(
             nanny=self.context["request"].user,
             day=data["day"],
@@ -114,89 +86,39 @@ class AvailabilitySerializer(serializers.ModelSerializer):
         if qs.exists():
             raise serializers.ValidationError("Ya existe disponibilidad en este rango.")
         return data
-    
+
     def create(self, validated_data):
         validated_data["nanny"] = self.context["request"].user
         return super().create(validated_data)
-    
+
     def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation["nanny"] = {
+        rep = super().to_representation(instance)
+        rep["nanny"] = {
             "id": instance.nanny.id,
             "username": instance.nanny.username,
             "email": instance.nanny.email,
             "role": instance.nanny.role,
         }
-        return representation
+        return rep
 
+
+# --- Notification ---
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = "__all__"
-        read_only_fields = ["user", "created_at"]
+        read_only_fields = ["user", "created_at", "updated_at"]
 
     def create(self, validated_data):
         validated_data["user"] = self.context["request"].user
         return super().create(validated_data)
-    
+
     def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation["user"] = {
+        rep = super().to_representation(instance)
+        rep["user"] = {
             "id": instance.user.id,
             "username": instance.user.username,
             "email": instance.user.email,
             "role": instance.user.role,
         }
-        return representation
-
-@api_view(["POST"])
-@permission_classes([permissions.IsAuthenticated])
-def accept_booking(request, pk):
-    try:
-        booking = Booking.objects.get(pk=pk, nanny=request.user)
-    except Booking.DoesNotExist:
-        return Response({"error": "Reserva no encontrada o no autorizada."},
-                        status=status.HTTP_404_NOT_FOUND)
-
-    booking.status = "confirmed"
-    booking.save()
-    return Response({"message": "Reserva aceptada"}, status=200)
-
-@api_view(["POST"])
-@permission_classes([permissions.IsAuthenticated])
-def reject_booking(request, pk):
-    try:
-        booking = Booking.objects.get(pk=pk, nanny=request.user)
-    except Booking.DoesNotExist:
-        return Response({"error": "Reserva no encontrada o no autorizada."},
-                        status=status.HTTP_404_NOT_FOUND)
-
-    booking.status = "rejected"
-    booking.save()
-    return Response({"message": "Reserva rechazada"}, status=200)
-@api_view(["POST"])
-@permission_classes([permissions.IsAuthenticated])
-def cancel_booking(request, pk):
-    try:
-        booking = Booking.objects.get(pk=pk, parent=request.user)
-    except Booking.DoesNotExist:
-        return Response({"error": "Reserva no encontrada o no autorizada."},
-                        status=status.HTTP_404_NOT_FOUND)
-
-    booking.status = "cancelled"
-    booking.save()
-    return Response({"message": "Reserva cancelada"}, status=200)
-
-@api_view(["POST"])
-@permission_classes([permissions.IsAuthenticated])
-def complete_booking(request, pk):
-    try:
-        booking = Booking.objects.get(pk=pk, nanny=request.user)
-    except Booking.DoesNotExist:
-        return Response({"error": "Reserva no encontrada o no autorizada."},
-                        status=status.HTTP_404_NOT_FOUND)
-
-    booking.status = "completed"
-    booking.save()
-    return Response({"message": "Reserva completada"}, status=200)
-
+        return rep

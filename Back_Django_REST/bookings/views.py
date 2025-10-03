@@ -1,28 +1,26 @@
-from rest_framework import generics, permissions, status, viewsets
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from drf_spectacular.utils import extend_schema
 from .models import Booking, Availability, Notification
-from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer, BookingDetailView, EmptySerializer
+from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer
 
-class BookingViewSet(viewsets.ModelViewSet):
+# --- BOOKING ---
+class BookingListCreateView(generics.ListCreateAPIView):
     serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Booking.objects.filter(parent=self.request.user)
-    
-    def perform_create(self, serializer):
-        serializer.save(parent=self.request.user)
-
-class BookingListCreateView(generics.ListCreateAPIView):
-    queryset = Booking.objects.all()
-    serializer_class = BookingSerializer
-    permission_classes = [permissions.IsAuthenticated]
+        # Un padre ve las reservas que hizo, una niñera las que recibió
+        user = self.request.user
+        if user.role == "parent":
+            return Booking.objects.filter(parent=user)
+        elif user.role == "nanny":
+            return Booking.objects.filter(nanny=user)
+        return Booking.objects.none()
 
     def perform_create(self, serializer):
         booking = serializer.save(parent=self.request.user)
-        # 🔔 Crear notificación para la niñera
         Notification.objects.create(
             user=booking.nanny,
             message=f"Tienes una nueva solicitud de reserva de {self.request.user.username} "
@@ -31,9 +29,11 @@ class BookingListCreateView(generics.ListCreateAPIView):
 
 class BookingDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Booking.objects.all()
-    serializer_class = BookingDetailView
+    serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+
+# --- AVAILABILITY ---
 class AvailabilityListCreateView(generics.ListCreateAPIView):
     serializer_class = AvailabilitySerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -50,47 +50,26 @@ class AvailabilityDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Availability.objects.filter(nanny=self.request.user)
-    
-    def perform_update(self, serializer):
-        serializer.save(nanny=self.request.user)
 
-    def perform_destroy(self, instance):
-        instance.delete()
 
-# Asegurarse de que solo la nanny propietaria pueda actualizar o eliminar su disponibilidad
-    def get_object(self):
-        obj = super().get_object()
-        if obj.nanny != self.request.user:
-            raise permissions.PermissionDenied("No tienes permiso para acceder a esta disponibilidad.")
-        return obj
-    
+# --- NOTIFICATION ---
 class NotificationListView(generics.ListAPIView):
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return self.request.user.notifications.all().order_by('-created_at')
-    
+
 class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return self.request.user.notifications.all()
-    
-    def get_object(self):
-        obj = super().get_object()
-        if obj.user != self.request.user:
-            raise permissions.PermissionDenied("No tienes permiso para acceder a esta notificación.")
-        return obj
-    
-    def perform_update(self, serializer):
-        serializer.save()
 
-    def perform_destroy(self, instance):
-        instance.delete()
 
-@extend_schema(request=EmptySerializer, responses=EmptySerializer)
+# --- ACCIONES PERSONALIZADAS ---
+@extend_schema(request=None, responses=None)
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def accept_booking(request, pk):
@@ -102,7 +81,6 @@ def accept_booking(request, pk):
 
     booking.status = "confirmed"
     booking.save()
-    # 🔔 Crear notificación para el padre
     Notification.objects.create(
         user=booking.parent,
         message=f"Tu reserva con {request.user.username} ha sido confirmada para el "
@@ -110,7 +88,8 @@ def accept_booking(request, pk):
     )
     return Response({"message": "Reserva aceptada"}, status=200)
 
-@extend_schema(request=EmptySerializer, responses=EmptySerializer)
+
+@extend_schema(request=None, responses=None)
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def reject_booking(request, pk):
@@ -122,7 +101,6 @@ def reject_booking(request, pk):
 
     booking.status = "rejected"
     booking.save()
-    # 🔔 Crear notificación para el padre
     Notification.objects.create(
         user=booking.parent,
         message=f"Tu reserva con {request.user.username} ha sido rechazada para el "
@@ -130,7 +108,8 @@ def reject_booking(request, pk):
     )
     return Response({"message": "Reserva rechazada"}, status=200)
 
-@extend_schema(request=EmptySerializer, responses=EmptySerializer)
+
+@extend_schema(request=None, responses=None)
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def cancel_booking(request, pk):
@@ -142,7 +121,6 @@ def cancel_booking(request, pk):
 
     booking.status = "cancelled"
     booking.save()
-    # 🔔 Crear notificación para la niñera
     Notification.objects.create(
         user=booking.nanny,
         message=f"La reserva con {request.user.username} ha sido cancelada para el "
@@ -150,7 +128,8 @@ def cancel_booking(request, pk):
     )
     return Response({"message": "Reserva cancelada"}, status=200)
 
-@extend_schema(request=EmptySerializer, responses=EmptySerializer)
+
+@extend_schema(request=None, responses=None)
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def complete_booking(request, pk):
@@ -162,7 +141,6 @@ def complete_booking(request, pk):
 
     booking.status = "completed"
     booking.save()
-    # 🔔 Crear notificación para el padre
     Notification.objects.create(
         user=booking.parent,
         message=f"Tu reserva con {request.user.username} ha sido marcada como completada para el "
