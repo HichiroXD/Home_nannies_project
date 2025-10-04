@@ -1,6 +1,7 @@
 from pathlib import Path
 from datetime import timedelta
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -11,11 +12,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 # TODO > Cambiar la clave secreta a un .env por seguridad
 SECRET_KEY = 'django-insecure--h(69v2+#5m+pj#@6eohrdxz)6b^f=6-_zy8k=!ucaoj(qfw%3'
+DEBUG=True
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['*', 'http://localhost:5173']
+ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -38,6 +37,8 @@ INSTALLED_APPS = [
     # Apps
     'users',
     'bookings',
+    'nannies',
+    'favorites',
 ]
 
 # Configuración REST Framework
@@ -91,11 +92,11 @@ WSGI_APPLICATION = 'django_crud_api.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'home_nannies_db',
-        'USER': 'morrigan',
-        'PASSWORD': 'Morrigan123',
-        'HOST': 'localhost',  # o IP del servidor
-        'PORT': '5432',
+        'NAME': "home_nannies_db",
+        'USER': "morrigan",
+        'PASSWORD': "Morrigan123",
+        'HOST': "localhost",
+        'PORT': "5432",
     }
 }
 

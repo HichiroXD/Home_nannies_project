@@ -26,7 +26,6 @@ class UserManager(BaseUserManager):
         # Aquí sí forzamos 'admin'
         return self.create_user(username, email, role='admin', password=password, **extra_fields)
 
-
 class User(AbstractUser):
     ROLE_CHOICES = (
         ('parent', 'Padre/Madre'),

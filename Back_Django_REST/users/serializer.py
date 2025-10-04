@@ -38,14 +38,18 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password2')
         role = validated_data.get('role', 'parent')  # fallback si viene vacío
+        if role not in ['parent', 'nanny']:
+            raise serializers.ValidationError("Rol inválido. Solo se permiten 'parent' o 'nanny'.")
+
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
             role=role,
-            password=validated_data['password']
+            password=validated_data['password'],
+            is_verified=False,
+            pending_verification=True,
         )
         return user
-
 
 class UserListSerializer(serializers.ModelSerializer):
     class Meta:

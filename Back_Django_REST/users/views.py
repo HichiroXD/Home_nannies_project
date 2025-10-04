@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from .models import User
 from .serializer import RegisterSerializer, UserSerializer, UserListSerializer, LoginSerializer
 from rest_framework.permissions import IsAdminUser
-from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate, login
 from .serializer import LoginSerializer
 
@@ -30,7 +30,7 @@ class RegisterView(generics.CreateAPIView):
 # Vista para login de usuarios
 class LoginView(views.APIView):
     permission_classes = [permissions.AllowAny]
-    serializer_class = LoginSerializer  
+    serializer_class = LoginSerializer
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -41,15 +41,20 @@ class LoginView(views.APIView):
             password=serializer.validated_data["password"]
         )
 
-        if user is None:
-            return Response(
-                {"detail": "Credenciales inválidas"},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+        if user is None or not user.is_active:
+            return Response({"detail": "Credenciales inválidas"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({"token": token.key, "username": user.username})
+        if not user.is_verified:
+            return Response({"detail": "Cuenta no verificada"}, status=status.HTTP_403_FORBIDDEN)
 
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "username": user.username,
+            "role": user.role
+        })
+    
 # Perfil del usuario autenticado
 class UserMeView(APIView):
     serializer_class = UserSerializer
@@ -60,7 +65,9 @@ class UserMeView(APIView):
         return Response(serializer.data)
 
     def put(self, request):
-        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        allowed_fields = {"email", "username"}
+        update_data = {k: v for k, v in request.data.items() if k in allowed_fields}
+        serializer = UserSerializer(request.user, data=update_data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
