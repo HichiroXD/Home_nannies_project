@@ -3,7 +3,7 @@ import API from "./api";
 
 // Registrar usuario
 export const registerUser = async (userData) => {
-  const response = await API.post("/users/register", userData);
+  const response = await API.post("/users/register/", userData);
   return response.data;
 };
 // Login de usuario

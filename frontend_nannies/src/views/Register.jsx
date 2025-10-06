@@ -72,7 +72,7 @@ function Register() {
     if (!emailValid || !passwordValid || !confirmValid) return;
 
     try {
-      const data = await registerUser(form);
+      const data = await registerUser({ ...form, password2: confirmPassword });
       console.log("Usuario registrado:", data);
       alert("✅ Registro exitoso, ahora inicia sesión");
     } catch (err) {
