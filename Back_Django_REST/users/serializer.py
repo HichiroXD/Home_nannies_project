@@ -37,9 +37,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password2')
-        role = validated_data.get('role', 'parent')  # fallback si viene vacío
-        if role not in ['parent', 'nanny']:
-            raise serializers.ValidationError("Rol inválido. Solo se permiten 'parent' o 'nanny'.")
+        role = validated_data.get('role', 'parent')
 
         user = User.objects.create_user(
             username=validated_data['username'],

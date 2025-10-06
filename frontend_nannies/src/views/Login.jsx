@@ -1,34 +1,43 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { loginUser } from "../api/userApi";
 import { useNavigate } from "react-router-dom";
 
 function Login() {
-  // Estados de formulario
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // Handler de password sin validación
-  const handlePasswordChange = (e) => {
-    setPassword(e.target.value);
-  };
-
-  // Submit simplificado
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    if (!username || !password) return;
+    if (!username || !password) {
+      setError("Por favor ingresa tu usuario y contraseña.");
+      return;
+    }
 
     try {
       const data = await loginUser(username, password);
-      localStorage.setItem("accessToken", data.token);
+
+      // ✅ Guarda correctamente los tokens
+      localStorage.setItem("accessToken", data.access);
+      localStorage.setItem("refreshToken", data.refresh);
+
       console.log("Login exitoso:", data);
-      alert("✅ Bienvenido " + username);
+      alert(`✅ Bienvenido ${data.username}`);
+
       navigate("/dashboard");
     } catch (err) {
-      console.error(err);
-      alert("❌ Credenciales inválidas");
+      console.error("Error en login:", err.response?.data || err.message);
+
+      if (err.response?.status === 401) {
+        setError("Credenciales inválidas. Verifica tu usuario o contraseña.");
+      } else if (err.response?.status === 403) {
+        setError("Tu cuenta no está verificada.");
+      } else {
+        setError("Error al iniciar sesión. Intenta nuevamente.");
+      }
     }
   };
 
@@ -41,7 +50,6 @@ function Login() {
           </h1>
 
           <form className="mt-8 mx-auto max-w-xs" onSubmit={handleSubmit}>
-            {/* Username */}
             <input
               className="w-full px-8 py-4 rounded-lg bg-gray-100 border border-gray-200 mt-5"
               type="text"
@@ -51,17 +59,21 @@ function Login() {
               required
             />
 
-            {/* Password */}
             <input
               className="w-full px-8 py-4 rounded-lg bg-gray-100 border border-gray-200 mt-5"
               type="password"
               placeholder="Contraseña"
               value={password}
-              onChange={handlePasswordChange}
+              onChange={(e) => setPassword(e.target.value)}
               required
             />
 
-            {/* Botón */}
+            {error && (
+              <div className="text-red-500 text-sm mt-3 text-center">
+                {error}
+              </div>
+            )}
+
             <button
               type="submit"
               className="mt-5 tracking-wide font-semibold bg-indigo-500 text-white w-full py-4 rounded-lg hover:bg-indigo-700 transition"
