@@ -130,3 +130,8 @@ class VerifyEmailView(APIView):
             return Response({"detail": "✅ Tu cuenta ha sido verificada correctamente."})
         else:
             return Response({"detail": "❌ Enlace de verificación inválido o expirado."}, status=400)
+        
+class PublicNannyListView(generics.ListAPIView):
+    queryset = User.objects.filter(role='nanny', is_verified=True)
+    serializer_class = UserListSerializer
+    permission_classes = [AllowAny]

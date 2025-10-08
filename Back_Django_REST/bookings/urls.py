@@ -10,6 +10,8 @@ from .views import (
     AvailabilityDetailView,
     NotificationListView,
     NotificationDetailView,
+    FavoriteListCreateView,
+    FavoriteDeleteView,
 )
 
 urlpatterns = [
@@ -28,4 +30,8 @@ urlpatterns = [
     # Notifications
     path('notifications/', NotificationListView.as_view(), name='notification-list'),
     path('notifications/<int:pk>/', NotificationDetailView.as_view(), name='notification-detail'),
+
+    # Favorites
+    path("favorites/", FavoriteListCreateView.as_view(), name="favorite-list"),
+    path("favorites/<int:pk>/", FavoriteDeleteView.as_view(), name="favorite-delete"),
 ]

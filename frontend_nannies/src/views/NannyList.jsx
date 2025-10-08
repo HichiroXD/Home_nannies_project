@@ -1,152 +1,79 @@
 import React, { useEffect, useState } from "react";
-import { getNannies } from "../api/nannyApi";
-import { addFavorite } from "../api/favoriteApi";
+import { useNavigate } from "react-router-dom";
+import { getNannies } from "../api/nannyApi"; // tu API actual
+import { Heart } from "lucide-react";
 
-function NannyList() {
+export default function NannyList() {
   const [nannies, setNannies] = useState([]);
-  const [filters, setFilters] = useState({
-    search: "",
-    max_rate: "",
-    min_experience: "",
-    verified: false,
-  });
-
-  // Cargar niñeras filtradas
-  const fetchNannies = async () => {
-    try {
-      const params = {};
-
-      if (filters.search) params.search = filters.search;
-      if (filters.max_rate) params.max_rate = filters.max_rate;
-      if (filters.min_experience) params.min_experience = filters.min_experience;
-      if (filters.verified) params.verified = true;
-
-      const data = await getNannies(params);
-      setNannies(data);
-    } catch (error) {
-      console.error("Error al cargar niñeras:", error);
-    }
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchNannies = async () => {
+      try {
+        const data = await getNannies();
+        setNannies(data);
+      } catch (err) {
+        setError("No se pudieron cargar las niñeras.");
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchNannies();
   }, []);
 
-  const handleFilterChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFilters({
-      ...filters,
-      [name]: type === "checkbox" ? checked : value,
-    });
-  };
+  const handleBookingClick = (nannyId) => {
+    const token = localStorage.getItem("token");
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchNannies();
-  };
-
-  const handleFavorite = async (nannyId) => {
-    try {
-      await addFavorite(nannyId);
-      alert("Niñera agregada a favoritos ❤️");
-    } catch (error) {
-      console.error("Error al agregar favorito:", error);
+    if (!token) {
+      // 🔒 No autenticado → redirigir al login con mensaje
+      localStorage.setItem("redirect_after_login", `/catalog?nanny=${nannyId}`);
+      navigate("/login", { state: { fromCatalog: true } });
+      return;
     }
+
+    // ✅ Si está autenticado → continuar con flujo de reserva
+    navigate(`/bookings/create/${nannyId}`);
   };
+
+  if (loading) return <p className="text-center mt-10">Cargando niñeras...</p>;
+  if (error) return <p className="text-center mt-10 text-red-600">{error}</p>;
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">
+    <div className="min-h-screen bg-pink-50 py-10">
+      <h1 className="text-3xl font-bold text-center text-pink-600 mb-8">
         Catálogo de Niñeras
-      </h2>
+      </h1>
 
-      {/* 🔍 FILTROS */}
-      <form
-        onSubmit={handleSearch}
-        className="bg-gray-100 p-4 rounded-lg mb-6 flex flex-wrap gap-4 items-center"
-      >
-        <input
-          type="text"
-          name="search"
-          value={filters.search}
-          onChange={handleFilterChange}
-          placeholder="Buscar por nombre o descripción..."
-          className="flex-1 p-2 border rounded-md"
-        />
-
-        <input
-          type="number"
-          name="max_rate"
-          value={filters.max_rate}
-          onChange={handleFilterChange}
-          placeholder="Tarifa máx ($/h)"
-          className="w-40 p-2 border rounded-md"
-        />
-
-        <input
-          type="number"
-          name="min_experience"
-          value={filters.min_experience}
-          onChange={handleFilterChange}
-          placeholder="Experiencia mínima (años)"
-          className="w-52 p-2 border rounded-md"
-        />
-
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            name="verified"
-            checked={filters.verified}
-            onChange={handleFilterChange}
-          />
-          Solo verificadas
-        </label>
-
-        <button
-          type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-        >
-          Aplicar filtros
-        </button>
-      </form>
-
-      {/* 🧒 LISTA DE NIÑERAS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {nannies.length > 0 ? (
-          nannies.map((nanny) => (
-            <div
-              key={nanny.id}
-              className="bg-white shadow-md rounded-xl p-4 border hover:shadow-lg transition"
-            >
-              <h3 className="text-lg font-semibold text-gray-800">
-                {nanny.full_name}
-              </h3>
-              <p className="text-gray-600 text-sm">{nanny.description}</p>
-              <p className="text-blue-700 font-medium mt-2">
-                ${nanny.hourly_rate}/hora
-              </p>
-              <p className="text-gray-500 text-sm">
-                Experiencia: {nanny.experience_years} años
-              </p>
-              {nanny.verified && (
-                <span className="inline-block mt-1 px-2 py-1 text-xs bg-green-200 text-green-800 rounded-md">
-                  ✅ Verificada
-                </span>
-              )}
-              <button
-                onClick={() => handleFavorite(nanny.id)}
-                className="mt-3 bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg"
-              >
-                ❤️ Agregar a favoritos
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-8">
+        {nannies.map((nanny) => (
+          <div
+            key={nanny.id}
+            className="bg-white p-5 rounded-2xl shadow hover:shadow-lg transition-all"
+          >
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-800">
+                {nanny.username}
+              </h2>
+              <button className="text-pink-500 hover:text-pink-600">
+                <Heart size={20} />
               </button>
             </div>
-          ))
-        ) : (
-          <p className="text-gray-600">No se encontraron niñeras.</p>
-        )}
+            <p className="text-gray-500 text-sm">{nanny.email}</p>
+            <p className="mt-2 text-gray-700">
+              <strong>Rol:</strong> {nanny.role === "nanny" ? "Niñera" : "Otro"}
+            </p>
+
+            <button
+              onClick={() => handleBookingClick(nanny.id)}
+              className="mt-4 bg-pink-500 text-white w-full py-2 rounded-lg hover:bg-pink-600 transition-colors"
+            >
+              Agendar
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
-
-export default NannyList;

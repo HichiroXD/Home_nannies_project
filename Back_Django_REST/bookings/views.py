@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from drf_spectacular.utils import extend_schema
 from .models import Booking, Availability, Notification
-from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer
+from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer, FavoriteSerializer
 
 # --- BOOKING ---
 class BookingListCreateView(generics.ListCreateAPIView):
@@ -147,3 +147,21 @@ def complete_booking(request, pk):
                 f"{booking.start_time} - {booking.end_time}."
     )
     return Response({"message": "Reserva completada"}, status=200)
+
+# --- FAVORITES ---
+class FavoriteListCreateView(generics.ListCreateAPIView):
+    serializer_class = FavoriteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return self.request.user.favorites.all()
+
+    def perform_create(self, serializer):
+        serializer.save(parent=self.request.user)
+
+class FavoriteDeleteView(generics.RetrieveDestroyAPIView):
+    serializer_class = FavoriteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return self.request.user.favorites.all()

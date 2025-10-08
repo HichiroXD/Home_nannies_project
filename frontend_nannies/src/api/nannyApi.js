@@ -1,12 +1,7 @@
-import api from "./api";
+import API from "./api";
 
+// Obtener lista pública de niñeras
 export const getNannies = async () => {
-  const params = new URLSearchParams(filters).toString();
-  const response = await api.get(`nannies/?${params}`);
-  return response.data;
-};
-
-export const getNannyDetail = async (id) => {
-  const response = await api.get(`nannies/${id}/`);
+  const response = await API.get("/users/nannies/");
   return response.data;
 };

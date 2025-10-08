@@ -1,182 +1,157 @@
 import React, { useState } from "react";
-import { registerUser } from "../api/userApi";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 
-function Register() {
-  const [form, setForm] = useState({
+export default function Register() {
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
     username: "",
     email: "",
+    role: "parent",
     password: "",
     password2: "",
   });
 
-  const [errors, setErrors] = useState({});
+  const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Validaciones básicas
-  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const validatePassword = (password) =>
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{10,}$/.test(password);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-    setErrors({ ...errors, [name]: "" });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setError("");
     setSuccessMessage("");
-    setErrors({});
 
-    // Validaciones frontend
-    const newErrors = {};
-    if (!validateEmail(form.email)) newErrors.email = "Email no válido";
-    if (!validatePassword(form.password))
-      newErrors.password =
-        "Debe tener al menos 10 caracteres, una mayúscula, una minúscula y un número";
-    if (form.password !== form.password2)
-      newErrors.password2 = "Las contraseñas no coinciden";
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      setIsSubmitting(false);
+    // Validación rápida antes del POST
+    if (formData.password !== formData.password2) {
+      setError("Las contraseñas no coinciden.");
       return;
     }
 
     try {
-      const data = await registerUser(form);
-      console.log("Usuario registrado:", data);
+      const response = await axios.post("http://127.0.0.1:8000/api/users/register/", formData);
 
-      setSuccessMessage(
-        "✅ Registro exitoso. Revisa tu correo electrónico para verificar tu cuenta antes de iniciar sesión."
-      );
+      if (response.status === 201) {
+        setSuccessMessage(
+          "Tu cuenta ha sido creada correctamente. Se ha enviado un correo para verificar tu cuenta antes de iniciar sesión."
+        );
 
-      // Limpieza de formulario
-      setForm({
-        username: "",
-        email: "",
-        password: "",
-        password2: "",
-      });
-    } catch (err) {
-      console.error("Error al registrar:", err);
-
-      if (axios.isAxiosError(err) && err.response) {
-        if (err.response.data.email) {
-          setErrors({ email: "⚠️ Este correo ya está registrado" });
-        } else if (err.response.data.username) {
-          setErrors({ username: "⚠️ Este nombre de usuario ya existe" });
-        } else {
-          setErrors({
-            general:
-              "❌ Error al registrar usuario. Verifica los datos e inténtalo nuevamente.",
-          });
-        }
-      } else {
-        setErrors({
-          general:
-            "❌ Error de conexión con el servidor. Intenta nuevamente más tarde.",
+        // Limpiar el formulario
+        setFormData({
+          username: "",
+          email: "",
+          role: "parent",
+          password: "",
+          password2: "",
         });
+
+        // Redirigir al login luego de unos segundos
+        setTimeout(() => navigate("/login"), 3500);
       }
-    } finally {
-      setIsSubmitting(false);
+    } catch (err) {
+      if (err.response?.status === 400) {
+        const details = Object.values(err.response.data).flat().join(" ");
+        setError(details || "Error en los datos ingresados. Revisa la información.");
+      } else {
+        setError("Ocurrió un error al registrar la cuenta. Intenta más tarde.");
+      }
     }
   };
 
   return (
-    <div className="min-h-screen bg-pink-200 text-gray-900 flex justify-center items-center p-6">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <h1 className="text-3xl font-bold text-center text-indigo-600 mb-6">
+    <div className="flex justify-center items-center min-h-screen bg-pink-50">
+      <div className="bg-white p-8 rounded-2xl shadow-md w-96">
+        <h1 className="text-3xl font-bold text-center text-pink-600 mb-6">
           Crear cuenta
         </h1>
 
+        {/* Mensaje de éxito */}
         {successMessage && (
-          <div className="bg-green-100 border border-green-400 text-green-700 p-3 rounded mb-4 text-center">
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 text-sm">
             {successMessage}
           </div>
         )}
-        {errors.general && (
-          <div className="bg-red-100 border border-red-400 text-red-700 p-3 rounded mb-4 text-center">
-            {errors.general}
+
+        {/* Mensaje de error */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
+            {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          {/* Username */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
-            className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 mt-3 focus:ring-2 focus:ring-indigo-400 outline-none"
             type="text"
             name="username"
             placeholder="Nombre de usuario"
-            value={form.username}
+            value={formData.username}
             onChange={handleChange}
+            className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-pink-400"
             required
           />
-          {errors.username && (
-            <p className="text-red-500 text-sm mt-1">{errors.username}</p>
-          )}
-
-          {/* Email */}
           <input
-            className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 mt-3 focus:ring-2 focus:ring-indigo-400 outline-none"
             type="email"
             name="email"
             placeholder="Correo electrónico"
-            value={form.email}
+            value={formData.email}
             onChange={handleChange}
+            className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-pink-400"
             required
           />
-          {errors.email && (
-            <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-          )}
 
-          {/* Password */}
+          {/* Selección de rol */}
+          <select
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-pink-400"
+          >
+            <option value="parent">Padre / Madre</option>
+            <option value="nanny">Niñera</option>
+          </select>
+
           <input
-            className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 mt-3 focus:ring-2 focus:ring-indigo-400 outline-none"
             type="password"
             name="password"
             placeholder="Contraseña"
-            value={form.password}
+            value={formData.password}
             onChange={handleChange}
+            className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-pink-400"
             required
           />
-          {errors.password && (
-            <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-          )}
-
-          {/* Confirm password */}
           <input
-            className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 mt-3 focus:ring-2 focus:ring-indigo-400 outline-none"
             type="password"
             name="password2"
             placeholder="Confirmar contraseña"
-            value={form.password2}
+            value={formData.password2}
             onChange={handleChange}
+            className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-pink-400"
             required
           />
-          {errors.password2 && (
-            <p className="text-red-500 text-sm mt-1">{errors.password2}</p>
-          )}
 
-          {/* Botón de envío */}
           <button
             type="submit"
-            disabled={isSubmitting}
-            className={`mt-6 w-full py-3 rounded-lg text-white font-semibold transition ${
-              isSubmitting
-                ? "bg-indigo-300 cursor-not-allowed"
-                : "bg-indigo-500 hover:bg-indigo-700"
-            }`}
+            className="bg-pink-500 text-white py-2 rounded-lg font-semibold hover:bg-pink-600 transition-colors"
           >
-            {isSubmitting ? "Registrando..." : "Registrarse"}
+            Registrarse
           </button>
         </form>
+
+        {/* Enlace al login */}
+        <p className="text-center text-gray-600 text-sm mt-6">
+          ¿Ya tienes cuenta?{" "}
+          <Link
+            to="/login"
+            className="text-pink-500 hover:text-pink-700 font-medium underline"
+          >
+            Inicia sesión aquí
+          </Link>
+        </p>
       </div>
     </div>
   );
 }
-
-export default Register;
