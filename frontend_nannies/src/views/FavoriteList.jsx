@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { getFavorites, deleteFavorite } from "../api/favoriteApi";
+import {
+  FavoriteCard,
+  FavoriteListLayout,
+} from "../components/Favorites";
 
-function FavoriteList() {
+export default function FavoriteList() {
   const [favorites, setFavorites] = useState([]);
 
   useEffect(() => {
@@ -27,26 +31,12 @@ function FavoriteList() {
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Mis Niñeras Favoritas</h2>
-      <ul className="space-y-3">
-        {favorites.map((fav) => (
-          <li
-            key={fav.id}
-            className="flex justify-between items-center bg-gray-100 p-3 rounded-lg shadow-sm"
-          >
-            <span>{fav.nanny.full_name}</span>
-            <button
-              onClick={() => handleDelete(fav.id)}
-              className="text-red-600 hover:text-red-800"
-            >
-              ❌
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <FavoriteListLayout>
+      {favorites.map((fav) => (
+        <li key={fav.id}>
+          <FavoriteCard fav={fav} onDelete={handleDelete} />
+        </li>
+      ))}
+    </FavoriteListLayout>
   );
 }
-
-export default FavoriteList;

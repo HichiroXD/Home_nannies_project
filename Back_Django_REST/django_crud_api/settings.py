@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'bookings',
     'nannies',
     'favorites',
+    'reviews',
 ]
 
 # Configuración REST Framework
@@ -125,7 +126,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-cl'
 
 TIME_ZONE = 'America/Santiago'
 
@@ -176,3 +177,13 @@ SIMPLE_JWT = {
 # Configuración de correo electrónico (usando consola para desarrollo)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'no-reply@homenannies.com'
+
+# Configuración de drf-spectacular
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Home Nannies API',
+    'DESCRIPTION': 'API REST para la plataforma de gestión de niñeras, reservas y usuarios.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
+    'SCHEMA_PATH_PREFIX': '/api',
+}

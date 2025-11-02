@@ -1,14 +1,15 @@
 from rest_framework import serializers
-from .models import NannyProfile
+from users.models import User  # ✅ importar modelo
+
 
 class NannyProfileSerializer(serializers.ModelSerializer):
-    full_name = serializers.CharField(source='user.get_full_name', read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
+    reviews = serializers.SerializerMethodField()
 
     class Meta:
-        model = NannyProfile
-        fields = [
-            'id', 'full_name', 'email', 'experience_years',
-            'hourly_rate', 'description', 'verified',
-            'age', 'certifications', 'rating_avg'
-        ]
+        model = User
+        fields = ['id', 'username', 'email', 'role', 'reviews']
+
+    def get_reviews(self, obj):
+        from reviews.serializer import ReviewSerializer  # ✅ Importación local (evita el bucle)
+        reviews = obj.reviews_received.all()
+        return ReviewSerializer(reviews, many=True).data

@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Landing from "../views/Landing";
-import Login from "../views/Login";
-import Register from "../views/Register";
+import Landing from "../../views/Landing";
+import Login from "../../views/auth/Login";
+import Register from "../../views/auth/Register";
 import Dashboard from "../views/Dashboard";
-import NannyList from "../views/NannyList";
+import Catalog from "../views/Catalog";
 import FavoriteList from "../views/FavoriteList";
-import Verify from "../views/Verify";
+import Verify from "../../views/auth/Verify";
 
 export default function AppRouter() {
   return (
@@ -25,7 +25,7 @@ export default function AppRouter() {
         <Route path="/dashboard/" element={<Dashboard />} />
 
         {/* Ruta para ver la lista de niñeras */}
-        <Route path="/catalog/" element={<NannyList />} />
+        <Route path="/catalog/" element={<Catalog />} />
 
         {/* Ruta para ver la lista de niñeras favoritas */}
         <Route path="/favorites/" element={<FavoriteList />} />

@@ -2,5 +2,5 @@ projectKey=Home-Nannies-Project
 serverUrl=http://localhost:9000
 serverVersion=25.10.0.114319
 dashboardUrl=http://localhost:9000/dashboard?id=Home-Nannies-Project
-ceTaskId=94bce78a-5ac4-4a0b-8e51-6d4ea2105328
-ceTaskUrl=http://localhost:9000/api/ce/task?id=94bce78a-5ac4-4a0b-8e51-6d4ea2105328
+ceTaskId=c979d87f-e654-42e8-be98-0fa414f97b52
+ceTaskUrl=http://localhost:9000/api/ce/task?id=c979d87f-e654-42e8-be98-0fa414f97b52

@@ -34,14 +34,17 @@ export const getProfile = async () => {
       throw new Error("Token de acceso no encontrado");
     }
 
-    // Agregamos el encabezado Authorization
-    const response = await API.get("/users/me/", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await API.get("/users/me/");
 
     return response.data;
   } catch (error) {
     console.error("Error en getProfile:", error.response?.data || error.message);
     throw error.response?.data || { detail: "Error al obtener perfil" };
   }
+};
+
+// Verificar usuario
+export const verifyUser = async (uid, token) => {
+  const response = await API.get(`/users/verify/${uid}/${token}/`);
+  return response.data;
 };

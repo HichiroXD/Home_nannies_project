@@ -1,21 +1,5 @@
-import axios from "./api";
+import API from "./api";
 
-export const getFavorites = async (token) => {
-  return await axios.get("/api/bookings/favorites/", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-};
-
-export const addFavorite = async (nannyId, token) => {
-  return await axios.post(
-    "/api/bookings/favorites/",
-    { nanny: nannyId },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-};
-
-export const deleteFavorite = async (favoriteId, token) => {
-  return await axios.delete(`/api/bookings/favorites/${favoriteId}/`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-};
+export const getFavorites = async () => API.get("/bookings/favorites/");
+export const addFavorite = async (nannyId) => API.post("/bookings/favorites/", { nanny: nannyId });
+export const deleteFavorite = async (favoriteId) => API.delete(`/bookings/favorites/${favoriteId}/`);

@@ -45,4 +45,8 @@ urlpatterns = [
 
     # Favoritos
     path('api/favorites/', include('favorites.urls')),
+
+    # Reseñas
+    path('api/reviews/', include('reviews.urls')),
+
 ]
