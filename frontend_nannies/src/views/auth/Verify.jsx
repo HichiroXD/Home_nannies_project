@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "@api/api";
-import { AuthLayout, AuthMessage } from "../components/auth";
-import Loader from "../components/layout/Loader";
+import { AuthLayout, AuthMessage } from "@components/auth";
+import { Loader } from "@components/layout";
 
 export default function Verify() {
   const { uid, token } = useParams();

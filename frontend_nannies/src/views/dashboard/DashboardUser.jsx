@@ -4,7 +4,7 @@ import {
   DashboardLayout,
   TokenDisplay,
   LogoutButton,
-} from "../components/Dashboard";
+} from "@components/dashboard";
 
 export default function Dashboard() {
   const [token, setToken] = useState(null);

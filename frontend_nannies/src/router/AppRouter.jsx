@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Landing from "../../views/Landing";
-import Login from "../../views/auth/Login";
-import Register from "../../views/auth/Register";
-import Dashboard from "../views/Dashboard";
-import Catalog from "../views/Catalog";
-import FavoriteList from "../views/FavoriteList";
-import Verify from "../../views/auth/Verify";
+import Landing from "@views/Landing";
+import Login from "@views/auth/Login";
+import Register from "@views/auth/Register";
+import Verify from "@views/auth/Verify";
+import DashboardUser from "@views/dashboard/DashboardUser";
+import Catalog from "@views/Catalog";
+import FavoriteList from "@views/FavoriteList";
 
 export default function AppRouter() {
   return (
@@ -22,7 +22,7 @@ export default function AppRouter() {
         <Route path="/register/" element={<Register />} />
 
         {/* Ruta del dashboard */}
-        <Route path="/dashboard/" element={<Dashboard />} />
+        <Route path="/dashboard/" element={<DashboardUser />} />
 
         {/* Ruta para ver la lista de niñeras */}
         <Route path="/catalog/" element={<Catalog />} />
@@ -32,6 +32,12 @@ export default function AppRouter() {
 
         {/* Ruta para verificación de cuenta */}
         <Route path="/verify/:uid/:token/" element={<Verify />} />
+
+        {/* Ruta para manejo de rutas no encontradas */}
+        <Route path="*" element={<h1>404 Not Found</h1>} />
+
+        {/* Dashboards según rol */}
+        
         
       </Routes>
     </BrowserRouter>

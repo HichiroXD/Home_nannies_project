@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { registerUser } from "../../api/userApi";
-import { AuthLayout, AuthMessage, AuthForm } from "../../components/Auth";
+import { registerUser } from "@api/userApi";
+import { AuthLayout, AuthMessage, AuthForm } from "@components/auth";
+import { MainLayout, Loader, PageContainer } from "@components/layout";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function Register() {
 
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -26,9 +28,11 @@ export default function Register() {
     e.preventDefault();
     setError("");
     setSuccessMessage("");
+    setIsLoading(true);
 
     if (formData.password !== formData.password2) {
       setError("Las contraseñas no coinciden.");
+      setIsLoading(false);
       return;
     }
 
@@ -57,6 +61,8 @@ export default function Register() {
       } else {
         setError("Ocurrió un error al registrar la cuenta. Intenta más tarde.");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -101,17 +107,25 @@ export default function Register() {
     },
   ];
 
+  if (isLoading) {
+    return <Loader />;
+  }
+
   return (
-    <AuthLayout title="Crear cuenta">
-      <AuthMessage type="success" message={successMessage} />
-      <AuthMessage type="error" message={error} />
-      <AuthForm fields={fields} onSubmit={handleSubmit} buttonText="Registrarse" />
-      <p className="text-center text-gray-600 text-sm mt-6">
-        ¿Ya tienes cuenta?{" "}
-        <Link to="/login" className="text-pink-500 hover:text-pink-700 font-medium underline">
-          Inicia sesión aquí
-        </Link>
-      </p>
-    </AuthLayout>
+    <MainLayout>
+      <PageContainer className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <AuthLayout title="Crear cuenta">
+          <AuthMessage type="success" message={successMessage} />
+          <AuthMessage type="error" message={error} />
+          <AuthForm fields={fields} onSubmit={handleSubmit} buttonText="Registrarse" />
+          <p className="text-center text-gray-600 text-sm mt-6">
+            ¿Ya tienes cuenta?{" "}
+            <Link to="/login" className="text-pink-500 hover:text-pink-700 font-medium underline">
+              Inicia sesión aquí
+            </Link>
+          </p>
+        </AuthLayout>
+      </PageContainer>
+    </MainLayout>
   );
 }
