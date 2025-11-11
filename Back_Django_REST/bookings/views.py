@@ -7,6 +7,17 @@ from .serializer import BookingSerializer, AvailabilitySerializer, NotificationS
 
 # --- BOOKING ---
 class BookingListCreateView(generics.ListCreateAPIView):
+    """
+    Vista para listar y crear reservas.
+    
+    GET:
+    - Padres ven sus propias reservas
+    - Niñeras ven las reservas que han recibido
+    
+    POST:
+    - Crea una nueva reserva
+    - Notifica automáticamente a la niñera
+    """
     serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -28,6 +39,7 @@ class BookingListCreateView(generics.ListCreateAPIView):
         )
 
 class BookingDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Vista para obtener, actualizar o eliminar una reserva específica."""
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -35,6 +47,12 @@ class BookingDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 # --- AVAILABILITY ---
 class AvailabilityListCreateView(generics.ListCreateAPIView):
+    """
+    Vista para que las niñeras gestionen su disponibilidad.
+    
+    GET: Lista la disponibilidad de la niñera autenticada
+    POST: Crea un nuevo slot de disponibilidad
+    """
     serializer_class = AvailabilitySerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -45,6 +63,7 @@ class AvailabilityListCreateView(generics.ListCreateAPIView):
         serializer.save(nanny=self.request.user)
 
 class AvailabilityDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Vista para actualizar o eliminar un slot de disponibilidad."""
     serializer_class = AvailabilitySerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -54,6 +73,10 @@ class AvailabilityDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 # --- NOTIFICATION ---
 class NotificationListView(generics.ListAPIView):
+    """
+    Vista para listar las notificaciones del usuario autenticado.
+    Ordenadas por fecha de creación (más recientes primero).
+    """
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -61,6 +84,7 @@ class NotificationListView(generics.ListAPIView):
         return self.request.user.notifications.all().order_by('-created_at')
 
 class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Vista para obtener, actualizar o eliminar una notificación específica."""
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -69,84 +93,95 @@ class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # --- ACCIONES PERSONALIZADAS ---
+
+def _update_booking_status(booking, new_status, request_user, recipient_role):
+    """
+    Función auxiliar para actualizar el estado de una reserva y crear notificación.
+    
+    Args:
+        booking: Objeto Booking a actualizar
+        new_status: Nuevo estado ('confirmed', 'rejected', 'cancelled', 'completed')
+        request_user: Usuario que realiza la acción
+        recipient_role: 'parent' o 'nanny' (destinatario de la notificación)
+    """
+    booking.status = new_status
+    booking.save()
+    
+    # Determinar el destinatario de la notificación
+    recipient = booking.parent if recipient_role == 'parent' else booking.nanny
+    
+    # Mapeo de mensajes legibles
+    status_messages = {
+        'confirmed': 'confirmada',
+        'rejected': 'rechazada',
+        'cancelled': 'cancelada',
+        'completed': 'completada'
+    }
+    
+    message = (f"Tu reserva con {request_user.username} ha sido {status_messages.get(new_status, new_status)} "
+               f"para el {booking.start_time.strftime('%d/%m/%Y %H:%M')} - {booking.end_time.strftime('%d/%m/%Y %H:%M')}.")
+    
+    Notification.objects.create(user=recipient, message=message)
+
+
 @extend_schema(request=None, responses=None)
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def accept_booking(request, pk):
+    """Aceptar una reserva (solo la niñera)."""
     try:
         booking = Booking.objects.get(pk=pk, nanny=request.user)
     except Booking.DoesNotExist:
         return Response({"error": "Reserva no encontrada o no autorizada."},
                         status=status.HTTP_404_NOT_FOUND)
 
-    booking.status = "confirmed"
-    booking.save()
-    Notification.objects.create(
-        user=booking.parent,
-        message=f"Tu reserva con {request.user.username} ha sido confirmada para el "
-                f"{booking.start_time} - {booking.end_time}."
-    )
-    return Response({"message": "Reserva aceptada"}, status=200)
+    _update_booking_status(booking, "confirmed", request.user, 'parent')
+    return Response({"message": "Reserva aceptada."}, status=status.HTTP_200_OK)
 
 
 @extend_schema(request=None, responses=None)
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def reject_booking(request, pk):
+    """Rechazar una reserva (solo la niñera)."""
     try:
         booking = Booking.objects.get(pk=pk, nanny=request.user)
     except Booking.DoesNotExist:
         return Response({"error": "Reserva no encontrada o no autorizada."},
                         status=status.HTTP_404_NOT_FOUND)
 
-    booking.status = "rejected"
-    booking.save()
-    Notification.objects.create(
-        user=booking.parent,
-        message=f"Tu reserva con {request.user.username} ha sido rechazada para el "
-                f"{booking.start_time} - {booking.end_time}."
-    )
-    return Response({"message": "Reserva rechazada"}, status=200)
+    _update_booking_status(booking, "rejected", request.user, 'parent')
+    return Response({"message": "Reserva rechazada."}, status=status.HTTP_200_OK)
 
 
 @extend_schema(request=None, responses=None)
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def cancel_booking(request, pk):
+    """Cancelar una reserva (solo el padre/madre)."""
     try:
         booking = Booking.objects.get(pk=pk, parent=request.user)
     except Booking.DoesNotExist:
         return Response({"error": "Reserva no encontrada o no autorizada."},
                         status=status.HTTP_404_NOT_FOUND)
 
-    booking.status = "cancelled"
-    booking.save()
-    Notification.objects.create(
-        user=booking.nanny,
-        message=f"La reserva con {request.user.username} ha sido cancelada para el "
-                f"{booking.start_time} - {booking.end_time}."
-    )
-    return Response({"message": "Reserva cancelada"}, status=200)
+    _update_booking_status(booking, "cancelled", request.user, 'nanny')
+    return Response({"message": "Reserva cancelada."}, status=status.HTTP_200_OK)
 
 
 @extend_schema(request=None, responses=None)
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def complete_booking(request, pk):
+    """Marcar una reserva como completada (solo la niñera)."""
     try:
         booking = Booking.objects.get(pk=pk, nanny=request.user)
     except Booking.DoesNotExist:
         return Response({"error": "Reserva no encontrada o no autorizada."},
                         status=status.HTTP_404_NOT_FOUND)
 
-    booking.status = "completed"
-    booking.save()
-    Notification.objects.create(
-        user=booking.parent,
-        message=f"Tu reserva con {request.user.username} ha sido marcada como completada para el "
-                f"{booking.start_time} - {booking.end_time}."
-    )
-    return Response({"message": "Reserva completada"}, status=200)
+    _update_booking_status(booking, "completed", request.user, 'parent')
+    return Response({"message": "Reserva completada."}, status=status.HTTP_200_OK)
 
 # --- FAVORITES ---
 class FavoriteListCreateView(generics.ListCreateAPIView):

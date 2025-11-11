@@ -178,6 +178,9 @@ SIMPLE_JWT = {
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'no-reply@homenannies.com'
 
+# Configuración del Frontend URL
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+
 # Configuración de drf-spectacular
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Home Nannies API',
