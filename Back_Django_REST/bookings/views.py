@@ -2,8 +2,9 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from drf_spectacular.utils import extend_schema
+import logging
 from .models import Booking, Availability, Notification
-from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer, FavoriteSerializer
+from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer
 
 # --- BOOKING ---
 class BookingListCreateView(generics.ListCreateAPIView):
@@ -37,6 +38,12 @@ class BookingListCreateView(generics.ListCreateAPIView):
             message=f"Tienes una nueva solicitud de reserva de {self.request.user.username} "
                     f"para el {booking.start_time} - {booking.end_time}."
         )
+        # Log booking creation
+        try:
+            logger = logging.getLogger('bookings')
+            logger.info(f"booking_created id={booking.id} parent={booking.parent.username} nanny={booking.nanny.username} start={booking.start_time} end={booking.end_time}")
+        except Exception:
+            pass
 
 class BookingDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Vista para obtener, actualizar o eliminar una reserva específica."""
@@ -57,10 +64,22 @@ class AvailabilityListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # Si se pasa el parámetro 'nanny' en la querystring, devolver la disponibilidad
+        # de esa niñera (uso de lectura pública por usuarios autenticados).
+        nanny_id = self.request.query_params.get('nanny')
+        if nanny_id:
+            return Availability.objects.filter(nanny__id=nanny_id)
         return Availability.objects.filter(nanny=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(nanny=self.request.user)
+        # Log availability created
+        try:
+            obj = serializer.instance
+            logger = logging.getLogger('bookings')
+            logger.info(f"availability_created id={obj.id} nanny={obj.nanny.username} day={obj.day} start={obj.start_time} end={obj.end_time}")
+        except Exception:
+            pass
 
 class AvailabilityDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Vista para actualizar o eliminar un slot de disponibilidad."""
@@ -122,6 +141,11 @@ def _update_booking_status(booking, new_status, request_user, recipient_role):
                f"para el {booking.start_time.strftime('%d/%m/%Y %H:%M')} - {booking.end_time.strftime('%d/%m/%Y %H:%M')}.")
     
     Notification.objects.create(user=recipient, message=message)
+    try:
+        logger = logging.getLogger('bookings')
+        logger.info(f"booking_status_updated id={booking.id} status={new_status} by={request_user.username}")
+    except Exception:
+        pass
 
 
 @extend_schema(request=None, responses=None)
@@ -183,20 +207,4 @@ def complete_booking(request, pk):
     _update_booking_status(booking, "completed", request.user, 'parent')
     return Response({"message": "Reserva completada."}, status=status.HTTP_200_OK)
 
-# --- FAVORITES ---
-class FavoriteListCreateView(generics.ListCreateAPIView):
-    serializer_class = FavoriteSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return self.request.user.favorites.all()
-
-    def perform_create(self, serializer):
-        serializer.save(parent=self.request.user)
-
-class FavoriteDeleteView(generics.RetrieveDestroyAPIView):
-    serializer_class = FavoriteSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return self.request.user.favorites.all()
+# Favorites have been moved to the `favorites` app; use /api/favorites/ endpoints.

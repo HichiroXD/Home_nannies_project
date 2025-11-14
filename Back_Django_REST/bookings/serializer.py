@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import Booking, Availability, Notification, Favorite
+from .models import Booking, Availability, Notification
+# Favorite model/serializer now lives in the `favorites` app. Import serializer from there.
+from favorites.serializer import FavoriteSerializer
 from django.utils import timezone
 
 # --- Booking ---
@@ -123,36 +125,4 @@ class NotificationSerializer(serializers.ModelSerializer):
         }
         return rep
 
-# --- Favorite ---
-class FavoriteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Favorite
-        fields = "__all__"
-        read_only_fields = ["parent", "created_at"]
-
-    def validate(self, data):
-        if data["nanny"].role != "nanny":
-            raise serializers.ValidationError("El usuario seleccionado no es una niñera.")
-        if data["nanny"] == self.context["request"].user:
-            raise serializers.ValidationError("No puedes agregarte a ti mismo como favorito.")
-        return data
-
-    def create(self, validated_data):
-        validated_data["parent"] = self.context["request"].user
-        return super().create(validated_data)
-
-    def to_representation(self, instance):
-        rep = super().to_representation(instance)
-        rep["parent"] = {
-            "id": instance.parent.id,
-            "username": instance.parent.username,
-            "email": instance.parent.email,
-            "role": instance.parent.role,
-        }
-        rep["nanny"] = {
-            "id": instance.nanny.id,
-            "username": instance.nanny.username,
-            "email": instance.nanny.email,
-            "role": instance.nanny.role,
-        }
-        return rep
+# Favorites are handled by the `favorites` app; serializer imported above.

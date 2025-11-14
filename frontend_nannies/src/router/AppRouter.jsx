@@ -6,6 +6,8 @@ import Verify from "@views/auth/Verify";
 import DashboardUser from "@views/dashboard/DashboardUser";
 import Catalog from "@views/Catalog";
 import FavoriteList from "@views/FavoriteList";
+import MyBookings from "@views/MyBookings";
+import BookingCreate from "@views/BookingCreate";
 
 export default function AppRouter() {
   return (
@@ -29,6 +31,11 @@ export default function AppRouter() {
 
         {/* Ruta para ver la lista de niñeras favoritas */}
         <Route path="/favorites/" element={<FavoriteList />} />
+
+        {/* Ruta para ver y gestionar mis reservas */}
+        <Route path="/bookings/" element={<MyBookings />} />
+  {/* Ruta para crear una reserva seleccionando disponibilidad */}
+  <Route path="/bookings/create/:nannyId" element={<BookingCreate />} />
 
         {/* Ruta para verificación de cuenta */}
         <Route path="/verify/:uid/:token/" element={<Verify />} />

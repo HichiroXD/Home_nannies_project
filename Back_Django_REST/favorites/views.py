@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions
 from .models import Favorite
 from .serializer import FavoriteSerializer
+import logging
 
 class FavoriteListCreateView(generics.ListCreateAPIView):
     """
@@ -20,6 +21,12 @@ class FavoriteListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(parent=self.request.user)
+        try:
+            obj = serializer.instance
+            logger = logging.getLogger('favorites')
+            logger.info(f"favorite_created id={obj.id} parent={obj.parent.username} nanny={obj.nanny.username}")
+        except Exception:
+            pass
 
 class FavoriteDeleteView(generics.DestroyAPIView):
     """

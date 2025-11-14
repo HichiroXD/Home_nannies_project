@@ -1,7 +1,12 @@
 from pathlib import Path
 from datetime import timedelta
 import os
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except Exception:
+    # dotenv is optional in some environments; continue if not installed.
+    def load_dotenv():
+        return None
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -151,9 +156,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
+    "http://localhost:5174",
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:5174",
     "http://172.16.157.119:3000",  # tu frontend actual
 ]
+
+# During development it's convenient to allow all origins when DEBUG is True.
+# In production, ensure DEBUG=False and restrict origins appropriately.
+CORS_ALLOW_ALL_ORIGINS = DEBUG
+
+# Allow cookies / credentials in cross-site requests if your frontend uses them.
+CORS_ALLOW_CREDENTIALS = True
 
 # Configuración de usuario personalizado
 AUTH_USER_MODEL = 'users.User'
@@ -189,4 +203,51 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
     'SCHEMA_PATH_PREFIX': '/api',
+}
+
+
+# Basic logging / monitoring configuration
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {asctime} {name} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '[{levelname}] {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': str(LOGS_DIR / 'home_nannies.log'),
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+        },
+        'bookings': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'favorites': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    }
 }

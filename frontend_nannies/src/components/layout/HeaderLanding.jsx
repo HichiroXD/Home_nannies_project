@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { NotificationCenter } from "@components/layout";
 
 export default function HeaderLanding({ isLoggedIn, username }) {
   const navigate = useNavigate();
@@ -19,9 +20,34 @@ export default function HeaderLanding({ isLoggedIn, username }) {
       >
         Home Nannies
       </h1>
-      <div className="space-x-4">
+      <div className="space-x-4 flex items-center">
+        {isLoggedIn && (
+          <>
+            <button
+              onClick={() => navigate("/catalog")}
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+            >
+              Catálogo
+            </button>
+            <button
+              onClick={() => navigate("/favorites")}
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+            >
+              Favoritos
+            </button>
+            <button
+              onClick={() => navigate("/bookings")}
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+            >
+              Mis Reservas
+            </button>
+          </>
+        )}
         {isLoggedIn ? (
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 border-l border-gray-200 pl-4">
+            {/* Centro de Notificaciones */}
+            <NotificationCenter />
+            
             <div className="flex items-center space-x-2">
               <img
                 src={`https://ui-avatars.com/api/?name=${username}&background=pink&color=fff`}
