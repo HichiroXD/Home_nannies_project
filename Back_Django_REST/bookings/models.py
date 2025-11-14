@@ -62,10 +62,3 @@ class Notification(models.Model):
         ordering = ["-created_at"]
         verbose_name = "Notificación"
         verbose_name_plural = "Notificaciones"
-
-class Favorite(models.Model):
-    # Deprecated: Favorite model moved to dedicated `favorites` app.
-    # This placeholder remains only to keep migrations history if needed.
-    class Meta:
-        managed = False
-        db_table = 'bookings_favorite'

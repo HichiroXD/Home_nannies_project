@@ -1,4 +1,17 @@
-from django.db import migrations
+from django.db import migrations, connection
+
+
+def forwards(apps, schema_editor):
+    """Drop the legacy bookings_favorite table."""
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            DROP TABLE IF EXISTS bookings_favorite CASCADE;
+        """)
+
+
+def backwards(apps, schema_editor):
+    # No reverse migration
+    pass
 
 
 class Migration(migrations.Migration):
@@ -8,7 +21,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.DeleteModel(
-            name='Favorite',
-        ),
+        migrations.RunPython(forwards, backwards),
     ]
