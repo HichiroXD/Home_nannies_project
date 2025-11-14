@@ -83,3 +83,43 @@ export const scheduleBooking = async (nannyId) => {
   const response = await API.post("/bookings/", { nanny: nannyId });
   return response.data;
 };
+
+/**
+ * Obtener todas las disponibilidades de la niñera autenticada
+ */
+export const getAvailabilities = async () => {
+  const response = await API.get("/bookings/availabilities/");
+  return response.data;
+};
+
+/**
+ * Crear una nueva franja de disponibilidad
+ */
+export const createAvailability = async (data) => {
+  const response = await API.post("/bookings/availabilities/", data);
+  return response.data;
+};
+
+/**
+ * Actualizar una franja de disponibilidad
+ */
+export const updateAvailability = async (availabilityId, data) => {
+  const response = await API.put(`/bookings/availabilities/${availabilityId}/`, data);
+  return response.data;
+};
+
+/**
+ * Eliminar una franja de disponibilidad
+ */
+export const deleteAvailability = async (availabilityId) => {
+  const response = await API.delete(`/bookings/availabilities/${availabilityId}/`);
+  return response.data;
+};
+
+/**
+ * Obtener todas las reservas de la niñera autenticada
+ */
+export const getBookingsByNanny = async () => {
+  const response = await API.get("/bookings/");
+  return response.data;
+};

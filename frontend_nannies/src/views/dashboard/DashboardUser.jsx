@@ -8,12 +8,22 @@ import {
 
 export default function Dashboard() {
   const [token, setToken] = useState(null);
+  const [role, setRole] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const storedToken = localStorage.getItem("accessToken");
+    const storedRole = localStorage.getItem("role");
+    const roleNormalized = storedRole ? String(storedRole).toLowerCase() : null;
+
     if (storedToken) {
       setToken(storedToken);
+      setRole(storedRole);
+
+      // Redirigir a dashboard específico según rol (acepta varias formas)
+      if (roleNormalized && (roleNormalized.includes("nanny") || roleNormalized.includes("niñ"))) {
+        navigate("/dashboard/nanny/");
+      }
     } else {
       navigate("/login");
     }
@@ -22,6 +32,7 @@ export default function Dashboard() {
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+    localStorage.removeItem("role");
     navigate("/login");
   };
 
@@ -34,6 +45,7 @@ export default function Dashboard() {
         Este es un panel de prueba. Si ves esto después de iniciar sesión,
         significa que el login y la redirección funcionan correctamente.
       </p>
+      {role && <p className="text-gray-700 mb-6">Tu rol: <strong>{role}</strong></p>}
       <TokenDisplay token={token} />
       <LogoutButton onLogout={handleLogout} />
     </DashboardLayout>

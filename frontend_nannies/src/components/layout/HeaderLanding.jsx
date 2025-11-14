@@ -3,6 +3,8 @@ import { NotificationCenter } from "@components/layout";
 
 export default function HeaderLanding({ isLoggedIn, username }) {
   const navigate = useNavigate();
+  const rawRole = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
+  const role = rawRole ? String(rawRole).toLowerCase() : null;
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
@@ -29,6 +31,14 @@ export default function HeaderLanding({ isLoggedIn, username }) {
             >
               Catálogo
             </button>
+            {(role && (role.includes("nanny") || role.includes("niñ"))) && (
+              <button
+                onClick={() => navigate("/dashboard/nanny/")}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+              >
+                Panel Niñera
+              </button>
+            )}
             <button
               onClick={() => navigate("/favorites")}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
