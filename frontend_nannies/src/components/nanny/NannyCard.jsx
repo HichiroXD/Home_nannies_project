@@ -39,9 +39,9 @@ export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = fal
         <p className="text-gray-700 text-sm">
           <strong className="text-gray-900">Experiencia:</strong> {nanny.experience_years || 0} años
         </p>
-        {nanny.rating_avg && (
+        {Number.isFinite(Number(nanny?.rating_avg)) && (
           <p className="text-gray-700 text-sm">
-            <strong className="text-gray-900">Rating:</strong> ⭐ {nanny.rating_avg.toFixed(1)}/5
+            <strong className="text-gray-900">Rating:</strong> ⭐ {Number(nanny.rating_avg).toFixed(1)}/5
           </p>
         )}
       </div>

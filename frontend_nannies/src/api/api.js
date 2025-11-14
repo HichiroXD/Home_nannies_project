@@ -16,4 +16,25 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
+// Global response handler: if backend returns 401, clear auth and redirect to login
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    if (status === 401) {
+      try {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+      } catch (e) {
+        // ignore
+      }
+      // redirect to login so user can re-authenticate
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default API;

@@ -10,6 +10,7 @@ export default function Catalog() {
   const [nannies, setNannies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // store Favorite objects: { id, nanny, created_at }
   const [favorites, setFavorites] = useState([]);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [alert, setAlert] = useState({ visible: false, message: "", type: "info" });
@@ -43,16 +44,22 @@ export default function Catalog() {
     }
   };
 
-  // Cargar favoritos del usuario
+  // Cargar favoritos del usuario (guardamos objetos completos)
   const fetchFavorites = async () => {
     try {
       const token = localStorage.getItem("accessToken");
-      if (!token) return;
+      if (!token) return setFavorites([]);
 
       const favs = await getFavorites();
-      setFavorites(favs.map((fav) => fav.nanny.id));
+      if (Array.isArray(favs)) setFavorites(favs);
+      else {
+        console.warn("getFavorites returned unexpected payload:", favs);
+        setFavorites([]);
+      }
     } catch (err) {
-      console.error("Error cargando favoritos:", err);
+      console.error("Error cargando favoritos:", err, err.response?.data);
+      // if 401 the api interceptor will redirect to login; keep favorites empty
+      setFavorites([]);
     }
   };
 
@@ -89,35 +96,23 @@ export default function Catalog() {
 
     setFavoriteLoading(true);
     try {
-      if (favorites.includes(nannyId)) {
-        // Eliminar de favoritos
-        const favoriteToDelete = favorites.find(
-          (fav) => nannies.find((n) => n.id === nannyId && n.id === fav)
-        );
-        await deleteFavorite(nannyId);
-        setFavorites(favorites.filter((id) => id !== nannyId));
-        setAlert({
-          visible: true,
-          message: "Niñera eliminada de favoritos.",
-          type: "info",
-        });
+      // buscar favorito existente por nanny.id
+      const existing = favorites.find((f) => f.nanny?.id === nannyId);
+      if (existing) {
+        // eliminar usando el id del Favorite
+        await deleteFavorite(existing.id);
+        setFavorites(favorites.filter((f) => f.nanny?.id !== nannyId));
+        setAlert({ visible: true, message: "Niñera eliminada de favoritos.", type: "info" });
       } else {
-        // Añadir a favoritos
-        await addFavorite(nannyId);
-        setFavorites([...favorites, nannyId]);
-        setAlert({
-          visible: true,
-          message: "¡Niñera añadida a favoritos! ❤️",
-          type: "success",
-        });
+        // crear favorito; backend devuelve el objeto Favorite
+        const created = await addFavorite(nannyId);
+        if (created) setFavorites([...favorites, created]);
+        setAlert({ visible: true, message: "¡Niñera añadida a favoritos! ❤️", type: "success" });
       }
     } catch (err) {
-      console.error("Error con favoritos:", err);
-      setAlert({
-        visible: true,
-        message: err.response?.data?.detail || "No se pudo procesar la acción.",
-        type: "error",
-      });
+      console.error("Error con favoritos:", err, err.response?.data);
+      const msg = err.response?.data?.detail || err.response?.data || err.message || "No se pudo procesar la acción.";
+      setAlert({ visible: true, message: msg, type: "error" });
     } finally {
       setFavoriteLoading(false);
     }
