@@ -20,9 +20,13 @@ export default function Dashboard() {
       setToken(storedToken);
       setRole(storedRole);
 
-      // Redirigir a dashboard específico según rol (acepta varias formas)
+      // Redirigir a dashboard específico según rol
       if (roleNormalized && (roleNormalized.includes("nanny") || roleNormalized.includes("niñ"))) {
         navigate("/dashboard/nanny/");
+      } else if (roleNormalized === "admin") {
+        navigate("/admin/dashboard/");
+      } else if (roleNormalized === "parent" || roleNormalized.includes("padre") || roleNormalized.includes("madre")) {
+        navigate("/dashboard/parent/");
       }
     } else {
       navigate("/login");

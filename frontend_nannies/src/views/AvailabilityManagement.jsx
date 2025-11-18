@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import Calendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
 import { getAvailabilities, createAvailability, deleteAvailability } from "../api/bookingApi";
 import AlertToast from "../components/layout/AlertToast";
 import Loader from "../components/layout/Loader";
-import { Trash2, Plus } from "lucide-react";
+import AvailabilityForm from "../components/availability/AvailabilityForm";
+import AvailabilityCalendar from "../components/availability/AvailabilityCalendar";
+import PageHeader from "../components/layout/PageHeader";
 
 export default function AvailabilityManagement() {
   const [availabilities, setAvailabilities] = useState([]);
@@ -40,14 +40,6 @@ export default function AvailabilityManagement() {
       setAlert({
         type: "warning",
         message: "Por favor completa todos los campos",
-      });
-      return;
-    }
-
-    if (timeSlot.start >= timeSlot.end) {
-      setAlert({
-        type: "error",
-        message: "La hora de inicio debe ser anterior a la hora de fin",
       });
       return;
     }

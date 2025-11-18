@@ -1,10 +1,30 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Clock, FileText, LogOut } from "lucide-react";
-import DashboardLayout from "@components/dashboard/DashboardLayout";
+import {
+  Calendar,
+  Clock,
+  FileText,
+  Star,
+  TrendingUp,
+} from "lucide-react";
+import {
+  DashboardLayout,
+  StatCard,
+  QuickLinkButton,
+  ActivityItem,
+  LogoutButton,
+} from "@components/dashboard";
+import { PageHeader } from "@components/layout";
 
 export default function NannyDashboard() {
   const [userRole, setUserRole] = useState(null);
+  const [stats, setStats] = useState({
+    availableSlots: 0,
+    pendingRequests: 0,
+    completedBookings: 0,
+    averageRating: 0,
+  });
+  const [recentActivity, setRecentActivity] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,7 +43,49 @@ export default function NannyDashboard() {
     if (!roleNormalized || !(roleNormalized.includes("nanny") || roleNormalized.includes("niñ"))) {
       navigate("/dashboard/");
     }
+
+    // Simulación de datos - en producción vendría del backend
+    loadStats();
+    loadActivity();
   }, [navigate]);
+
+  const loadStats = () => {
+    setStats({
+      availableSlots: 12,
+      pendingRequests: 2,
+      completedBookings: 24,
+      averageRating: 4.8,
+    });
+  };
+
+  const loadActivity = () => {
+    setRecentActivity([
+      {
+        id: 1,
+        timestamp: "Hoy a las 10:30",
+        title: "Solicitud pendiente",
+        description: "Ana García solicitó tu disponibilidad para el 25/11/2025",
+        icon: "Clock",
+        color: "#f59e0b",
+      },
+      {
+        id: 2,
+        timestamp: "Ayer a las 18:00",
+        title: "Reserva completada",
+        description: "Reserva con familia López finalizada con éxito",
+        icon: "FileText",
+        color: "#10b981",
+      },
+      {
+        id: 3,
+        timestamp: "Hace 2 días",
+        title: "Nueva reseña",
+        description: "Te dieron 5 estrellas: Excelente cuidado y dedicación",
+        icon: "Star",
+        color: "#f43f5e",
+      },
+    ]);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
@@ -32,118 +94,148 @@ export default function NannyDashboard() {
     navigate("/login");
   };
 
-  const menuItems = [
-    {
-      title: "Gestionar Disponibilidad",
-      description: "Define tus franjas horarias disponibles",
-      icon: Calendar,
-      path: "/availability/",
-      color: "bg-blue-500",
-    },
-    {
-      title: "Solicitudes Pendientes",
-      description: "Revisa y responde a las solicitudes de reserva",
-      icon: Clock,
-      path: "/requests/",
-      color: "bg-yellow-500",
-    },
-    {
-      title: "Historial de Reservas",
-      description: "Consulta todas tus reservas pasadas y actuales",
-      icon: FileText,
-      path: "/history/",
-      color: "bg-green-500",
-    },
-  ];
+  const getActivityIcon = (iconName) => {
+    const iconMap = {
+      Clock: Clock,
+      FileText: FileText,
+      Star: Star,
+    };
+    return iconMap[iconName] || Clock;
+  };
 
   return (
     <DashboardLayout>
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">
-          Panel de Niñera
-        </h1>
-        <p className="text-gray-600">
-          Gestiona tu disponibilidad, solicitudes y historial de reservas
-        </p>
-        <div className="mt-4">
-          <button
-            onClick={() => navigate('/dashboard/nanny/profile')}
-            className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600"
-          >
-            Ver Perfil
-          </button>
+      <div className="space-y-6">
+        {/* Header */}
+        <PageHeader
+          title="Panel de Niñera"
+          description="Gestiona tu disponibilidad, solicitudes y reservas"
+        />
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Franjas Disponibles"
+            value={stats.availableSlots}
+            icon={Calendar}
+            color="#3b82f6"
+            trend={5}
+          />
+          <StatCard
+            title="Solicitudes Pendientes"
+            value={stats.pendingRequests}
+            icon={Clock}
+            color="#f59e0b"
+            trend={0}
+          />
+          <StatCard
+            title="Reservas Completadas"
+            value={stats.completedBookings}
+            icon={FileText}
+            color="#10b981"
+            trend={15}
+          />
+          <StatCard
+            title="Calificación Promedio"
+            value={`${stats.averageRating}★`}
+            icon={Star}
+            color="#f43f5e"
+            trend={2}
+          />
         </div>
-      </div>
 
-      {/* Grid de opciones principales */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        {menuItems.map((item) => {
-          const IconComponent = item.icon;
-          return (
+        {/* Quick Actions */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Acciones Principales</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <QuickLinkButton
+              title="Gestionar Disponibilidad"
+              description="Define tus franjas horarias disponibles"
+              icon={Calendar}
+              to="/availability/"
+              color="#3b82f6"
+            />
+            <QuickLinkButton
+              title="Solicitudes Pendientes"
+              description="Revisa y responde solicitudes de reserva"
+              icon={Clock}
+              to="/requests/"
+              color="#f59e0b"
+            />
+            <QuickLinkButton
+              title="Historial de Reservas"
+              description="Consulta tus reservas pasadas y actuales"
+              icon={FileText}
+              to="/history/"
+              color="#10b981"
+            />
+          </div>
+        </div>
+
+        {/* Profile Quick Link */}
+        <div className="bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 rounded-lg p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Tu Perfil</h3>
+              <p className="text-gray-600 text-sm mt-1">Actualiza tu información personal y foto de perfil</p>
+            </div>
             <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className="group bg-white rounded-lg shadow-md hover:shadow-lg transition p-6 text-left"
+              onClick={() => navigate("/dashboard/nanny/profile")}
+              className="px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition font-medium"
             >
-              <div
-                className={`${item.color} text-white rounded-lg p-3 mb-4 w-fit group-hover:scale-110 transition`}
-              >
-                <IconComponent size={24} />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {item.title}
-              </h3>
-              <p className="text-gray-600 text-sm">{item.description}</p>
+              Ver Perfil
             </button>
-          );
-        })}
-      </div>
+          </div>
+        </div>
 
-      {/* Sección de información útil */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-3">
-          ¿Cómo funciona?
-        </h2>
-        <ul className="space-y-2 text-gray-700">
-          <li className="flex items-start gap-2">
-            <span className="text-blue-500 font-bold mt-1">1.</span>
-            <span>
-              Primero, añade tus franjas de disponibilidad en el apartado
-              "Gestionar Disponibilidad"
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-blue-500 font-bold mt-1">2.</span>
-            <span>
-              Los padres podrán ver tus franjas y hacer solicitudes de reserva
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-blue-500 font-bold mt-1">3.</span>
-            <span>
-              Revisa las solicitudes en "Solicitudes Pendientes" y acepta o
-              rechaza
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-blue-500 font-bold mt-1">4.</span>
-            <span>
-              Consulta tu historial de reservas y las reseñas que dejan los
-              padres
-            </span>
-          </li>
-        </ul>
-      </div>
+        {/* Recent Activity */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Actividad Reciente</h2>
+          <div className="space-y-4">
+            {recentActivity.length > 0 ? (
+              recentActivity.map((item) => (
+                <ActivityItem
+                  key={item.id}
+                  timestamp={item.timestamp}
+                  title={item.title}
+                  description={item.description}
+                  icon={getActivityIcon(item.icon)}
+                  color={item.color}
+                />
+              ))
+            ) : (
+              <p className="text-gray-600">No hay actividad reciente</p>
+            )}
+          </div>
+        </div>
 
-      {/* Botón de logout */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg transition"
-        >
-          <LogOut size={18} />
-          Cerrar Sesión
-        </button>
+        {/* How it works */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">¿Cómo funciona?</h3>
+          <ol className="space-y-2 text-gray-700">
+            <li className="flex items-start gap-3">
+              <span className="font-bold text-blue-600 flex-shrink-0">1.</span>
+              <span>Añade tus franjas de disponibilidad en "Gestionar Disponibilidad"</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="font-bold text-blue-600 flex-shrink-0">2.</span>
+              <span>Los padres verán tus franjas y harán solicitudes de reserva</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="font-bold text-blue-600 flex-shrink-0">3.</span>
+              <span>Revisa solicitudes en "Solicitudes Pendientes" y acepta o rechaza</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="font-bold text-blue-600 flex-shrink-0">4.</span>
+              <span>Consulta tu historial y las reseñas que dejan los padres</span>
+            </li>
+          </ol>
+        </div>
+
+        {/* Logout */}
+        <div className="flex justify-end pt-4">
+          <LogoutButton onLogout={handleLogout} />
+        </div>
       </div>
     </DashboardLayout>
   );
