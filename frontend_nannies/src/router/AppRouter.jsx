@@ -12,6 +12,11 @@ import NannyDashboard from "@views/dashboard/NannyDashboard";
 import AdminDashboard from "@views/dashboard/AdminDashboard";
 import NannyProfile from "@views/dashboard/NannyProfile";
 
+// Vistas de perfil según rol
+import ParentProfile from "@views/profile/ParentProfile";
+import NannyProfileView from "@views/profile/NannyProfile";
+import AdminProfile from "@views/profile/AdminProfile";
+
 // Vistas de catálogo y búsqueda
 import Catalog from "@views/Catalog";
 import FavoriteList from "@views/FavoriteList";
@@ -48,6 +53,16 @@ export default function AppRouter() {
 
         {/* Dashboard administrador */}
         <Route path="/admin/dashboard/" element={<AdminDashboard />} />
+
+        {/* ==================== PERFILES POR ROL ==================== */}
+        {/* Perfil de padre */}
+        <Route path="/profile/parent/" element={<ParentProfile />} />
+
+        {/* Perfil de niñera */}
+        <Route path="/profile/nanny/" element={<NannyProfileView />} />
+
+        {/* Perfil de admin */}
+        <Route path="/profile/admin/" element={<AdminProfile />} />
 
         {/* ==================== CATÁLOGO Y BÚSQUEDA ==================== */}
         <Route path="/catalog/" element={<Catalog />} />

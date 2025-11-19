@@ -180,7 +180,7 @@ export default function NannyDashboard() {
               <p className="text-gray-600 text-sm mt-1">Actualiza tu información personal y foto de perfil</p>
             </div>
             <button
-              onClick={() => navigate("/dashboard/nanny/profile")}
+              onClick={() => navigate("/profile/nanny/")}
               className="px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition font-medium"
             >
               Ver Perfil

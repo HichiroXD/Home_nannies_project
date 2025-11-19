@@ -167,7 +167,7 @@ export default function ParentDashboard() {
               title="Mi Perfil"
               description="Actualiza tu información personal"
               icon={BookOpen}
-              to="/dashboard/profile"
+              to="/profile/parent/"
               color="#8b5cf6"
             />
           </div>
