@@ -9,7 +9,13 @@ from django.conf import settings
 import jwt
 import os
 import random
+import logging
 from datetime import date, timedelta
+
+from .ocr_processor import OCRProcessor, OCRProcessingException
+from notifications.signals import send_ocr_notification
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     UniversityProgram,
@@ -437,7 +443,7 @@ class OCRDocumentUploadView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        """Cargar documento para procesamiento OCR"""
+        """Cargar documento para procesamiento OCR (Phase 3: Real)"""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
@@ -446,8 +452,8 @@ class OCRDocumentUploadView(generics.CreateAPIView):
         doc.user = request.user
         doc.save()
         
-        # Iniciar procesamiento OCR (simulado)
-        self._process_ocr_simulated(doc)
+        # Iniciar procesamiento OCR real
+        self._process_ocr_real(doc)
         
         return Response(
             {
@@ -460,55 +466,133 @@ class OCRDocumentUploadView(generics.CreateAPIView):
         )
 
     @staticmethod
-    def _process_ocr_simulated(doc):
+    def _process_ocr_real(doc):
         """
-        Simular procesamiento OCR.
-        
-        Phase 2: En producción, usar pytesseract o servicio OCR externo
+        Procesamiento OCR real usando pytesseract.
+        Phase 3: Integración productiva
         """
         doc.ocr_status = 'processing'
         doc.save()
         
-        # Simular extracción basada en tipo de documento
-        if doc.document_type == 'rut':
-            # Simular extracción de RUT
-            simulated_rut = f"{random.randint(10, 25)}.{random.randint(100000, 999999)}-{random.choice('0123456789K')}"
-            doc.extracted_rut = simulated_rut
-            doc.extracted_name = f"Usuario {doc.user.id}"
-            doc.confidence_score = random.uniform(0.85, 0.99)
+        try:
+            # Obtener ruta del archivo
+            file_path = doc.document_file.path
+            logger.info(f"Iniciando OCR real para documento {doc.id}: {file_path}")
             
-        elif doc.document_type == 'certificate':
-            # Simular extracción de certificado
-            doc.extracted_rut = f"{random.randint(10, 25)}.{random.randint(100000, 999999)}-{random.choice('0123456789K')}"
-            doc.extracted_name = doc.user.get_full_name()
-            doc.valid_from = date.today() - timedelta(days=365)
-            doc.valid_until = date.today() + timedelta(days=365)
-            doc.confidence_score = random.uniform(0.80, 0.98)
-        
-        doc.ocr_status = 'extracted'
-        doc.save()
-        
-        # Crear registro OCRExtraction
-        OCRExtraction.objects.create(
-            document=doc,
-            extracted_rut=doc.extracted_rut,
-            extracted_name=doc.extracted_name,
-            extracted_program='Educación' if doc.document_type == 'certificate' else '',
-            extracted_enrollment_year=date.today().year if doc.document_type == 'certificate' else None,
-            valid_from=doc.valid_from,
-            valid_until=doc.valid_until,
-            confidence_score=doc.confidence_score,
-            confidence_level=OCRExtraction.CONFIDENCE_LEVELS[
-                0 if doc.confidence_score >= 0.9 else (1 if doc.confidence_score >= 0.7 else 2)
-            ][0],
-            raw_text=f"Texto extraído simulado para {doc.document_type}",
-            extraction_metadata={
-                'method': 'simulated_ocr',
-                'language': 'es',
-                'document_type': doc.document_type
-            },
-            status='extracted'
-        )
+            # Inicializar OCRProcessor
+            processor = OCRProcessor()
+            
+            # Procesar documento (extrae RUT, valida confianza, etc.)
+            result = processor.process_document(file_path)
+            
+            if result['status'] == 'error':
+                # Fallo en procesamiento
+                doc.ocr_status = 'failed'
+                doc.ocr_error_message = result.get('error', 'Error desconocido en OCR')
+                doc.save()
+                logger.error(f"OCR fallido para doc {doc.id}: {result['error']}")
+                return
+            
+            # Guardar datos extraídos
+            doc.extracted_rut = result.get('rut')
+            doc.extracted_name = ""  # No siempre disponible en OCR
+            doc.confidence_score = result.get('confidence', 0.0)
+            
+            # Determinar nivel de confianza
+            if doc.confidence_score >= 0.9:
+                confidence_level = 'high'
+            elif doc.confidence_score >= 0.7:
+                confidence_level = 'medium'
+            else:
+                confidence_level = 'low'
+            
+            # Si RUT no fue válido, marcar como requiere revisión
+            if not result.get('rut_valid', False):
+                doc.ocr_status = 'needs_review'
+                logger.warning(f"RUT inválido en doc {doc.id}: {result.get('rut')}")
+                # Enviar notificación de que requiere revisión
+                send_ocr_notification(
+                    user=doc.user,
+                    document_id=str(doc.id),
+                    status='needs_review',
+                    context={
+                        'confidence_score': f"{doc.confidence_score:.0%}",
+                        'rut': result.get('rut', 'No extraído'),
+                    }
+                )
+            else:
+                doc.ocr_status = 'extracted'
+                # Enviar notificación de documento aprobado
+                send_ocr_notification(
+                    user=doc.user,
+                    document_id=str(doc.id),
+                    status='approved',
+                    context={
+                        'confidence_score': f"{doc.confidence_score:.0%}",
+                        'rut': result.get('rut'),
+                    }
+                )
+            
+            doc.save()
+            
+            # Crear registro OCRExtraction con datos reales
+            OCRExtraction.objects.create(
+                document=doc,
+                extracted_rut=result.get('rut'),
+                extracted_name=result.get('extracted_name', ''),
+                extracted_program='',  # No disponible en OCR puro
+                extracted_enrollment_year=None,
+                valid_from=None,
+                valid_until=None,
+                confidence_score=result.get('confidence', 0.0),
+                confidence_level=confidence_level,
+                raw_text=result.get('text', '')[:5000],  # Limitar a 5000 chars
+                extraction_metadata={
+                    'method': 'pytesseract_real_ocr',
+                    'language': 'spa+eng',
+                    'document_type': doc.document_type,
+                    'pages': result.get('pages', 1),
+                    'rut_valid': result.get('rut_valid', False),
+                    'rut_message': result.get('rut_message', ''),
+                    'confidence_valid': result.get('confidence_valid', False),
+                    'confidence_message': result.get('confidence_message', '')
+                },
+                status='extracted' if result.get('rut_valid') else 'needs_review'
+            )
+            
+            logger.info(f"OCR exitoso para doc {doc.id}: RUT={result.get('rut')}, Confianza={result.get('confidence'):.0%}")
+            
+        except OCRProcessingException as e:
+            # Error específico de OCR
+            doc.ocr_status = 'failed'
+            doc.ocr_error_message = f"Error OCR: {str(e)}"
+            doc.save()
+            logger.error(f"OCRProcessingException en doc {doc.id}: {str(e)}")
+            # Enviar notificación de fallo
+            send_ocr_notification(
+                user=doc.user,
+                document_id=str(doc.id),
+                status='rejected',
+                context={
+                    'error': str(e),
+                }
+            )
+            
+        except Exception as e:
+            # Error inesperado
+            doc.ocr_status = 'failed'
+            doc.ocr_error_message = f"Error inesperado: {str(e)}"
+            doc.save()
+            logger.error(f"Error inesperado en OCR doc {doc.id}: {str(e)}", exc_info=True)
+            # Enviar notificación de fallo
+            send_ocr_notification(
+                user=doc.user,
+                document_id=str(doc.id),
+                status='rejected',
+                context={
+                    'error': 'Error procesando documento',
+                }
+            )
 
 
 class OCRDocumentStatusView(generics.RetrieveAPIView):
@@ -523,11 +607,11 @@ class OCRDocumentStatusView(generics.RetrieveAPIView):
 
 
 class OCRExtractRUTView(generics.GenericAPIView):
-    """Phase 2: Extraer RUT de documento"""
+    """Phase 3: Extraer RUT de documento (Real con pytesseract)"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        """Extraer RUT de documento"""
+        """Extraer RUT de documento usando OCR real"""
         document_id = request.data.get('document_id')
         
         if not document_id:
@@ -551,30 +635,77 @@ class OCRExtractRUTView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Simular extracción de RUT
-        ocr_result = self._simulate_rut_extraction(doc)
+        # Extraer RUT usando OCR real
+        ocr_result = self._extract_rut_real(doc)
         
         return Response(ocr_result, status=status.HTTP_200_OK)
 
     @staticmethod
-    def _simulate_rut_extraction(doc):
-        """Simular extracción de RUT específicamente"""
-        # Simular RUT válido chileno
-        rut_numbers = f"{random.randint(10, 25)}.{random.randint(100000, 999999)}"
-        check_digits = random.choice('0123456789K')
-        simulated_rut = f"{rut_numbers}-{check_digits}"
-        
-        doc.extracted_rut = simulated_rut
-        doc.confidence_score = random.uniform(0.90, 0.99)
-        doc.save()
-        
-        return {
-            'document_id': doc.id,
-            'extracted_rut': simulated_rut,
-            'confidence_score': doc.confidence_score,
-            'confidence_level': 'high' if doc.confidence_score >= 0.85 else 'medium',
-            'status': 'extracted'
-        }
+    def _extract_rut_real(doc):
+        """Extraer RUT de documento usando pytesseract real"""
+        try:
+            file_path = doc.document_file.path
+            logger.info(f"Extrayendo RUT de documento {doc.id}")
+            
+            # Inicializar OCRProcessor
+            processor = OCRProcessor()
+            
+            # Procesar documento
+            result = processor.process_document(file_path)
+            
+            if result['status'] == 'error':
+                logger.error(f"Error extrayendo RUT: {result['error']}")
+                return {
+                    'document_id': doc.id,
+                    'extracted_rut': None,
+                    'confidence_score': 0.0,
+                    'status': 'failed',
+                    'error': result['error']
+                }
+            
+            # Guardar datos en documento
+            doc.extracted_rut = result.get('rut')
+            doc.confidence_score = result.get('confidence', 0.0)
+            doc.save()
+            
+            # Determinar nivel de confianza
+            if doc.confidence_score >= 0.9:
+                confidence_level = 'high'
+            elif doc.confidence_score >= 0.7:
+                confidence_level = 'medium'
+            else:
+                confidence_level = 'low'
+            
+            logger.info(f"RUT extraído: {result.get('rut')}, Confianza: {result.get('confidence'):.0%}")
+            
+            return {
+                'document_id': doc.id,
+                'extracted_rut': result.get('rut'),
+                'confidence_score': result.get('confidence', 0.0),
+                'confidence_level': confidence_level,
+                'rut_valid': result.get('rut_valid', False),
+                'status': 'extracted' if result.get('rut_valid') else 'needs_review',
+                'pages': result.get('pages', 1)
+            }
+            
+        except OCRProcessingException as e:
+            logger.error(f"OCRProcessingException: {str(e)}")
+            return {
+                'document_id': doc.id,
+                'extracted_rut': None,
+                'confidence_score': 0.0,
+                'status': 'failed',
+                'error': f'Error OCR: {str(e)}'
+            }
+        except Exception as e:
+            logger.error(f"Error inesperado: {str(e)}", exc_info=True)
+            return {
+                'document_id': doc.id,
+                'extracted_rut': None,
+                'confidence_score': 0.0,
+                'status': 'failed',
+                'error': f'Error inesperado: {str(e)}'
+            }
 
 
 class AcademicVerifyView(generics.GenericAPIView):

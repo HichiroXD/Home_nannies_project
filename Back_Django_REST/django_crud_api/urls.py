@@ -52,4 +52,13 @@ urlpatterns = [
     # Reseñas
     path('api/reviews/', include('reviews.urls')),
 
+    # Notificaciones - Phase 3
+    path('api/', include('notifications.urls')),
+
+    # Validación Académica - Phase 3
+    path('api/academic/', include('academic.urls')),
+
+    # Reportes y Análisis - Phase 3
+    path('api/reports/', include('reports.urls')),
+
 ]

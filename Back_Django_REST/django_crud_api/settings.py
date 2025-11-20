@@ -49,6 +49,9 @@ INSTALLED_APPS = [
     'nannies',
     'favorites',
     'reviews',
+    'notifications',  # Phase 3: Notificaciones automáticas
+    'academic',  # Phase 3: Validación académica
+    'reports',  # Phase 3: Reportes y análisis
 ]
 
 # Configuración REST Framework
