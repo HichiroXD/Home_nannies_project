@@ -16,6 +16,7 @@ import NannyProfile from "@views/dashboard/NannyProfile";
 import ParentProfile from "@views/profile/ParentProfile";
 import NannyProfileView from "@views/profile/NannyProfile";
 import AdminProfile from "@views/profile/AdminProfile";
+import Settings from "@views/Settings";
 
 // Vistas de catálogo y búsqueda
 import Catalog from "@views/Catalog";
@@ -63,6 +64,9 @@ export default function AppRouter() {
 
         {/* Perfil de admin */}
         <Route path="/profile/admin/" element={<AdminProfile />} />
+
+        {/* ==================== CONFIGURACIONES ==================== */}
+        <Route path="/settings/" element={<Settings />} />
 
         {/* ==================== CATÁLOGO Y BÚSQUEDA ==================== */}
         <Route path="/catalog/" element={<Catalog />} />
