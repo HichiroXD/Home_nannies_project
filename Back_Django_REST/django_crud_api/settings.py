@@ -19,7 +19,7 @@ load_dotenv()
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # TODO > Cambiar la clave secreta a un .env por seguridad
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY", "b)+h)pgkb7s^cg%j%6(r!mhnlog%#z94uti)!hqfz1mcnz#z^z")
 DEBUG=True
 
 ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
 
     # Apps
+    'core',  # Phase 1: Validación Institucional
     'users',
     'bookings',
     'nannies',
@@ -97,16 +98,25 @@ WSGI_APPLICATION = 'django_crud_api.wsgi.application'
 
 # settings.py en Django 
 # TODO > Cambiar las credenciales a un .env por seguridad
+# Usar SQLite para desarrollo, PostgreSQL para producción
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv("DB_NAME"),
-        'USER': os.getenv("DB_USER"),
-        'PASSWORD': os.getenv("DB_PASSWORD"),
-        'HOST': os.getenv("DB_HOST", "localhost"),
-        'PORT': os.getenv("DB_PORT", "5432"),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Configuración PostgreSQL (comentada para desarrollo)
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv("DB_NAME"),
+#         'USER': os.getenv("DB_USER"),
+#         'PASSWORD': os.getenv("DB_PASSWORD"),
+#         'HOST': os.getenv("DB_HOST", "localhost"),
+#         'PORT': os.getenv("DB_PORT", "5432"),
+#     }
+# }
 
 
 # Password validation

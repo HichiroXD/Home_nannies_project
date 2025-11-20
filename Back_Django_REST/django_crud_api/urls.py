@@ -29,6 +29,9 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
+    # Core - Phase 1: Validación Institucional
+    path('api/core/', include('core.urls')),
+
     # Usuarios
     path('api/users/', include('users.urls')),
 
