@@ -3,7 +3,7 @@
  * Resumen de hijos, bookings activos, pagos y notificaciones
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -18,9 +18,7 @@ import {
 import { Plus, Calendar, CreditCard, Bell } from 'lucide-react';
 import {
   TabsComponent,
-  useFetch,
   useToggle,
-  DashboardSkeleton,
 } from '@/components/common';
 
 // Componentes del dashboard
@@ -39,16 +37,42 @@ export const ParentDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [showAddKid, setShowAddKid] = useToggle(false);
   const [showSearchNanny, setShowSearchNanny] = useToggle(false);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Obtener token para auth
   const token = localStorage.getItem('token');
 
-  // Obtener datos del dashboard
-  const { data: dashboardData, loading, error } = useFetch('/api/dashboard/parent', {
-    // Mock data para desarrollo
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
+  useEffect(() => {
+    if (!token) {
+      setError('No autenticado');
+      return;
+    }
+
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/dashboard/parent', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setDashboardData(data);
+        } else {
+          setError('Error cargando datos');
+        }
+      } catch (err) {
+        console.error('Error fetching dashboard:', err);
+        setError('Error de conexión');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
   }, [token]);
 
   // Estado de demostración si no hay datos reales
@@ -154,7 +178,15 @@ export const ParentDashboard = () => {
 
   const data = dashboardData || demoData;
 
-  if (loading) return <DashboardSkeleton />;
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography>Cargando dashboard...</Typography>
+        </Box>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>

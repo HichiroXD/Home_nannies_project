@@ -1,0 +1,201 @@
+/* AvailabilitySelector Styles */
+
+.availability-selector {
+  width: 100%;
+  margin: 20px 0;
+}
+
+.availability-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  max-width: 1000px;
+}
+
+.availability-calendar {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.availability-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Calendario de React Calendar */
+.availability-calendar :global(.react-calendar) {
+  width: 100%;
+  border: none;
+  font-family: inherit;
+}
+
+.availability-calendar :global(.react-calendar__navigation) {
+  margin-bottom: 15px;
+}
+
+.availability-calendar :global(.react-calendar__month-view__weekdays__weekday) {
+  font-weight: 600;
+  color: #666;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.availability-calendar :global(.react-calendar__tile) {
+  padding: 10px 0;
+  font-size: 14px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.availability-calendar :global(.react-calendar__tile:hover) {
+  background-color: #f0f0f0;
+}
+
+.availability-calendar :global(.react-calendar__tile--active) {
+  background-color: #ff6b9d;
+  color: white;
+  font-weight: bold;
+}
+
+.availability-calendar :global(.react-calendar__tile--disabled) {
+  background-color: #f9f9f9;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Custom tile classes */
+.availability-calendar :global(.availability-has-slots) {
+  background-color: #d4edda;
+  color: #155724;
+  font-weight: 500;
+}
+
+.availability-calendar :global(.availability-selected-date) {
+  background-color: #ff6b9d;
+  color: white;
+  font-weight: bold;
+}
+
+.availability-hint {
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Slots horarios */
+.availability-slots {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.availability-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.availability-slot {
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.availability-slot:hover:not(.selected) {
+  border-color: #ff6b9d;
+  background-color: #fff0f5;
+}
+
+.availability-slot.selected {
+  background-color: #ff6b9d;
+  color: white;
+  border-color: #ff6b9d;
+  font-weight: bold;
+}
+
+.slot-time {
+  font-weight: 600;
+}
+
+.slot-separator {
+  color: #999;
+  margin: 0 4px;
+}
+
+.availability-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #999;
+  border: 2px dashed #e0e0e0;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.availability-loading {
+  padding: 40px 20px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+.availability-selected-info {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #d4edda;
+  border: 2px solid #28a745;
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .availability-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .availability-slots-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .availability-calendar {
+    padding: 15px;
+  }
+
+  .availability-slots {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 600px) {
+  .availability-calendar :global(.react-calendar__tile) {
+    padding: 8px 0;
+    font-size: 12px;
+  }
+
+  .availability-slot {
+    font-size: 12px;
+    padding: 10px;
+  }
+}

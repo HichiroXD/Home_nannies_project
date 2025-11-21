@@ -46,7 +46,7 @@ export const AvailabilityCalendar = ({
       </Box>
 
       {availability.length === 0 ? (
-        <Card sx={{ textAlign: 'center', p: 4 }}>
+        <Card sx={{ textAlign: 'center'}}>
           <Typography color="textSecondary">
             No tienes horarios de disponibilidad configurados
           </Typography>
@@ -63,7 +63,7 @@ export const AvailabilityCalendar = ({
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
                   '&:hover': {
-                    transform: 'translateY(-4px)',
+//                    transform: 'translateY(-4px)',
                     boxShadow: 3,
                   },
                 }}

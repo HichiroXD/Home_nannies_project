@@ -46,6 +46,9 @@ urlpatterns = [
     # Nannies
     path('api/nannies/', include('nannies.urls')),
 
+    # Dashboards
+    path('api/dashboard/', include('django_crud_api.dashboard_urls')),
+
     # Favoritos
     path('api/favorites/', include('favorites.urls')),
 

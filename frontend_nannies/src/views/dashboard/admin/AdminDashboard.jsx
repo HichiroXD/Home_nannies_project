@@ -3,7 +3,7 @@
  * Gestión de usuarios, reportes, métricas del sistema
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -14,12 +14,10 @@ import {
   Typography,
   Alert as MuiAlert,
 } from '@mui/material';
-import { Users, BarChart3, Settings } from 'lucide-react';
+import { Plus, Users, TrendingUp, AlertCircle } from 'lucide-react';
 import {
   TabsComponent,
-  useFetch,
   useToggle,
-  DashboardSkeleton,
 } from '@/components/common';
 
 // Componentes del dashboard
@@ -37,11 +35,31 @@ export const AdminDashboard = () => {
   // Obtener token para auth
   const token = localStorage.getItem('token');
 
+  // Estados del dashboard
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   // Obtener datos del dashboard
-  const { data: dashboardData, loading, error } = useFetch('/api/dashboard/admin', {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchAdminData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/dashboard/admin', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (response.ok) {
+          setDashboardData(await response.json());
+        }
+      } catch (err) {
+        setError('Error de conexión');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAdminData();
   }, [token]);
 
   // Demo data para desarrollo
@@ -132,7 +150,15 @@ export const AdminDashboard = () => {
 
   const data = dashboardData || demoData;
 
-  if (loading) return <DashboardSkeleton />;
+  if (loading) {
+    return (
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Typography variant="h6" sx={{ textAlign: 'center', py: 10 }}>
+          Cargando datos del dashboard...
+        </Typography>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>

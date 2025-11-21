@@ -8,6 +8,7 @@ export { default as FormBuilder, FormBuilder as FormBuilderComponent } from './F
 export { default as DataTable, DataTable as DataTableComponent } from './DataTable';
 export { default as Modal, Modal as ModalComponent } from './Modal';
 export { AlertComponent, AlertComponent as Alert } from './Alert';
+export { default as AlertToast, useAlert } from './AlertToast';
 export { default as StatCard } from './StatCard';
 
 // Componentes de skeleton/loading

@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { getNannies } from "@api/nannyApi";
 import { addFavorite, deleteFavorite, getFavorites } from "@api/favoriteApi";
 import { NannyFilters, NannyCard } from "@components/nanny";
-import { MainLayout, AlertToast } from "@components/layout";
+import { MainLayout } from "@components/layout";
+import { AlertToast, useAlert } from "@components/common";
 import { Loader } from "@components/layout";
 
 export default function Catalog() {
@@ -13,7 +14,7 @@ export default function Catalog() {
   // store Favorite objects: { id, nanny, created_at }
   const [favorites, setFavorites] = useState([]);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
-  const [alert, setAlert] = useState({ visible: false, message: "", type: "info" });
+  const { showAlert, alert, setAlert } = useAlert();
   const [filters, setFilters] = useState({
     search: "",
     max_rate: "",
@@ -34,15 +35,11 @@ export default function Catalog() {
       const data = await getNannies(params);
       setNannies(data);
     } catch (err) {
-      setAlert({
-        visible: true,
-        message: "No se pudieron cargar las niñeras.",
-        type: "error",
-      });
+      showAlert("No se pudieron cargar las niñeras.", "error");
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, showAlert]);
 
   // Cargar favoritos del usuario (guardamos objetos completos)
   const fetchFavorites = useCallback(async () => {
@@ -85,11 +82,7 @@ export default function Catalog() {
   const handleFavorite = useCallback(async (nannyId) => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
-      setAlert({
-        visible: true,
-        message: "Debes iniciar sesión para usar favoritos.",
-        type: "warning",
-      });
+      showAlert("Debes iniciar sesión para usar favoritos.", "warning");
       navigate("/login");
       return;
     }
@@ -102,21 +95,21 @@ export default function Catalog() {
         // eliminar usando el id del Favorite
         await deleteFavorite(existing.id);
         setFavorites(favorites.filter((f) => f.nanny?.id !== nannyId));
-        setAlert({ visible: true, message: "Niñera eliminada de favoritos.", type: "info" });
+        showAlert("Niñera eliminada de favoritos.", "info");
       } else {
         // crear favorito; backend devuelve el objeto Favorite
         const created = await addFavorite(nannyId);
         if (created) setFavorites([...favorites, created]);
-        setAlert({ visible: true, message: "¡Niñera añadida a favoritos! ❤️", type: "success" });
+        showAlert("¡Niñera añadida a favoritos! ❤️", "success");
       }
     } catch (err) {
       console.error("Error con favoritos:", err, err.response?.data);
       const msg = err.response?.data?.detail || err.response?.data || err.message || "No se pudo procesar la acción.";
-      setAlert({ visible: true, message: msg, type: "error" });
+      showAlert(msg, "error");
     } finally {
       setFavoriteLoading(false);
     }
-  }, [favorites, navigate]);
+  }, [favorites, navigate, showAlert]);
 
   const handleBookingClick = useCallback((nannyId) => {
     const token = localStorage.getItem("accessToken");
@@ -141,12 +134,7 @@ export default function Catalog() {
 
   return (
     <MainLayout>
-      <AlertToast
-        message={alert.message}
-        type={alert.type}
-        isVisible={alert.visible}
-        onClose={() => setAlert({ ...alert, visible: false })}
-      />
+      <AlertToast {...alert} onClose={() => setAlert({})} />
 
       <div className="min-h-screen bg-pink-50 py-10 px-6">
         <h1 className="text-3xl font-bold text-center text-pink-600 mb-8">

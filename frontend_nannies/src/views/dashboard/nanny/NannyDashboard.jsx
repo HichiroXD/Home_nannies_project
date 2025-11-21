@@ -3,7 +3,7 @@
  * Disponibilidad, ingresos, bookings, reseñas
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Container,
@@ -17,9 +17,7 @@ import {
 import { Plus, Calendar, TrendingUp, MessageSquare } from 'lucide-react';
 import {
   TabsComponent,
-  useFetch,
   useToggle,
-  DashboardSkeleton,
 } from '@/components/common';
 
 // Componentes del dashboard
@@ -33,113 +31,79 @@ import ReviewsPanel from './components/ReviewsPanel';
 export const NannyDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [showAddAvailability, setShowAddAvailability] = useToggle(false);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Obtener token para auth
   const token = localStorage.getItem('token');
 
   // Obtener datos del dashboard
-  const { data: dashboardData, loading, error } = useFetch('/api/dashboard/nanny', {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  }, [token]);
+  useEffect(() => {
+    if (!token) {
+      setError('No autenticado');
+      return;
+    }
 
-  // Demo data para desarrollo
-  const demoData = {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/dashboard/nanny', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setDashboardData(data);
+        } else {
+          setError('Error cargando datos');
+        }
+      } catch (err) {
+        console.error('Error fetching dashboard:', err);
+        setError('Error de conexión');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [token]); // Dependencia correcta
+
+  // Demo data para desarrollo - SOLO SI NO EXISTEN DATOS REALES
+  const emptyData = {
     nanny: {
-      name: 'María González',
-      avatar: 'MG',
-      memberSince: '2023-06-10',
-      rating: 4.9,
-      reviews: 127,
+      name: dashboardData?.nanny?.name || 'Perfil de Niñera',
+      avatar: dashboardData?.nanny?.avatar || 'NN',
+      memberSince: dashboardData?.nanny?.memberSince || new Date().toISOString(),
+      rating: 0,
     },
     stats: {
-      totalEarnings: 3650.00,
-      activeBookings: 4,
-      pendingRequests: 2,
-      completedBookings: 45,
-      averageRating: 4.9,
+      activeBookings: 0,
+      completedBookings: 0,
+      totalReviews: 0,
+      avgRating: 0,
     },
-    availability: [
-      { day: 'Lunes', available: true, hours: '09:00 - 18:00', bookings: 2 },
-      { day: 'Martes', available: true, hours: '09:00 - 18:00', bookings: 1 },
-      { day: 'Miércoles', available: true, hours: '09:00 - 18:00', bookings: 3 },
-      { day: 'Jueves', available: false, hours: 'No disponible', bookings: 0 },
-      { day: 'Viernes', available: true, hours: '09:00 - 18:00', bookings: 2 },
-      { day: 'Sábado', available: true, hours: '10:00 - 16:00', bookings: 1 },
-      { day: 'Domingo', available: false, hours: 'No disponible', bookings: 0 },
-    ],
-    earnings: [
-      { month: 'Enero', amount: 450, bookings: 6 },
-      { month: 'Febrero', amount: 520, bookings: 7 },
-      { month: 'Marzo', amount: 480, bookings: 6 },
-      { month: 'Abril', amount: 610, bookings: 8 },
-      { month: 'Mayo', amount: 580, bookings: 7 },
-      { month: 'Junio', amount: 610, bookings: 8 },
-    ],
-    bookings: [
-      {
-        id: 1,
-        parentName: 'Carlos Pérez',
-        parentImage: null,
-        kids: 2,
-        date: '2024-11-25',
-        time: '14:00 - 18:00',
-        status: 'confirmed',
-        rate: 20,
-      },
-      {
-        id: 2,
-        parentName: 'Ana Martínez',
-        parentImage: null,
-        kids: 1,
-        date: '2024-11-26',
-        time: '09:00 - 13:00',
-        status: 'pending',
-        rate: 18,
-      },
-      {
-        id: 3,
-        parentName: 'David García',
-        parentImage: null,
-        kids: 3,
-        date: '2024-11-27',
-        time: '16:00 - 20:00',
-        status: 'confirmed',
-        rate: 25,
-      },
-    ],
-    reviews: [
-      {
-        id: 1,
-        parentName: 'Sofia López',
-        rating: 5,
-        comment: 'Excelente cuidadora, mis hijos la adoran',
-        date: '2024-11-20',
-        verified: true,
-      },
-      {
-        id: 2,
-        parentName: 'Juan Rodríguez',
-        rating: 5,
-        comment: 'Profesional y responsable, muy recomendada',
-        date: '2024-11-18',
-        verified: true,
-      },
-      {
-        id: 3,
-        parentName: 'Rosa Martínez',
-        rating: 4,
-        comment: 'Muy buena, cumplida y atenta',
-        date: '2024-11-15',
-        verified: true,
-      },
-    ],
+    upcomingBookings: [],
+    recentReviews: [],
+    earnings: {
+      thisMonth: 0,
+      total: 0,
+    },
   };
 
-  const data = dashboardData || demoData;
+  const data = dashboardData || emptyData;
 
-  if (loading) return <DashboardSkeleton />;
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography>Cargando dashboard...</Typography>
+        </Box>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>

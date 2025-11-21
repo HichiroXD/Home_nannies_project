@@ -225,37 +225,75 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '[{levelname}] {asctime} {name} {message}',
+            'format': '[{levelname}] {asctime} {name} {module}.{funcName}:{lineno} {message}',
             'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
         },
         'simple': {
             'format': '[{levelname}] {message}',
             'style': '{',
         },
     },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
+            'filters': ['require_debug_true'],
         },
         'file': {
             'class': 'logging.FileHandler',
             'filename': str(LOGS_DIR / 'home_nannies.log'),
             'formatter': 'verbose',
+            'level': 'DEBUG',
+        },
+        'bookings_file': {
+            'class': 'logging.FileHandler',
+            'filename': str(LOGS_DIR / 'bookings.log'),
+            'formatter': 'verbose',
+        },
+        'users_file': {
+            'class': 'logging.FileHandler',
+            'filename': str(LOGS_DIR / 'users.log'),
+            'formatter': 'verbose',
+        },
+        'errors_file': {
+            'class': 'logging.FileHandler',
+            'filename': str(LOGS_DIR / 'errors.log'),
+            'formatter': 'verbose',
+            'level': 'WARNING',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console', 'file', 'errors_file'],
             'level': 'INFO',
+            'propagate': False,
         },
         'bookings': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console', 'bookings_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'users': {
+            'handlers': ['console', 'users_file'],
             'level': 'INFO',
             'propagate': False,
         },
         'favorites': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console', 'bookings_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'notifications': {
+            'handlers': ['console', 'bookings_file'],
             'level': 'INFO',
             'propagate': False,
         },

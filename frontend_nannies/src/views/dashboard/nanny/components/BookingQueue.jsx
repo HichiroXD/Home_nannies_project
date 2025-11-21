@@ -23,9 +23,37 @@ export const BookingQueue = ({
   onReject,
   onComplete,
 }) => {
+  // Manejar tanto formato antiguo como datos del API
+  const normalizedBookings = bookings.map(b => ({
+    id: b.id || b.id,
+    parentName: b.parentName || `${b.parent__user__first_name || ''} ${b.parent__user__last_name || ''}`.trim(),
+    kids: b.kids || 1,
+    date: b.date,
+    time: b.time || '09:00 - 13:00',
+    status: b.status || 'pending',
+    rate: b.rate || 0,
+  }));
+
   // Separar bookings por estado
-  const pending = bookings.filter((b) => b.status === 'pending');
-  const confirmed = bookings.filter((b) => b.status === 'confirmed');
+  const pending = normalizedBookings.filter((b) => b.status === 'pending');
+  const confirmed = normalizedBookings.filter((b) => b.status === 'confirmed');
+
+  // Mostrar mensaje si no hay bookings
+  if (normalizedBookings.length === 0) {
+    return (
+      <Card>
+        <CardContent sx={{ textAlign: 'center', py: 6 }}>
+          <Clock size={48} style={{ color: '#cbd5e1', marginBottom: '16px' }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+            Sin reservas
+          </Typography>
+          <Typography color="textSecondary" variant="body2">
+            No tienes bookings próximos. Los nuevos bookings aparecerán aquí.
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const BookingCard = ({ booking, actions }) => (
     <Card sx={{ mb: 2 }}>

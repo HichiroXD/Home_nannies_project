@@ -9,12 +9,11 @@ import {
   Box,
   Tabs as MuiTabs,
   Tab,
-  TabPanel as MuiTabPanel,
   Typography,
   Stack,
 } from '@mui/material';
 
-// Panel content wrapper
+// Panel content wrapper - Custom implementation (not from MUI)
 const TabPanel = ({ children, value, index, ...other }) => (
   <div
     role="tabpanel"

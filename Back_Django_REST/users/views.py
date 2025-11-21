@@ -194,3 +194,104 @@ class PublicNannyListView(generics.ListAPIView):
     queryset = User.objects.filter(role='nanny', is_verified=True)
     serializer_class = UserListSerializer
     permission_classes = [AllowAny]
+
+
+# Dashboard views
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from bookings.models import Booking
+from reviews.models import Review
+from django.db.models import Q, Avg
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def parent_dashboard(request):
+    """Endpoint para obtener datos del dashboard del padre."""
+    user = request.user
+    
+    if user.role != 'parent':
+        return Response(
+            {'error': 'No eres un padre/madre registrado'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Bookings activos
+    active_bookings = Booking.objects.filter(
+        parent__user=user,
+        status__in=['pending', 'confirmed']
+    ).count()
+    
+    # Bookings completados
+    completed_bookings = Booking.objects.filter(
+        parent__user=user,
+        status='completed'
+    ).count()
+    
+    # Próximas reservas
+    upcoming_bookings = Booking.objects.filter(
+        parent__user=user,
+        status__in=['pending', 'confirmed']
+    ).order_by('start_date')[:5].values(
+        'id', 'nanny__user__first_name', 'nanny__user__last_name',
+        'start_date', 'end_date', 'status'
+    )
+    
+    dashboard_data = {
+        'parent': {
+            'name': f"{user.first_name} {user.last_name}",
+            'avatar': user.first_name[0] + user.last_name[0] if user.first_name and user.last_name else 'P',
+            'memberSince': user.date_joined.isoformat(),
+        },
+        'stats': {
+            'activeBookings': active_bookings,
+            'completedBookings': completed_bookings,
+            'totalSpent': 0,  # TODO: Calcular gastos reales
+        },
+        'upcomingBookings': list(upcoming_bookings),
+        'recentBookings': list(upcoming_bookings),
+    }
+    
+    return Response(dashboard_data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_dashboard(request):
+    """Endpoint para obtener datos del dashboard del admin."""
+    user = request.user
+    
+    if user.role != 'admin' and not user.is_superuser:
+        return Response(
+            {'error': 'No tienes permisos de administrador'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Estadísticas generales
+    total_users = User.objects.count()
+    total_nannies = User.objects.filter(role='nanny', is_verified=True).count()
+    total_parents = User.objects.filter(role='parent').count()
+    
+    # Bookings
+    total_bookings = Booking.objects.count()
+    pending_bookings = Booking.objects.filter(status='pending').count()
+    
+    dashboard_data = {
+        'admin': {
+            'name': f"{user.first_name} {user.last_name}",
+            'avatar': user.first_name[0] + user.last_name[0] if user.first_name and user.last_name else 'A',
+            'role': 'Superadmin' if user.is_superuser else 'Admin',
+        },
+        'stats': {
+            'totalUsers': total_users,
+            'totalNannies': total_nannies,
+            'totalParents': total_parents,
+            'totalBookings': total_bookings,
+            'pendingBookings': pending_bookings,
+        },
+        'systemHealth': {
+            'status': 'ok',
+            'uptime': '99.9%',
+        }
+    }
+    
+    return Response(dashboard_data, status=status.HTTP_200_OK)

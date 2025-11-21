@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { MainLayout, AlertToast, Loader, PageContainer } from "@components/layout";
+import { MainLayout, Loader, PageContainer } from "@components/layout";
+import { AlertToast, useAlert } from "@components/common";
 import { EditBookingModal, BookingCard, ConfirmationModal } from "@components/bookings";
 import {
   getBookings,
@@ -14,7 +15,7 @@ export default function MyBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [alert, setAlert] = useState({ visible: false, message: "", type: "info" });
+  const { showAlert, alert, setAlert } = useAlert();
   const [editingBooking, setEditingBooking] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState(null);
@@ -30,11 +31,7 @@ export default function MyBookings() {
       const data = await getBookings();
       setBookings(data);
     } catch (err) {
-      setAlert({
-        visible: true,
-        message: "Error al cargar las reservas.",
-        type: "error",
-      });
+      showAlert("Error al cargar las reservas.", "error");
     } finally {
       setLoading(false);
     }
@@ -84,22 +81,12 @@ export default function MyBookings() {
         )
       );
 
-      setAlert({
-        visible: true,
-        message: "Reserva actualizada exitosamente ✅",
-        type: "success",
-      });
+      showAlert("Reserva actualizada exitosamente ✅", "success");
 
       handleModalClose();
     } catch (err) {
-      setAlert({
-        visible: true,
-        message:
-          err.response?.data?.detail ||
-          err.response?.data?.error ||
-          "Error al actualizar la reserva.",
-        type: "error",
-      });
+      const errorMsg = err.response?.data?.detail || err.response?.data?.error || "Error al actualizar la reserva.";
+      showAlert(errorMsg, "error");
     } finally {
       setActionLoading(false);
     }
@@ -115,20 +102,10 @@ export default function MyBookings() {
     try {
       await deleteBooking(bookingId);
       setBookings(bookings.filter((b) => b.id !== bookingId));
-      setAlert({
-        visible: true,
-        message: "Reserva cancelada 💔",
-        type: "info",
-      });
+      showAlert("Reserva cancelada 💔", "info");
     } catch (err) {
-      setAlert({
-        visible: true,
-        message:
-          err.response?.data?.detail ||
-          err.response?.data?.error ||
-          "Error al cancelar la reserva.",
-        type: "error",
-      });
+      const errorMsg = err.response?.data?.detail || err.response?.data?.error || "Error al cancelar la reserva.";
+      showAlert(errorMsg, "error");
     } finally {
       setActionLoading(false);
     }
@@ -149,20 +126,10 @@ export default function MyBookings() {
       setConfirmedBooking(confirmedBooking);
       setIsConfirmationOpen(true);
       
-      setAlert({
-        visible: true,
-        message: "Reserva aceptada ✅",
-        type: "success",
-      });
+      showAlert("Reserva aceptada ✅", "success");
     } catch (err) {
-      setAlert({
-        visible: true,
-        message:
-          err.response?.data?.detail ||
-          err.response?.data?.error ||
-          "Error al aceptar la reserva.",
-        type: "error",
-      });
+      const errorMsg = err.response?.data?.detail || err.response?.data?.error || "Error al aceptar la reserva.";
+      showAlert(errorMsg, "error");
     } finally {
       setActionLoading(false);
     }
@@ -182,20 +149,10 @@ export default function MyBookings() {
           b.id === bookingId ? { ...b, status: "rejected" } : b
         )
       );
-      setAlert({
-        visible: true,
-        message: "Reserva rechazada ❌",
-        type: "info",
-      });
+      showAlert("Reserva rechazada ❌", "info");
     } catch (err) {
-      setAlert({
-        visible: true,
-        message:
-          err.response?.data?.detail ||
-          err.response?.data?.error ||
-          "Error al rechazar la reserva.",
-        type: "error",
-      });
+      const errorMsg = err.response?.data?.detail || err.response?.data?.error || "Error al rechazar la reserva.";
+      showAlert(errorMsg, "error");
     } finally {
       setActionLoading(false);
     }
@@ -203,12 +160,7 @@ export default function MyBookings() {
 
   return (
     <MainLayout>
-      <AlertToast
-        message={alert.message}
-        type={alert.type}
-        isVisible={alert.visible}
-        onClose={() => setAlert({ ...alert, visible: false })}
-      />
+      <AlertToast {...alert} onClose={() => setAlert({})} />
 
       <ConfirmationModal
         booking={confirmedBooking}
