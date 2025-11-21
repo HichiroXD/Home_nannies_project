@@ -11,9 +11,9 @@ import { Heart } from "lucide-react";
  */
 export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = false, isLoading = false }) {
   return (
-    <div className="bg-white p-5 rounded-2xl shadow hover:shadow-lg transition-all">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-800">
+    <div className="group bg-white p-6 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-pink-200 transform hover:-translate-y-1">
+      <div className="flex justify-between items-start mb-4">
+        <h2 className="text-xl font-bold text-gray-800 group-hover:text-pink-600 transition-colors">
           {nanny.user?.first_name && nanny.user?.last_name
             ? `${nanny.user.first_name} ${nanny.user.last_name}`
             : nanny.user?.username || "Niñera"}
@@ -21,45 +21,51 @@ export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = fal
         <button
           onClick={() => onFavorite(nanny.id)}
           disabled={isLoading}
-          className={`transition-all transform hover:scale-110 ${
+          className={`transition-all transform hover:scale-125 active:scale-95 ${
             isFavorited
               ? "text-red-500 fill-red-500"
               : "text-gray-300 hover:text-pink-500"
           } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
           aria-label={isFavorited ? "Eliminar de favoritos" : "Añadir a favoritos"}
         >
-          <Heart size={24} strokeWidth={isFavorited ? 0 : 2} />
+          <Heart size={26} strokeWidth={isFavorited ? 0 : 2} />
         </button>
       </div>
-      <p className="text-gray-500 text-sm mt-2">{nanny.description || "Sin descripción"}</p>
-      <div className="mt-3 space-y-1">
-        <p className="text-gray-700 text-sm">
-          <strong className="text-gray-900">Tarifa:</strong> ${nanny.hourly_rate || "N/A"}/hora
-        </p>
-        <p className="text-gray-700 text-sm">
-          <strong className="text-gray-900">Experiencia:</strong> {nanny.experience_years || 0} años
-        </p>
+      <p className="text-gray-600 text-sm mb-4 line-clamp-2 leading-relaxed">{nanny.description || "Sin descripción"}</p>
+      <div className="mt-4 space-y-2 pb-4 border-b border-gray-100">
+        <div className="flex items-center gap-2 text-gray-700">
+          <span className="font-semibold text-gray-900">💰 Tarifa:</span>
+          <span className="text-pink-600 font-bold">${nanny.hourly_rate || "N/A"}/hora</span>
+        </div>
+        <div className="flex items-center gap-2 text-gray-700">
+          <span className="font-semibold text-gray-900">⭐ Experiencia:</span>
+          <span>{nanny.experience_years || 0} años</span>
+        </div>
         {Number.isFinite(Number(nanny?.rating_avg)) && (
-          <p className="text-gray-700 text-sm">
-            <strong className="text-gray-900">Rating:</strong> ⭐ {Number(nanny.rating_avg).toFixed(1)}/5
-          </p>
+          <div className="flex items-center gap-2 text-gray-700">
+            <span className="font-semibold text-gray-900">📊 Rating:</span>
+            <span className="flex items-center gap-1">
+              <span className="text-yellow-400">⭐</span>
+              <span className="font-bold">{Number(nanny.rating_avg).toFixed(1)}/5</span>
+            </span>
+          </div>
         )}
       </div>
       {nanny.verified && (
-        <span className="inline-block mt-3 px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full">
-          ✅ Verificada
+        <span className="inline-flex items-center gap-1 mt-3 px-3 py-1 text-xs font-semibold bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 rounded-full border border-green-200">
+          <span>✅</span> Verificada
         </span>
       )}
       <button
         onClick={() => onBook(nanny.id)}
         disabled={isLoading}
-        className={`mt-4 w-full py-2 px-4 rounded-lg font-medium transition-all ${
+        className={`mt-5 w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${
           isLoading
             ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-            : "bg-pink-500 text-white hover:bg-pink-600 active:scale-95"
+            : "bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:from-pink-600 hover:to-rose-600 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
         }`}
       >
-        {isLoading ? "Procesando..." : "Agendar"}
+        {isLoading ? "Procesando..." : "Agendar ahora"}
       </button>
     </div>
   );

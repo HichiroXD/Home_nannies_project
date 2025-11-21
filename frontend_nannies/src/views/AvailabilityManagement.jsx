@@ -113,12 +113,12 @@ export default function AvailabilityManagement() {
   if (loading) return <Loader />;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="mb-10">
+        <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-pink-600 to-rose-500 bg-clip-text text-transparent mb-3">
           Gestionar Disponibilidad
         </h1>
-        <p className="text-gray-600">
+        <p className="text-lg text-gray-600">
           Define las franjas horarias en las que estás disponible para cuidar
         </p>
       </div>
@@ -127,23 +127,25 @@ export default function AvailabilityManagement() {
         <AlertToast
           type={alert.type}
           message={alert.message}
+          isVisible={true}
           onClose={() => setAlert(null)}
         />
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Formulario */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-pink-100 p-6 md:p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <Plus className="text-pink-600" size={24} />
             Añadir Nueva Franja
           </h2>
 
-          <form onSubmit={handleAddAvailability} className="space-y-4">
+          <form onSubmit={handleAddAvailability} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
                 Selecciona una fecha
               </label>
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm hover:border-pink-300 transition-colors">
                 <Calendar
                   value={selectedDate}
                   onChange={setSelectedDate}
@@ -155,7 +157,7 @@ export default function AvailabilityManagement() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Hora de inicio
                 </label>
                 <input
@@ -164,11 +166,11 @@ export default function AvailabilityManagement() {
                   onChange={(e) =>
                     setTimeSlot({ ...timeSlot, start: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Hora de fin
                 </label>
                 <input
@@ -177,7 +179,7 @@ export default function AvailabilityManagement() {
                   onChange={(e) =>
                     setTimeSlot({ ...timeSlot, end: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all outline-none"
                 />
               </div>
             </div>
@@ -185,7 +187,7 @@ export default function AvailabilityManagement() {
             <button
               type="submit"
               disabled={isAdding}
-              className="w-full bg-pink-500 hover:bg-pink-600 disabled:opacity-50 text-white font-semibold py-2 px-4 rounded-md transition flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
             >
               <Plus size={20} />
               {isAdding ? "Añadiendo..." : "Añadir Franja"}
@@ -194,33 +196,39 @@ export default function AvailabilityManagement() {
         </div>
 
         {/* Lista de disponibilidades */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-pink-100 p-6 md:p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
             Mis Franjas Disponibles
           </h2>
 
           {availabilities.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
-              No tienes franjas de disponibilidad. ¡Añade una para comenzar!
-            </p>
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📅</div>
+              <p className="text-gray-500 text-lg font-medium">
+                No tienes franjas de disponibilidad.
+              </p>
+              <p className="text-gray-400 text-sm mt-2">
+                ¡Añade una para comenzar!
+              </p>
+            </div>
           ) : (
-            <div className="space-y-3 max-h-96 overflow-y-auto">
+            <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
               {availabilities.map((avail) => (
                 <div
                   key={avail.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200"
+                  className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-pink-50 rounded-xl border border-gray-200 hover:border-pink-300 hover:shadow-md transition-all group"
                 >
                   <div>
-                    <p className="font-medium text-gray-900">
+                    <p className="font-semibold text-gray-900">
                       {formatDate(avail.date)}
                     </p>
-                    <p className="text-sm text-gray-600">
-                      {avail.start_time} - {avail.end_time}
+                    <p className="text-sm text-gray-600 mt-1">
+                      🕐 {avail.start_time} - {avail.end_time}
                     </p>
                   </div>
                   <button
                     onClick={() => handleDeleteAvailability(avail.id)}
-                    className="text-red-500 hover:text-red-700 transition"
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all transform hover:scale-110"
                   >
                     <Trash2 size={18} />
                   </button>

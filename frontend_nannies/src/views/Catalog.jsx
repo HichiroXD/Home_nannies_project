@@ -137,10 +137,14 @@ export default function Catalog() {
         onClose={() => setAlert({ ...alert, visible: false })}
       />
 
-      <div className="min-h-screen bg-pink-50 py-10 px-6">
-        <h1 className="text-3xl font-bold text-center text-pink-600 mb-8">
-          Catálogo de Niñeras
-        </h1>
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50 py-10 px-6">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-center bg-gradient-to-r from-pink-600 to-rose-500 bg-clip-text text-transparent mb-4">
+            Catálogo de Niñeras
+          </h1>
+          <p className="text-center text-gray-600 mb-8 text-lg">
+            Encuentra la niñera perfecta para tu familia
+          </p>
 
         <NannyFilters
           filters={filters}
@@ -172,6 +176,7 @@ export default function Catalog() {
             )}
           </div>
         )}
+        </div>
       </div>
     </MainLayout>
   );

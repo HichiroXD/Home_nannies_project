@@ -1,21 +1,22 @@
 export default function AuthForm({ fields, onSubmit, buttonText }) {
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form onSubmit={onSubmit} className="flex flex-col gap-5">
       {fields.map((field) =>
         field.type === "select" ? (
-          <select
-            key={field.name}
-            name={field.name}
-            value={field.value}
-            onChange={field.onChange}
-            className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-pink-400"
-          >
-            {field.options.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <div key={field.name}>
+            <select
+              name={field.name}
+              value={field.value}
+              onChange={field.onChange}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all outline-none bg-white"
+            >
+              {field.options.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
         ) : (
           <input
             key={field.name}
@@ -25,13 +26,13 @@ export default function AuthForm({ fields, onSubmit, buttonText }) {
             value={field.value}
             onChange={field.onChange}
             required
-            className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-pink-400"
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all outline-none placeholder:text-gray-400"
           />
         )
       )}
       <button
         type="submit"
-        className="bg-pink-500 text-white py-2 rounded-lg font-semibold hover:bg-pink-600 transition-colors"
+        className="mt-2 w-full py-3 px-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-semibold hover:from-pink-600 hover:to-rose-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
       >
         {buttonText}
       </button>

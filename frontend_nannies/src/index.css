@@ -42,6 +42,30 @@
   }
 }
 
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+@keyframes gradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
 @layer utilities {
   .animate-slideIn {
     animation: slideIn 0.3s ease-out;
@@ -58,4 +82,66 @@
   .animate-fadeIn {
     animation: fadeIn 0.3s ease-in;
   }
+
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+
+  .animate-gradient {
+    background-size: 200% auto;
+    animation: gradient 3s linear infinite;
+  }
+
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #ec4899, #f43f5e);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #db2777, #e11d48);
+}
+
+/* React Calendar custom styles */
+.react-calendar {
+  border: none !important;
+  border-radius: 0.75rem;
+  font-family: inherit;
+}
+
+.react-calendar__tile--active {
+  background: linear-gradient(to right, #ec4899, #f43f5e) !important;
+  color: white !important;
+}
+
+.react-calendar__tile--now {
+  background: #fce7f3 !important;
+  color: #ec4899 !important;
+  font-weight: 600;
+}
+
+.react-calendar__tile:hover {
+  background: #fce7f3 !important;
 }

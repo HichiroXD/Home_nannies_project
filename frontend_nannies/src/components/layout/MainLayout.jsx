@@ -7,7 +7,7 @@ export default function MainLayout({ children }) {
   const username = localStorage.getItem('username');
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-pink-100 to-white">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50">
       <HeaderLanding isLoggedIn={isLoggedIn} username={username} />
       <main className="flex-grow">
         {children}
