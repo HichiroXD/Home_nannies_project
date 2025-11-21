@@ -250,10 +250,10 @@ class AcademicProgramAdmin(admin.ModelAdmin):
     """Admin para programas académicos"""
 
     list_display = [
-        'program_name', 'program_code', 'get_type_badge',
+        'program_name', 'program_code',
         'career_name', 'faculty', 'get_active_badge', 'created_at'
     ]
-    list_filter = ['provider', 'program_type', 'is_active', 'faculty', 'created_at']
+    list_filter = ['provider', 'is_active', 'faculty', 'created_at']
     search_fields = ['program_name', 'program_code', 'career_name', 'faculty']
     readonly_fields = ['created_at', 'updated_at', 'get_student_count']
     fieldsets = (
@@ -261,7 +261,7 @@ class AcademicProgramAdmin(admin.ModelAdmin):
             'fields': ('provider', 'program_name', 'program_code')
         }),
         ('Datos del Programa', {
-            'fields': ('career_name', 'faculty', 'program_type')
+            'fields': ('career_name', 'faculty')
         }),
         ('Estado', {
             'fields': ('is_active',)

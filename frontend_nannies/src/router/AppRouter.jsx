@@ -1,40 +1,47 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-// Vistas de autenticación
-import Landing from "@views/Landing";
-import Login from "@views/auth/Login";
-import Register from "@views/auth/Register";
-import Verify from "@views/auth/Verify";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Suspense, lazy } from "react";
 
-// Vistas de dashboard según rol
-import DashboardUser from "@views/dashboard/DashboardUser";
-import ParentDashboard from "@views/dashboard/ParentDashboard";
-import NannyDashboard from "@views/dashboard/NannyDashboard";
-import AdminDashboard from "@views/dashboard/AdminDashboard";
-import NannyProfile from "@views/dashboard/NannyProfile";
+// Fallback component para lazy loading
+const LoadingFallback = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+    <p>Cargando...</p>
+  </div>
+);
 
-// Vistas de perfil según rol
-import ParentProfile from "@views/profile/ParentProfile";
-import NannyProfileView from "@views/profile/NannyProfile";
-import AdminProfile from "@views/profile/AdminProfile";
-import Settings from "@views/Settings";
+// === LAZY LOADING: Vistas de autenticación ===
+const Landing = lazy(() => import("@views/Landing"));
+const Login = lazy(() => import("@views/auth/Login"));
+const Register = lazy(() => import("@views/auth/Register"));
+const Verify = lazy(() => import("@views/auth/Verify"));
 
-// Vistas de catálogo y búsqueda
-import Catalog from "@views/Catalog";
-import FavoriteList from "@views/FavoriteList";
+// === LAZY LOADING: Dashboards por rol ===
+const DashboardUser = lazy(() => import("@views/dashboard/DashboardUser"));
+const ParentDashboard = lazy(() => import("@views/dashboard/parent/ParentDashboard"));
+const NannyDashboard = lazy(() => import("@views/dashboard/nanny/NannyDashboard"));
+const AdminDashboard = lazy(() => import("@views/dashboard/admin/AdminDashboard"));
 
-// Vistas de reservas - Padre
-import MyBookings from "@views/MyBookings";
-import BookingCreate from "@views/BookingCreate";
+// === LAZY LOADING: Vistas de perfil ===
+const ParentProfile = lazy(() => import("@views/profile/ParentProfile"));
+const NannyProfile = lazy(() => import("@views/profile/NannyProfile"));
+const AdminProfile = lazy(() => import("@views/profile/AdminProfile"));
+const Settings = lazy(() => import("@views/Settings"));
 
-// Vistas de reservas - Niñera (Fase 0)
-import AvailabilityManagement from "@views/AvailabilityManagement";
-import NannyRequests from "@views/NannyRequests";
-import NannyBookingHistory from "@views/NannyBookingHistory";
+// === LAZY LOADING: Catálogo y búsqueda ===
+const Catalog = lazy(() => import("@views/Catalog"));
+const FavoriteList = lazy(() => import("@views/FavoriteList"));
+
+// === LAZY LOADING: Reservas ===
+const MyBookings = lazy(() => import("@views/MyBookings"));
+const BookingCreate = lazy(() => import("@views/BookingCreate"));
+const AvailabilityManagement = lazy(() => import("@views/AvailabilityManagement"));
+const NannyRequests = lazy(() => import("@views/NannyRequests"));
+const NannyBookingHistory = lazy(() => import("@views/NannyBookingHistory"));
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
-      <Routes>
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
         {/* ==================== AUTENTICACIÓN ==================== */}
         <Route path="/" element={<Landing />} />
         <Route path="/login/" element={<Login />} />
@@ -50,7 +57,6 @@ export default function AppRouter() {
 
         {/* Dashboard niñera y gestión de perfil */}
         <Route path="/dashboard/nanny/" element={<NannyDashboard />} />
-        <Route path="/dashboard/nanny/profile" element={<NannyProfile />} />
 
         {/* Dashboard administrador */}
         <Route path="/admin/dashboard/" element={<AdminDashboard />} />
@@ -60,7 +66,7 @@ export default function AppRouter() {
         <Route path="/profile/parent/" element={<ParentProfile />} />
 
         {/* Perfil de niñera */}
-        <Route path="/profile/nanny/" element={<NannyProfileView />} />
+        <Route path="/profile/nanny/" element={<NannyProfile />} />
 
         {/* Perfil de admin */}
         <Route path="/profile/admin/" element={<AdminProfile />} />
@@ -89,6 +95,7 @@ export default function AppRouter() {
         {/* ==================== 404 ==================== */}
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

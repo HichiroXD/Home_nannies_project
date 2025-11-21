@@ -20,7 +20,7 @@ load_dotenv()
 # SECURITY WARNING: keep the secret key used in production secret!
 # TODO > Cambiar la clave secreta a un .env por seguridad
 SECRET_KEY = os.getenv("SECRET_KEY", "b)+h)pgkb7s^cg%j%6(r!mhnlog%#z94uti)!hqfz1mcnz#z^z")
-DEBUG=True
+DEBUG = os.getenv("DEBUG", "False") == "True"  # False por defecto para optimizar startup
 
 ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
 
@@ -131,13 +131,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
     },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    # Remover CommonPasswordValidator en desarrollo por rendimiento
+    # Mantener solo en producción si es necesario
 ]
 
 
@@ -185,12 +184,10 @@ CORS_ALLOW_CREDENTIALS = True
 # Configuración de usuario personalizado
 AUTH_USER_MODEL = 'users.User'
 
-# Configuración de algoritmos de hash para contraseñas
+# Configuración de algoritmos de hash para contraseñas - Optimizado para startup
 PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.Argon2PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
-    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.Argon2PasswordHasher',    # Primario - más seguro
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',    # Fallback para compatibilidad
 ]
 
 # Configuración de Simple JWT

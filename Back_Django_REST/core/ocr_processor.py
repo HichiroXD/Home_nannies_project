@@ -1,18 +1,15 @@
 """
 OCR Processing Module - Phase 3
 Handles real OCR processing using pytesseract
+Optimized with lazy imports for faster Django startup
 """
 
 import os
 import re
 import logging
+import mimetypes
 from typing import Dict, Optional, List, Tuple
 from pathlib import Path
-
-import pytesseract
-from PIL import Image
-from pdf2image import convert_from_path, convert_from_bytes
-import magic
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +18,7 @@ class OCRProcessor:
     """
     Real OCR processing using pytesseract
     Supports PDF and image documents
+    Imports are lazy-loaded on first use to optimize Django startup
     """
 
     # RUT pattern: XX.XXX.XXX-X or XXXXXXXX-X
@@ -41,6 +39,9 @@ class OCRProcessor:
             tesseract_path: Path to tesseract executable (if not in system PATH)
             temp_dir: Directory for temporary files
         """
+        # Lazy import heavy dependencies on first instantiation
+        import pytesseract
+        
         if tesseract_path:
             pytesseract.pytesseract.pytesseract_cmd = tesseract_path
         
@@ -51,7 +52,8 @@ class OCRProcessor:
     @staticmethod
     def get_file_type(file_path: str) -> str:
         """
-        Detect file type using python-magic
+        Detect file type using native Python mimetypes
+        Replaced python-magic to avoid Windows MSYS2 conflicts
         
         Args:
             file_path: Path to file
@@ -60,8 +62,22 @@ class OCRProcessor:
             MIME type string
         """
         try:
-            mime = magic.Magic(mime=True)
-            return mime.from_file(file_path).lower()
+            mime_type, _ = mimetypes.guess_type(file_path)
+            if mime_type:
+                return mime_type.lower()
+            
+            # Fallback: check by extension
+            ext = Path(file_path).suffix.lower().lstrip('.')
+            if ext in {'jpg', 'jpeg'}:
+                return 'image/jpeg'
+            elif ext == 'png':
+                return 'image/png'
+            elif ext == 'pdf':
+                return 'application/pdf'
+            elif ext in {'bmp', 'gif', 'tiff'}:
+                return f'image/{ext}'
+            
+            return "unknown"
         except Exception as e:
             logger.error(f"Error detecting file type: {e}")
             return "unknown"
@@ -87,6 +103,8 @@ class OCRProcessor:
             # Check image format
             if ext in OCRProcessor.SUPPORTED_IMAGES:
                 try:
+                    # Lazy import PIL on first use
+                    from PIL import Image
                     Image.open(file_path)
                     return True, ""
                 except Exception as e:
@@ -102,7 +120,7 @@ class OCRProcessor:
             logger.error(f"File validation error: {e}")
             return False, f"File validation failed: {str(e)}"
 
-    def convert_pdf_to_images(self, pdf_path: str) -> List[Image.Image]:
+    def convert_pdf_to_images(self, pdf_path: str):
         """
         Convert PDF to list of PIL Images
         
@@ -116,6 +134,9 @@ class OCRProcessor:
             OCRProcessingError: If conversion fails
         """
         try:
+            # Lazy import pdf2image on first use
+            from pdf2image import convert_from_path
+            
             logger.info(f"Converting PDF to images: {pdf_path}")
             
             # Convert PDF to images
@@ -132,7 +153,7 @@ class OCRProcessor:
             logger.error(f"PDF conversion error: {e}")
             raise OCRProcessingError(f"PDF conversion failed: {str(e)}")
 
-    def extract_text_from_image(self, image: Image.Image) -> Dict:
+    def extract_text_from_image(self, image) -> Dict:
         """
         Extract text from PIL Image using pytesseract
         
@@ -148,6 +169,9 @@ class OCRProcessor:
             }
         """
         try:
+            # Lazy import pytesseract on first use
+            import pytesseract
+            
             logger.info("Extracting text from image using pytesseract")
             
             # Extract text
@@ -185,6 +209,9 @@ class OCRProcessor:
             Dict with extracted text and metadata
         """
         try:
+            # Lazy import PIL on first use
+            from PIL import Image
+            
             # Validate file
             is_valid, error_msg = self.validate_file_format(file_path)
             if not is_valid:

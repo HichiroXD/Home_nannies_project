@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Booking, Availability, Notification
+from .models import Booking, Availability
+from notifications.models import Notification
 # Favorite model/serializer now lives in the `favorites` app. Import serializer from there.
 from favorites.serializer import FavoriteSerializer
 from django.utils import timezone

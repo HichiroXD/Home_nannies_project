@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from drf_spectacular.utils import extend_schema
 import logging
-from .models import Booking, Availability, Notification
+from .models import Booking, Availability
+from notifications.models import Notification
 from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer
 
 # --- BOOKING ---

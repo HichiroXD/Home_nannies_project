@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getNannies } from "@api/nannyApi";
 import { addFavorite, deleteFavorite, getFavorites } from "@api/favoriteApi";
@@ -23,7 +23,7 @@ export default function Catalog() {
   const navigate = useNavigate();
 
   // Cargar niñeras
-  const fetchNannies = async () => {
+  const fetchNannies = useCallback(async () => {
     try {
       const params = {};
       if (filters.search) params.search = filters.search;
@@ -42,10 +42,10 @@ export default function Catalog() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   // Cargar favoritos del usuario (guardamos objetos completos)
-  const fetchFavorites = async () => {
+  const fetchFavorites = useCallback(async () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) return setFavorites([]);
@@ -61,28 +61,28 @@ export default function Catalog() {
       // if 401 the api interceptor will redirect to login; keep favorites empty
       setFavorites([]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchNannies();
     fetchFavorites();
   }, [filters]);
 
-  const handleFilterChange = (e) => {
+  const handleFilterChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
-    setFilters({
-      ...filters,
+    setFilters(prev => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
-    });
-  };
+    }));
+  }, []);
 
-  const handleSearch = (e) => {
+  const handleSearch = useCallback((e) => {
     e.preventDefault();
     setLoading(true);
     fetchNannies();
-  };
+  }, [fetchNannies]);
 
-  const handleFavorite = async (nannyId) => {
+  const handleFavorite = useCallback(async (nannyId) => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
       setAlert({
@@ -116,9 +116,9 @@ export default function Catalog() {
     } finally {
       setFavoriteLoading(false);
     }
-  };
+  }, [favorites, navigate]);
 
-  const handleBookingClick = (nannyId) => {
+  const handleBookingClick = useCallback((nannyId) => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
       localStorage.setItem("redirect_after_login", `/catalog?nanny=${nannyId}`);
@@ -126,7 +126,18 @@ export default function Catalog() {
       return;
     }
     navigate(`/bookings/create/${nannyId}`);
-  };
+  }, [navigate]);
+
+  // Memoizar nannies favoriteadas para evitar recalculos
+  const nannyFavoriteStatusMap = useMemo(() => {
+    const map = new Map();
+    favorites.forEach(fav => {
+      if (fav.nanny?.id) {
+        map.set(fav.nanny.id, true);
+      }
+    });
+    return map;
+  }, [favorites]);
 
   return (
     <MainLayout>
@@ -161,7 +172,7 @@ export default function Catalog() {
                   nanny={nanny}
                   onFavorite={handleFavorite}
                   onBook={handleBookingClick}
-                  isFavorited={favorites.includes(nanny.id)}
+                  isFavorited={nannyFavoriteStatusMap.has(nanny.id)}
                   isLoading={favoriteLoading}
                 />
               ))
