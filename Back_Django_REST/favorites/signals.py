@@ -14,7 +14,7 @@ def log_favorite_event(sender, instance, created, **kwargs):
     if created:
         logger.info(
             f"Favorito añadido: ID={instance.id} | Padre={instance.parent.username} | "
-            f"Niñera={instance.nanny.username}"
+            f"Niñera={instance.nanny.user.username}"
         )
 
 @receiver(post_delete, sender=Favorite)
@@ -22,5 +22,5 @@ def log_favorite_delete(sender, instance, **kwargs):
     """Registrar eliminación de favoritos"""
     logger.info(
         f"Favorito eliminado: Padre={instance.parent.username} | "
-        f"Niñera={instance.nanny.username}"
+        f"Niñera={instance.nanny.user.username}"
     )

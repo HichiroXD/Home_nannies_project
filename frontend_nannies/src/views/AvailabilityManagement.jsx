@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
-import { getAvailabilities, createAvailability, deleteAvailability } from "../api/bookingApi";
-import AlertToast from "../components/layout/AlertToast";
-import Loader from "../components/layout/Loader";
-import AvailabilityForm from "../components/availability/AvailabilityForm";
-import AvailabilityCalendar from "../components/availability/AvailabilityCalendar";
-import PageHeader from "../components/layout/PageHeader";
+import { useNavigate } from "react-router-dom";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import { Plus, Trash2, Clock, ArrowLeft } from "lucide-react";
+import { getAvailabilities, createAvailability, deleteAvailability } from "@api/availabilityApi";
+import { AlertToast } from "@components/common";
+import { Loader, PageHeader } from "@components/layout";
+import { AvailabilityForm, AvailabilityCalendar } from "@components/availability";
 
 export default function AvailabilityManagement() {
+  const navigate = useNavigate();
   const [availabilities, setAvailabilities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -48,7 +51,7 @@ export default function AvailabilityManagement() {
       setIsAdding(true);
       const dateStr = selectedDate.toISOString().split("T")[0];
       const payload = {
-        date: dateStr,
+        day: dateStr,
         start_time: timeSlot.start,
         end_time: timeSlot.end,
       };
@@ -94,7 +97,12 @@ export default function AvailabilityManagement() {
   };
 
   const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString("es-ES", {
+    if (!dateStr) return "Fecha no disponible";
+    // Crear fecha en zona horaria local para evitar desfase UTC
+    const [year, month, day] = dateStr.split('-');
+    const date = new Date(year, month - 1, day);
+    
+    return date.toLocaleDateString("es-ES", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -106,6 +114,17 @@ export default function AvailabilityManagement() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
+      {/* Header con botón de regreso */}
+      <div className="mb-6">
+        <button
+          onClick={() => navigate('/catalog')}
+          className="flex items-center gap-2 text-pink-600 hover:text-pink-700 font-medium transition mb-4"
+        >
+          <ArrowLeft size={20} />
+          Volver al Catálogo
+        </button>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Gestionar Disponibilidad
@@ -204,7 +223,7 @@ export default function AvailabilityManagement() {
                 >
                   <div>
                     <p className="font-medium text-gray-900">
-                      {formatDate(avail.date)}
+                      {formatDate(avail.day)}
                     </p>
                     <p className="text-sm text-gray-600">
                       {avail.start_time} - {avail.end_time}

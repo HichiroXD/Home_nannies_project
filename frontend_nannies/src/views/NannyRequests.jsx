@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
-import { getBookingsByNanny, acceptBooking, rejectBooking } from "../api/bookingApi";
-import AlertToast from "../components/layout/AlertToast";
-import Loader from "../components/layout/Loader";
-import RequestCard from "../components/bookings/RequestCard";
-import PageHeader from "../components/layout/PageHeader";
-import EmptyState from "../components/layout/EmptyState";
+import { getBookingsByNanny, acceptBooking, rejectBooking } from "@api/bookingApi";
+import { AlertToast } from "@components/common";
+import { Loader, PageHeader, EmptyState } from "@components/layout";
+import { RequestCard } from "@components/bookings";
 
 export default function NannyRequests() {
   const [bookings, setBookings] = useState([]);

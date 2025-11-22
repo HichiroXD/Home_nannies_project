@@ -16,13 +16,41 @@ class NannyListView(generics.ListAPIView):
     
     Filtrado por:
     - search: Busca en nombre, apellido y descripción
+    - max_rate: Filtra por tarifa máxima por hora
+    - min_experience: Filtra por años mínimos de experiencia
+    - verified: Filtra por niñeras verificadas (por defecto True)
     - ordering: Ordena por tarifa, calificación o años de experiencia
     """
-    queryset = NannyProfile.objects.filter(verified=True)
     serializer_class = NannyProfileSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['user__first_name', 'user__last_name', 'description']
     ordering_fields = ['hourly_rate', 'rating_avg', 'experience_years']
+
+    def get_queryset(self):
+        queryset = NannyProfile.objects.all()
+        
+        # Filtro por verificación (por defecto solo verificadas)
+        verified = self.request.query_params.get('verified', 'true')
+        if verified.lower() in ['true', '1', 'yes']:
+            queryset = queryset.filter(verified=True)
+        
+        # Filtro por tarifa máxima
+        max_rate = self.request.query_params.get('max_rate', None)
+        if max_rate:
+            try:
+                queryset = queryset.filter(hourly_rate__lte=float(max_rate))
+            except ValueError:
+                pass
+        
+        # Filtro por experiencia mínima
+        min_experience = self.request.query_params.get('min_experience', None)
+        if min_experience:
+            try:
+                queryset = queryset.filter(experience_years__gte=int(min_experience))
+            except ValueError:
+                pass
+        
+        return queryset
 
 class NannyDetailView(generics.RetrieveAPIView):
     """Vista para obtener los detalles de una niñera específica."""
@@ -51,13 +79,13 @@ def nanny_dashboard(request):
     
     # Bookings activos
     active_bookings = Booking.objects.filter(
-        nanny=nanny,
+        nanny=nanny.user,
         status__in=['pending', 'confirmed']
     ).count()
     
     # Bookings completados
     completed_bookings = Booking.objects.filter(
-        nanny=nanny,
+        nanny=nanny.user,
         status='completed'
     ).count()
     
@@ -67,16 +95,16 @@ def nanny_dashboard(request):
     
     # Próximas reservas
     upcoming_bookings = Booking.objects.filter(
-        nanny=nanny,
+        nanny=nanny.user,
         status__in=['pending', 'confirmed']
-    ).order_by('start_date')[:5].values(
-        'id', 'parent__user__first_name', 'parent__user__last_name',
-        'start_date', 'end_date', 'status'
+    ).order_by('start_time')[:5].values(
+        'id', 'parent__first_name', 'parent__last_name',
+        'start_time', 'end_time', 'status'
     )
     
     # Reseñas recientes
     recent_reviews = reviews.order_by('-created_at')[:5].values(
-        'id', 'rating', 'comment', 'parent__user__first_name',
+        'id', 'rating', 'comment', 'parent__first_name',
         'created_at'
     )
     

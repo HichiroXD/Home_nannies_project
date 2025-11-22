@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { DashboardLayout } from "@components/dashboard";
-import { PageHeader, Loader, AlertToast } from "@components/layout";
+import { MainLayout, PageHeader, Loader, AlertToast, PageContainer } from "@components/layout";
 import { ProfileSection, FormInput, FormTextarea } from "@components/profile";
 import { Star, MapPin, Briefcase, Heart } from "lucide-react";
 
@@ -80,12 +79,13 @@ export default function NannyProfile() {
   if (loading) return <Loader />;
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <PageHeader
-          title="Mi Perfil de Niñera"
-          description="Completa tu información para que los padres te encuentren"
-        />
+    <MainLayout>
+      <PageContainer>
+        <div className="space-y-6">
+          <PageHeader
+            title="Mi Perfil de Niñera"
+            description="Completa tu información para que los padres te encuentren"
+          />
 
         {alert && (
           <AlertToast
@@ -272,7 +272,8 @@ export default function NannyProfile() {
             </button>
           </div>
         </div>
-      </div>
-    </DashboardLayout>
+        </div>
+      </PageContainer>
+    </MainLayout>
   );
 }

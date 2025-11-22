@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'users',
     'bookings',
     'nannies',
+    'parents',
     'favorites',
     'reviews',
     'notifications',  # Phase 3: Notificaciones automáticas

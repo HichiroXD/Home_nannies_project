@@ -3,72 +3,70 @@
  */
 
 import React from 'react';
-import { Box, Typography, Avatar, Stack, Button, Rating } from '@mui/material';
-import { Settings, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Settings, LogOut, Star, User } from 'lucide-react';
 
 export const NannyHeader = ({ nanny = {} }) => {
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        p: 3,
-        background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-        borderRadius: '12px',
-        color: 'white',
-      }}
-    >
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Avatar
-          sx={{
-            width: 56,
-            height: 56,
-            backgroundColor: 'rgba(255, 255, 255, 0.3)',
-            fontSize: '24px',
-            fontWeight: 'bold',
-          }}
-        >
-          {nanny.avatar || 'N'}
-        </Avatar>
-        <Stack spacing={0.5}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            {nanny.name || 'Niñera'}
-          </Typography>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Rating
-              value={nanny.rating || 5}
-              readOnly
-              size="small"
-              sx={{ color: '#FCD34D' }}
-            />
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              {nanny.rating || 0}/5 ({nanny.reviews || 0} reseñas)
-            </Typography>
-          </Stack>
-          <Typography variant="body2" sx={{ opacity: 0.8 }}>
-            Miembro desde {nanny.memberSince ? new Date(nanny.memberSince).toLocaleDateString('es-ES') : 'N/A'}
-          </Typography>
-        </Stack>
-      </Stack>
+  const navigate = useNavigate();
 
-      <Stack direction="row" spacing={1}>
-        <Button
-          startIcon={<Settings size={18} />}
-          sx={{ color: 'white', textTransform: 'none' }}
-          onClick={() => console.log('Settings')}
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    navigate('/login');
+  };
+
+  const handleSettings = () => {
+    navigate('/profile/nanny');
+  };
+
+  const rating = nanny?.rating || 0;
+  const memberSince = nanny?.memberSince ? new Date(nanny.memberSince).toLocaleDateString('es-ES') : '21/11/2025';
+
+  return (
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-6 bg-gradient-to-r from-green-500 to-green-600 rounded-xl text-white shadow-lg">
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center flex-shrink-0">
+          <User size={36} className="text-gray-400" strokeWidth={1.5} />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold">{nanny?.name || 'Niñera'}</h2>
+          <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  size={16}
+                  className={i < Math.round(rating) ? 'fill-yellow-400 text-yellow-400' : 'text-white opacity-50'}
+                />
+              ))}
+            </div>
+            <span className="text-sm opacity-90">
+              {rating}/5
+            </span>
+          </div>
+          <p className="text-sm opacity-80 mt-1">
+            Miembro desde {memberSince}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          onClick={handleSettings}
+          className="flex items-center gap-2 px-4 py-2 bg-white text-green-600 hover:bg-gray-100 rounded-lg transition-colors font-medium shadow-sm"
         >
-          Configuración
-        </Button>
-        <Button
-          startIcon={<LogOut size={18} />}
-          sx={{ color: 'white', textTransform: 'none' }}
-          onClick={() => console.log('Logout')}
+          <Settings size={18} />
+          <span>Configuración</span>
+        </button>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-4 py-2 bg-white text-green-600 hover:bg-gray-100 rounded-lg transition-colors font-medium shadow-sm"
         >
-          Salir
-        </Button>
-      </Stack>
-    </Box>
+          <LogOut size={18} />
+          <span>Salir</span>
+        </button>
+      </div>
+    </div>
   );
 };
 

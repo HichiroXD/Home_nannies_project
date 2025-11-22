@@ -3,22 +3,12 @@
  * Disponibilidad, ingresos, bookings, reseñas
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
-import {
-  Box,
-  Container,
-  Stack,
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  Alert as MuiAlert,
-} from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Calendar, TrendingUp, MessageSquare } from 'lucide-react';
-import {
-  TabsComponent,
-  useToggle,
-} from '@/components/common';
+import { MainLayout, Loader, PageContainer } from '@components/layout';
+import { AlertToast, useAlert } from '@components/common';
+import API from '@api/api';
 
 // Componentes del dashboard
 import NannyHeader from './components/NannyHeader';
@@ -29,47 +19,35 @@ import BookingQueue from './components/BookingQueue';
 import ReviewsPanel from './components/ReviewsPanel';
 
 export const NannyDashboard = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
-  const [showAddAvailability, setShowAddAvailability] = useToggle(false);
+  const [showAddAvailability, setShowAddAvailability] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const { showAlert, alert, setAlert } = useAlert();
 
-  // Obtener token para auth
-  const token = localStorage.getItem('token');
+  const handleAddAvailability = () => {
+    navigate('/availability/');
+  };
 
   // Obtener datos del dashboard
   useEffect(() => {
-    if (!token) {
-      setError('No autenticado');
-      return;
-    }
-
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/dashboard/nanny', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setDashboardData(data);
-        } else {
-          setError('Error cargando datos');
-        }
+        const response = await API.get('/nannies/dashboard/');
+        setDashboardData(response.data);
       } catch (err) {
         console.error('Error fetching dashboard:', err);
-        setError('Error de conexión');
+        showAlert(err.response?.data?.error || 'Error cargando dashboard', 'error');
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, [token]); // Dependencia correcta
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Demo data para desarrollo - SOLO SI NO EXISTEN DATOS REALES
   const emptyData = {
@@ -97,102 +75,156 @@ export const NannyDashboard = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography>Cargando dashboard...</Typography>
-        </Box>
-      </Container>
+      <MainLayout>
+        <PageContainer>
+          <Loader />
+        </PageContainer>
+      </MainLayout>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Stack spacing={4}>
-        {/* Header */}
-        <NannyHeader nanny={data.nanny} />
+    <MainLayout>
+      <AlertToast message={alert.message} type={alert.type} isVisible={alert.visible} onClose={() => setAlert({ ...alert, visible: false })} />
+      <PageContainer>
+        <div className="space-y-6">
+          {/* Header */}
+          <NannyHeader nanny={data.nanny} />
 
-        {/* Alertas */}
-        {data.stats?.pendingRequests > 0 && (
-          <MuiAlert severity="warning" onClose={() => {}}>
-            Tienes {data.stats.pendingRequests} solicitudes de booking pendientes de responder
-          </MuiAlert>
-        )}
+          {/* Alertas */}
+          {data.stats?.pendingRequests > 0 && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-yellow-800">
+                Tienes {data.stats.pendingRequests} solicitudes de booking pendientes de responder
+              </p>
+            </div>
+          )}
 
-        {error && (
-          <MuiAlert severity="error" onClose={() => {}}>
-            Error cargando datos del dashboard
-          </MuiAlert>
-        )}
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Bookings Activos</p>
+                  <p className="text-3xl font-bold text-gray-800">{data.stats?.activeBookings || 0}</p>
+                  <p className="text-xs text-gray-500 mt-1">En progreso</p>
+                </div>
+                <Calendar className="text-blue-500" size={40} />
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Completados</p>
+                  <p className="text-3xl font-bold text-gray-800">{data.stats?.completedBookings || 0}</p>
+                  <p className="text-xs text-gray-500 mt-1">Total histórico</p>
+                </div>
+                <div className="text-orange-500">✓</div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Reseñas</p>
+                  <p className="text-3xl font-bold text-gray-800">{data.stats?.totalReviews || 0}</p>
+                  <p className="text-xs text-gray-500 mt-1">De clientes</p>
+                </div>
+                <div className="text-red-500">★</div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Calificación</p>
+                  <p className="text-3xl font-bold text-gray-800">{data.stats?.avgRating || 0.0}/5</p>
+                  <p className="text-xs text-gray-500 mt-1">Promedio</p>
+                </div>
+                <TrendingUp className="text-green-500" size={40} />
+              </div>
+            </div>
+          </div>
 
-        {/* Stats Cards */}
-        <StatsOverview stats={data.stats} />
+          {/* Tabs principales */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="border-b border-gray-200">
+              <nav className="flex -mb-px">
+                {[
+                  { label: 'Disponibilidad', icon: Calendar },
+                  { label: 'Ingresos', icon: TrendingUp },
+                  { label: 'Bookings', icon: Calendar },
+                  { label: 'Reseñas', icon: MessageSquare },
+                ].map((tab, idx) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveTab(idx)}
+                      className={`flex items-center gap-2 px-6 py-4 border-b-2 font-medium transition-colors ${
+                        activeTab === idx
+                          ? 'border-pink-500 text-pink-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <Icon size={20} />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
 
-        {/* Tabs principales */}
-        <TabsComponent
-          tabs={[
-            {
-              label: 'Disponibilidad',
-              icon: <Calendar size={20} />,
-              content: (
-                <AvailabilityCalendar
-                  availability={data.availability}
-                  onAddAvailability={setShowAddAvailability}
-                  showAddForm={showAddAvailability}
-                  onCancel={() => setShowAddAvailability(false)}
-                />
-              ),
-            },
-            {
-              label: 'Ingresos',
-              icon: <TrendingUp size={20} />,
-              content: (
-                <EarningsChart
-                  earnings={data.earnings}
-                  totalEarnings={data.stats?.totalEarnings}
-                />
-              ),
-            },
-            {
-              label: 'Bookings',
-              icon: <Calendar size={20} />,
-              content: (
-                <BookingQueue
-                  bookings={data.bookings}
-                  onAccept={(id) => console.log('Accept:', id)}
-                  onReject={(id) => console.log('Reject:', id)}
-                  onComplete={(id) => console.log('Complete:', id)}
-                />
-              ),
-            },
-            {
-              label: 'Reseñas',
-              icon: <MessageSquare size={20} />,
-              content: <ReviewsPanel reviews={data.reviews} />,
-            },
-          ]}
-          onChange={(idx) => setActiveTab(idx)}
-          defaultTab={activeTab}
-        />
+            <div className="p-6">
+              {activeTab === 0 && (
+                <div className="text-center py-8">
+                  <Calendar className="mx-auto text-gray-400 mb-4" size={48} />
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Calendario de Disponibilidad</h3>
+                  <p className="text-gray-600 mb-4">No tienes horarios de disponibilidad configurados</p>
+                  <button
+                    onClick={handleAddAvailability}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                  >
+                    <Plus size={18} />
+                    AGREGAR HORARIO
+                  </button>
+                </div>
+              )}
+              {activeTab === 1 && (
+                <div className="text-center py-8 text-gray-600">
+                  <TrendingUp className="mx-auto text-gray-400 mb-4" size={48} />
+                  <p>Ingresos: ${data.earnings?.thisMonth || 0} este mes</p>
+                </div>
+              )}
+              {activeTab === 2 && (
+                <div className="text-center py-8 text-gray-600">
+                  <Calendar className="mx-auto text-gray-400 mb-4" size={48} />
+                  <p>No tienes bookings activos</p>
+                </div>
+              )}
+              {activeTab === 3 && (
+                <div className="text-center py-8 text-gray-600">
+                  <MessageSquare className="mx-auto text-gray-400 mb-4" size={48} />
+                  <p>No tienes reseñas aún</p>
+                </div>
+              )}
+            </div>
+          </div>
 
-        {/* Botón flotante para crear disponibilidad */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', pt: 2 }}>
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<Plus size={20} />}
-            onClick={setShowAddAvailability}
-            sx={{
-              backgroundColor: '#10B981',
-              '&:hover': {
-                backgroundColor: '#059669',
-              },
-            }}
-          >
-            Agregar Disponibilidad
-          </Button>
-        </Box>
-      </Stack>
-    </Container>
+          {/* Botón flotante para crear disponibilidad */}
+          <div className="flex justify-center pt-4">
+            <button
+              onClick={handleAddAvailability}
+              className="flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl"
+            >
+              <Plus size={20} />
+              Agregar Disponibilidad
+            </button>
+          </div>
+        </div>
+      </PageContainer>
+    </MainLayout>
   );
 };
 

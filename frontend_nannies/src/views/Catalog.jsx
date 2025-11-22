@@ -24,13 +24,14 @@ export default function Catalog() {
   const navigate = useNavigate();
 
   // Cargar niñeras
-  const fetchNannies = useCallback(async () => {
+  const fetchNannies = useCallback(async (appliedFilters = filters) => {
     try {
+      setLoading(true);
       const params = {};
-      if (filters.search) params.search = filters.search;
-      if (filters.max_rate) params.max_rate = filters.max_rate;
-      if (filters.min_experience) params.min_experience = filters.min_experience;
-      if (filters.verified) params.verified = true;
+      if (appliedFilters.search) params.search = appliedFilters.search;
+      if (appliedFilters.max_rate) params.max_rate = appliedFilters.max_rate;
+      if (appliedFilters.min_experience) params.min_experience = appliedFilters.min_experience;
+      if (appliedFilters.verified) params.verified = true;
 
       const data = await getNannies(params);
       setNannies(data);
@@ -39,7 +40,7 @@ export default function Catalog() {
     } finally {
       setLoading(false);
     }
-  }, [filters, showAlert]);
+  }, [showAlert]);
 
   // Cargar favoritos del usuario (guardamos objetos completos)
   const fetchFavorites = useCallback(async () => {
@@ -63,7 +64,7 @@ export default function Catalog() {
   useEffect(() => {
     fetchNannies();
     fetchFavorites();
-  }, [filters]);
+  }, [fetchFavorites]);
 
   const handleFilterChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
@@ -75,9 +76,8 @@ export default function Catalog() {
 
   const handleSearch = useCallback((e) => {
     e.preventDefault();
-    setLoading(true);
-    fetchNannies();
-  }, [fetchNannies]);
+    fetchNannies(filters);
+  }, [filters, fetchNannies]);
 
   const handleFavorite = useCallback(async (nannyId) => {
     const token = localStorage.getItem("accessToken");
@@ -136,23 +136,30 @@ export default function Catalog() {
     <MainLayout>
       <AlertToast {...alert} onClose={() => setAlert({})} />
 
-      <div className="min-h-screen bg-pink-50 py-10 px-6">
-        <h1 className="text-3xl font-bold text-center text-pink-600 mb-8">
-          Catálogo de Niñeras
-        </h1>
+      <div className="min-h-screen bg-pink-100 py-8 px-4">
+        <div className="container mx-auto max-w-7xl">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-pink-200 to-pink-300 rounded-2xl p-6 mb-6 shadow-sm">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Catálogo
+            </h1>
+            <p className="text-gray-700">
+              Encuentra a la niñera perfecta para tu infante
+            </p>
+          </div>
 
-        <NannyFilters
-          filters={filters}
-          onChange={handleFilterChange}
-          onSubmit={handleSearch}
-        />
+          <NannyFilters
+            filters={filters}
+            onChange={handleFilterChange}
+            onSubmit={handleSearch}
+          />
 
-        {loading ? (
-          <Loader />
-        ) : error ? (
-          <p className="text-center mt-10 text-red-600">{error}</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          {loading ? (
+            <Loader />
+          ) : error ? (
+            <p className="text-center mt-10 text-red-600">{error}</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
             {nannies.length > 0 ? (
               nannies.map((nanny) => (
                 <NannyCard
@@ -169,8 +176,24 @@ export default function Catalog() {
                 No se encontraron niñeras con los filtros seleccionados.
               </p>
             )}
-          </div>
-        )}
+            </div>
+          )}
+
+          {/* Botón cargar más */}
+          {!loading && nannies.length > 0 && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={() => {
+                  // Aquí se puede implementar paginación en el futuro
+                  showAlert("Mostrando todas las niñeras disponibles", "info");
+                }}
+                className="px-8 py-3 bg-white text-pink-600 font-medium rounded-lg border-2 border-pink-300 hover:bg-pink-50 transition-colors"
+              >
+                Cargar más personas
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </MainLayout>
   );

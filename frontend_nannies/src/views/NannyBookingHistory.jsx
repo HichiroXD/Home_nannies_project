@@ -1,11 +1,8 @@
 import { useState, useEffect } from "react";
-import { getBookingsByNanny } from "../api/bookingApi";
-import Loader from "../components/layout/Loader";
-import AlertToast from "../components/layout/AlertToast";
-import NannyBookingCard from "../components/bookings/NannyBookingCard";
-import PageHeader from "../components/layout/PageHeader";
-import EmptyState from "../components/layout/EmptyState";
-import FilterTabs from "../components/layout/FilterTabs";
+import { getBookingsByNanny } from "@api/bookingApi";
+import { AlertToast } from "@components/common";
+import { Loader, PageHeader, EmptyState, FilterTabs } from "@components/layout";
+import { NannyBookingCard } from "@components/bookings";
 
 export default function NannyBookingHistory() {
   const [bookings, setBookings] = useState([]);

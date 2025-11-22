@@ -21,9 +21,17 @@ export default function AvailabilityCalendar({ availabilities = [], onSelect }) 
     return g;
   }, [availabilities]);
 
+  // Función para convertir Date a YYYY-MM-DD en zona horaria local
+  const formatLocalDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const tileContent = ({ date: tileDate, view }) => {
     if (view !== 'month') return null;
-    const dayKey = tileDate.toISOString().slice(0,10);
+    const dayKey = formatLocalDate(tileDate);
     const slots = grouped[dayKey];
     if (!slots || slots.length === 0) return null;
     return (
@@ -34,7 +42,7 @@ export default function AvailabilityCalendar({ availabilities = [], onSelect }) 
   };
 
   const handleDayClick = (d) => {
-    const dayKey = d.toISOString().slice(0,10);
+    const dayKey = formatLocalDate(d);
     setDate(dayKey);
   };
 

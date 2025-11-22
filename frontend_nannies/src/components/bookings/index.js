@@ -3,5 +3,6 @@ export { default as BookingCard } from "./BookingCard";
 export { default as ConfirmationModal } from "./ConfirmationModal";
 export { default as AvailabilityList } from "./AvailabilityList";
 export { default as AvailabilitySelector } from "./AvailabilitySelector";
+export { default as AvailabilityCalendar } from "./AvailabilityCalendar";
 export { default as RequestCard } from "./RequestCard";
 export { default as NannyBookingCard } from "./NannyBookingCard";

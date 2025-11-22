@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getAvailabilities } from "@api/availabilityApi";
 import { createBooking } from "@api/bookingApi";
 import { MainLayout, AlertToast, Loader, PageContainer } from "@components/layout";
-import AvailabilityCalendar from "@components/bookings/AvailabilityCalendar";
+import { AvailabilityCalendar } from "@components/bookings";
 
 export default function BookingCreate() {
   const { nannyId } = useParams();

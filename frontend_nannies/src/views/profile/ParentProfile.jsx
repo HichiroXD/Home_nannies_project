@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { DashboardLayout } from "@components/dashboard";
-import { PageHeader, Loader, AlertToast } from "@components/layout";
+import { MainLayout, PageHeader, Loader, AlertToast, PageContainer } from "@components/layout";
 import { ProfileSection, FormInput, FormTextarea } from "@components/profile";
 import { User, Mail, Phone, MapPin, Users } from "lucide-react";
 
@@ -78,12 +77,13 @@ export default function ParentProfile() {
   if (loading) return <Loader />;
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <PageHeader
-          title="Mi Perfil"
-          description="Actualiza tu información personal"
-        />
+    <MainLayout>
+      <PageContainer>
+        <div className="space-y-6">
+          <PageHeader
+            title="Mi Perfil"
+            description="Actualiza tu información personal"
+          />
 
         {alert && (
           <AlertToast
@@ -218,7 +218,8 @@ export default function ParentProfile() {
             </button>
           </div>
         </div>
-      </div>
-    </DashboardLayout>
+        </div>
+      </PageContainer>
+    </MainLayout>
   );
 }

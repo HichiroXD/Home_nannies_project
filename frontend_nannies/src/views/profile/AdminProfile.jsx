@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { DashboardLayout } from "@components/dashboard";
-import { PageHeader, Loader, AlertToast } from "@components/layout";
+import { MainLayout, PageHeader, Loader, AlertToast, PageContainer } from "@components/layout";
 import { ProfileSection, FormInput, FormTextarea } from "@components/profile";
 import { Shield, Lock, Bell } from "lucide-react";
 
@@ -72,12 +71,13 @@ export default function AdminProfile() {
   if (loading) return <Loader />;
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <PageHeader
-          title="Mi Perfil de Administrador"
-          description="Gestiona tu información de administrador"
-        />
+    <MainLayout>
+      <PageContainer>
+        <div className="space-y-6">
+          <PageHeader
+            title="Mi Perfil de Administrador"
+            description="Gestiona tu información de administrador"
+          />
 
         {alert && (
           <AlertToast
@@ -236,7 +236,8 @@ export default function AdminProfile() {
             </label>
           </div>
         </div>
-      </div>
-    </DashboardLayout>
+        </div>
+      </PageContainer>
+    </MainLayout>
   );
 }

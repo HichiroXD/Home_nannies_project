@@ -1,4 +1,4 @@
-import { Heart } from "lucide-react";
+import { Heart, User } from "lucide-react";
 
 /**
  * Componente NannyCard - Muestra información de una niñera
@@ -10,57 +10,85 @@ import { Heart } from "lucide-react";
  * @param {boolean} isLoading - Indica si se está procesando la acción
  */
 export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = false, isLoading = false }) {
+  // Determinar badge de estado
+  const getStatusBadge = () => {
+    if (nanny.verified) {
+      return { text: "Disponible", color: "bg-green-100 text-green-700" };
+    }
+    if (!nanny.verified && nanny.experience_years > 5) {
+      return { text: "Limitado", color: "bg-yellow-100 text-yellow-700" };
+    }
+    return { text: "No disponible", color: "bg-red-100 text-red-700" };
+  };
+
+  const status = getStatusBadge();
+
   return (
-    <div className="bg-white p-5 rounded-2xl shadow hover:shadow-lg transition-all">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-800">
-          {nanny.user?.first_name && nanny.user?.last_name
-            ? `${nanny.user.first_name} ${nanny.user.last_name}`
-            : nanny.user?.username || "Niñera"}
-        </h2>
+    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col">
+      <div className="flex p-3 gap-3">
+        {/* Avatar / Foto */}
+        <div className="relative bg-gradient-to-br from-pink-100 to-pink-200 rounded-full w-20 h-20 flex-shrink-0 flex items-center justify-center">
+          <User className="w-12 h-12 text-gray-400" strokeWidth={1.5} />
+        </div>
+
+        {/* Contenido Principal */}
+        <div className="flex-1 min-w-0">
+          {/* Nombre y Favorito */}
+          <div className="flex items-start justify-between mb-1">
+            <h3 className="text-sm font-bold text-gray-900 truncate pr-2">
+              {nanny.user?.first_name && nanny.user?.last_name
+                ? `${nanny.user.first_name} ${nanny.user.last_name}`
+                : nanny.user?.username || "Niñera"}
+            </h3>
+            <button
+              onClick={() => onFavorite(nanny.id)}
+              disabled={isLoading}
+              className={`flex-shrink-0 transition-all transform hover:scale-110 ${
+                isLoading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              aria-label={isFavorited ? "Eliminar de favoritos" : "Añadir a favoritos"}
+            >
+              <Heart 
+                size={18} 
+                className={isFavorited ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-pink-500"}
+                fill={isFavorited ? "currentColor" : "none"}
+              />
+            </button>
+          </div>
+
+          {/* Badge de estado */}
+          <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${status.color} mb-1`}>
+            {status.text}
+          </span>
+
+          {/* Información */}
+          <div className="space-y-0.5 text-xs">
+            <p className="text-gray-700">
+              <span className="font-medium">Precio:</span>{" "}
+              <span className="text-pink-600 font-bold">${nanny.hourly_rate || "N/A"}/hora</span>
+            </p>
+            <p className="text-gray-700">
+              <span className="font-medium">Tiempo libre:</span>{" "}
+              <span className="text-gray-900">{nanny.experience_years || 0} horas/sem</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Botón Contactar */}
+      <div className="px-3 pb-3">
         <button
-          onClick={() => onFavorite(nanny.id)}
-          disabled={isLoading}
-          className={`transition-all transform hover:scale-110 ${
-            isFavorited
-              ? "text-red-500 fill-red-500"
-              : "text-gray-300 hover:text-pink-500"
-          } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-          aria-label={isFavorited ? "Eliminar de favoritos" : "Añadir a favoritos"}
+          onClick={() => onBook(nanny.id)}
+          disabled={isLoading || !nanny.verified}
+          className={`w-full py-1.5 px-3 rounded-lg font-medium text-xs transition-all ${
+            isLoading || !nanny.verified
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-pink-400 text-white hover:bg-pink-500 active:scale-95"
+          }`}
         >
-          <Heart size={24} strokeWidth={isFavorited ? 0 : 2} />
+          {isLoading ? "Procesando..." : !nanny.verified ? "No disponible" : "Contactar"}
         </button>
       </div>
-      <p className="text-gray-500 text-sm mt-2">{nanny.description || "Sin descripción"}</p>
-      <div className="mt-3 space-y-1">
-        <p className="text-gray-700 text-sm">
-          <strong className="text-gray-900">Tarifa:</strong> ${nanny.hourly_rate || "N/A"}/hora
-        </p>
-        <p className="text-gray-700 text-sm">
-          <strong className="text-gray-900">Experiencia:</strong> {nanny.experience_years || 0} años
-        </p>
-        {Number.isFinite(Number(nanny?.rating_avg)) && (
-          <p className="text-gray-700 text-sm">
-            <strong className="text-gray-900">Rating:</strong> ⭐ {Number(nanny.rating_avg).toFixed(1)}/5
-          </p>
-        )}
-      </div>
-      {nanny.verified && (
-        <span className="inline-block mt-3 px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full">
-          ✅ Verificada
-        </span>
-      )}
-      <button
-        onClick={() => onBook(nanny.id)}
-        disabled={isLoading}
-        className={`mt-4 w-full py-2 px-4 rounded-lg font-medium transition-all ${
-          isLoading
-            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-            : "bg-pink-500 text-white hover:bg-pink-600 active:scale-95"
-        }`}
-      >
-        {isLoading ? "Procesando..." : "Agendar"}
-      </button>
     </div>
   );
 }
