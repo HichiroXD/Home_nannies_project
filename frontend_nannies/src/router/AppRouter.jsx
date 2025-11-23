@@ -13,6 +13,12 @@ const Landing = lazy(() => import("@views/Landing"));
 const Login = lazy(() => import("@views/auth/Login"));
 const Register = lazy(() => import("@views/auth/Register"));
 const Verify = lazy(() => import("@views/auth/Verify"));
+const ForgotPassword = lazy(() => import("@views/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("@views/auth/ResetPassword"));
+
+// === LAZY LOADING: Páginas legales ===
+const Terms = lazy(() => import("@views/Terms"));
+const Privacy = lazy(() => import("@views/Privacy"));
 
 // === LAZY LOADING: Dashboards por rol ===
 const DashboardUser = lazy(() => import("@views/dashboard/DashboardUser"));
@@ -47,6 +53,12 @@ export default function AppRouter() {
         <Route path="/login/" element={<Login />} />
         <Route path="/register/" element={<Register />} />
         <Route path="/verify/:uid/:token/" element={<Verify />} />
+        <Route path="/forgot-password/" element={<ForgotPassword />} />
+        <Route path="/reset-password/:uid/:token/" element={<ResetPassword />} />
+
+        {/* ==================== PÁGINAS LEGALES ==================== */}
+        <Route path="/terms/" element={<Terms />} />
+        <Route path="/privacy/" element={<Privacy />} />
 
         {/* ==================== DASHBOARDS ==================== */}
         {/* Dashboard genérico con redirección por rol */}

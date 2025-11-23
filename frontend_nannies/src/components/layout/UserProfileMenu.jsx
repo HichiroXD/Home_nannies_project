@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Settings, LogOut, ChevronDown } from "lucide-react";
+import { User, Settings, LogOut, ChevronDown, LayoutDashboard } from "lucide-react";
 
 export default function UserProfileMenu() {
   const navigate = useNavigate();
@@ -76,6 +76,20 @@ export default function UserProfileMenu() {
 
           {/* Opciones del menú */}
           <div className="py-2">
+            {/* Dashboard Admin - Solo para administradores */}
+            {String(role).toLowerCase() === "admin" && (
+              <button
+                onClick={() => {
+                  navigate("/admin/dashboard/");
+                  setIsOpen(false);
+                }}
+                className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors flex items-center gap-3"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Panel de Control</span>
+              </button>
+            )}
+
             {/* Mi Perfil */}
             <button
               onClick={() => {

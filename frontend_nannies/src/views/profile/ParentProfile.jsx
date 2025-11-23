@@ -3,17 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { MainLayout, PageHeader, Loader, AlertToast, PageContainer } from "@components/layout";
 import { ProfileSection, FormInput, FormTextarea } from "@components/profile";
 import { User, Mail, Phone, MapPin, Users } from "lucide-react";
+import { getParentProfile, updateParentProfile } from "@api/profileApi";
 
 export default function ParentProfile() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState({
-    firstName: "",
-    lastName: "",
+    first_name: "",
+    last_name: "",
     email: "",
     phone: "",
     address: "",
-    city: "",
-    about: "",
+    emergency_contact: "",
+    children_count: 1,
+    preferences: "",
+    total_bookings: 0,
   });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -32,23 +35,14 @@ export default function ParentProfile() {
       return;
     }
 
-    // Simulación: Cargar datos del usuario
     loadProfile();
   }, [navigate]);
 
   const loadProfile = async () => {
     try {
       setLoading(true);
-      // En producción, llamar a API: const data = await getProfile();
-      setProfile({
-        firstName: "Juan",
-        lastName: "Pérez García",
-        email: "juan@example.com",
-        phone: "+34 612 345 678",
-        address: "Calle Principal 123",
-        city: "Madrid",
-        about: "Buscamos niñera confiable para nuestros hijos.",
-      });
+      const data = await getParentProfile();
+      setProfile(data);
     } catch (error) {
       setAlert({ type: "error", message: "Error al cargar el perfil" });
     } finally {
@@ -64,11 +58,12 @@ export default function ParentProfile() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      // En producción: await updateProfile(profile);
+      await updateParentProfile(profile);
       setAlert({ type: "success", message: "Perfil actualizado correctamente" });
       setIsEditing(false);
+      await loadProfile(); // Recargar datos actualizados
     } catch (error) {
-      setAlert({ type: "error", message: "Error al guardar el perfil" });
+      setAlert({ type: "error", message: error.detail || "Error al guardar el perfil" });
     } finally {
       setSaving(false);
     }
@@ -105,19 +100,17 @@ export default function ParentProfile() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
               label="Nombre"
-              name="firstName"
-              value={profile.firstName}
+              name="first_name"
+              value={profile.first_name || ""}
               onChange={handleChange}
               disabled={!isEditing}
-              required
             />
             <FormInput
               label="Apellidos"
-              name="lastName"
-              value={profile.lastName}
+              name="last_name"
+              value={profile.last_name || ""}
               onChange={handleChange}
               disabled={!isEditing}
-              required
             />
           </div>
         </ProfileSection>
@@ -135,7 +128,7 @@ export default function ParentProfile() {
               label="Email"
               name="email"
               type="email"
-              value={profile.email}
+              value={profile.email || ""}
               onChange={handleChange}
               disabled={true}
               icon={Mail}
@@ -144,7 +137,7 @@ export default function ParentProfile() {
               label="Teléfono"
               name="phone"
               type="tel"
-              value={profile.phone}
+              value={profile.phone || ""}
               onChange={handleChange}
               disabled={!isEditing}
               placeholder="+34 612 345 678"
@@ -152,9 +145,37 @@ export default function ParentProfile() {
           </div>
         </ProfileSection>
 
-        {/* Ubicación */}
+        {/* Ubicación y Emergencias */}
         <ProfileSection
-          title="Ubicación"
+          title="Ubicación y Emergencias"
+          isEditing={isEditing}
+          onEdit={() => setIsEditing(!isEditing)}
+          onSave={handleSave}
+          isSaving={saving}
+        >
+          <div className="grid grid-cols-1 gap-4">
+            <FormInput
+              label="Dirección"
+              name="address"
+              value={profile.address || ""}
+              onChange={handleChange}
+              disabled={!isEditing}
+              placeholder="Calle Principal 123"
+            />
+            <FormInput
+              label="Contacto de Emergencia"
+              name="emergency_contact"
+              value={profile.emergency_contact || ""}
+              onChange={handleChange}
+              disabled={!isEditing}
+              placeholder="Nombre y teléfono de emergencia"
+            />
+          </div>
+        </ProfileSection>
+
+        {/* Información Familiar */}
+        <ProfileSection
+          title="Información Familiar"
           isEditing={isEditing}
           onEdit={() => setIsEditing(!isEditing)}
           onSave={handleSave}
@@ -162,36 +183,38 @@ export default function ParentProfile() {
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
-              label="Dirección"
-              name="address"
-              value={profile.address}
+              label="Número de Niños"
+              name="children_count"
+              type="number"
+              value={profile.children_count || 1}
               onChange={handleChange}
               disabled={!isEditing}
-              placeholder="Calle Principal 123"
+              min="1"
             />
-            <FormInput
-              label="Ciudad"
-              name="city"
-              value={profile.city}
-              onChange={handleChange}
-              disabled={!isEditing}
-              placeholder="Madrid"
-            />
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 text-gray-600 mb-1">
+                <Users className="w-4 h-4" />
+                <span className="text-sm">Reservas Realizadas</span>
+              </div>
+              <p className="text-2xl font-bold text-gray-900">
+                {profile.total_bookings || 0}
+              </p>
+            </div>
           </div>
         </ProfileSection>
 
-        {/* Acerca de */}
+        {/* Preferencias */}
         <ProfileSection
-          title="Acerca de Ti"
+          title="Preferencias y Notas"
           isEditing={isEditing}
           onEdit={() => setIsEditing(!isEditing)}
           onSave={handleSave}
           isSaving={saving}
         >
           <FormTextarea
-            label="Descripción"
-            name="about"
-            value={profile.about}
+            label="Preferencias"
+            name="preferences"
+            value={profile.preferences || ""}
             onChange={handleChange}
             disabled={!isEditing}
             placeholder="Cuéntanos sobre ti y qué buscas en una niñera..."

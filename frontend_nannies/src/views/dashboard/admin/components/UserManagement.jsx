@@ -69,22 +69,22 @@ export const UserManagement = ({
 
   const columns = [
     {
-      id: 'name',
+      key: 'name',
       label: 'Nombre',
       sortable: true,
-      render: (row) => row.name,
+      render: (value, row) => row.name || `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'Sin nombre',
     },
     {
-      id: 'email',
+      key: 'email',
       label: 'Email',
       sortable: true,
-      render: (row) => row.email,
+      render: (value, row) => row.email,
     },
     {
-      id: 'role',
+      key: 'role',
       label: 'Rol',
       sortable: true,
-      render: (row) => (
+      render: (value, row) => (
         <Chip
           label={getRoleLabel(row.role)}
           size="small"
@@ -96,10 +96,10 @@ export const UserManagement = ({
       ),
     },
     {
-      id: 'status',
+      key: 'status',
       label: 'Estado',
       sortable: false,
-      render: (row) => (
+      render: (value, row) => (
         <Chip
           label={row.status === 'active' ? 'Activo' : 'Inactivo'}
           color={getStatusColor(row.status)}
@@ -109,22 +109,22 @@ export const UserManagement = ({
       ),
     },
     {
-      id: 'joinDate',
+      key: 'joinDate',
       label: 'Fecha Registro',
       sortable: true,
-      render: (row) => new Date(row.joinDate).toLocaleDateString('es-ES'),
+      render: (value, row) => new Date(row.joinDate).toLocaleDateString('es-ES'),
     },
     {
-      id: 'bookings',
+      key: 'bookings',
       label: 'Bookings',
       sortable: true,
-      render: (row) => row.bookings,
+      render: (value, row) => row.bookings,
     },
     {
-      id: 'actions',
+      key: 'actions',
       label: 'Acciones',
       sortable: false,
-      render: (row) => (
+      render: (value, row) => (
         <Stack direction="row" spacing={0.5}>
           <Button
             size="small"

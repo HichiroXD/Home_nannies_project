@@ -50,7 +50,7 @@ export const ReportsView = ({ reports = [] }) => {
           <Paper sx={{ p: 2, textAlign: 'center', background: 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)', color: 'white' }}>
             <Typography variant="body2" sx={{ opacity: 0.9 }}>Ingresos Totales</Typography>
             <Typography variant="h5" sx={{ fontWeight: 600, mt: 1 }}>
-              {formatters.currency(totalRevenue, 'EUR')}
+              {formatters.currency(totalRevenue, 'CLP')}
             </Typography>
           </Paper>
         </Grid>
@@ -118,7 +118,7 @@ export const ReportsView = ({ reports = [] }) => {
               <YAxis yAxisId="right" orientation="right" />
               <Tooltip
                 formatter={(value, name) => {
-                  if (name === 'revenue') return formatters.currency(value, 'EUR');
+                  if (name === 'revenue') return formatters.currency(value, 'CLP');
                   return value;
                 }}
                 contentStyle={{
@@ -182,7 +182,7 @@ export const ReportsView = ({ reports = [] }) => {
                   <Box>
                     <Typography variant="caption" color="textSecondary">Ingresos</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {formatters.currency(report.revenue, 'EUR')}
+                      {formatters.currency(report.revenue, 'CLP')}
                     </Typography>
                   </Box>
                   <Box>

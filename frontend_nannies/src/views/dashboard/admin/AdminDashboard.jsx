@@ -14,7 +14,7 @@ import {
   Typography,
   Alert as MuiAlert,
 } from '@mui/material';
-import { Plus, Users, TrendingUp, AlertCircle } from 'lucide-react';
+import { Plus, Users, TrendingUp, AlertCircle, BarChart3, Settings } from 'lucide-react';
 import {
   TabsComponent,
   useToggle,
@@ -54,7 +54,7 @@ export const AdminDashboard = () => {
           setDashboardData(await response.json());
         }
       } catch (err) {
-        setError('Error de conexión');
+        setError('Error de conexión con el servidor');
       } finally {
         setLoading(false);
       }
@@ -62,7 +62,7 @@ export const AdminDashboard = () => {
     fetchAdminData();
   }, [token]);
 
-  // Demo data para desarrollo
+  // Datos de demostración (se usan solo si no hay datos reales del API)
   const demoData = {
     admin: {
       name: 'Admin Sistema',
@@ -125,12 +125,12 @@ export const AdminDashboard = () => {
       },
     ],
     reports: [
-      { month: 'Enero', bookings: 85, revenue: 4250, users: 120 },
-      { month: 'Febrero', bookings: 92, revenue: 4600, users: 145 },
-      { month: 'Marzo', bookings: 110, revenue: 5500, users: 178 },
-      { month: 'Abril', bookings: 138, revenue: 6900, users: 210 },
-      { month: 'Mayo', bookings: 156, revenue: 7800, users: 250 },
-      { month: 'Junio', bookings: 182, revenue: 9100, users: 298 },
+      { month: 'Enero', bookings: 85, revenue: 4250000, users: 120 },
+      { month: 'Febrero', bookings: 92, revenue: 4600000, users: 145 },
+      { month: 'Marzo', bookings: 110, revenue: 5500000, users: 178 },
+      { month: 'Abril', bookings: 138, revenue: 6900000, users: 210 },
+      { month: 'Mayo', bookings: 156, revenue: 7800000, users: 250 },
+      { month: 'Junio', bookings: 182, revenue: 9100000, users: 298 },
     ],
     ocrStatus: {
       total: 342,
@@ -148,6 +148,7 @@ export const AdminDashboard = () => {
     },
   };
 
+  // Usar datos reales si están disponibles, si no usar datos demo
   const data = dashboardData || demoData;
 
   if (loading) {
@@ -167,6 +168,12 @@ export const AdminDashboard = () => {
         <AdminHeader admin={data.admin} />
 
         {/* Alertas */}
+        {error && (
+          <MuiAlert severity="warning" onClose={() => setError(null)}>
+            {error} - Mostrando datos de demostración
+          </MuiAlert>
+        )}
+
         {data.ocrStatus?.failed > 0 && (
           <MuiAlert severity="warning" onClose={() => {}}>
             Hay {data.ocrStatus.failed} documentos OCR que fallaron en el procesamiento
@@ -176,12 +183,6 @@ export const AdminDashboard = () => {
         {data.academicStatus?.rejected > 0 && (
           <MuiAlert severity="info" onClose={() => {}}>
             {data.academicStatus.rejected} certificado(s) académico(s) rechazado(s)
-          </MuiAlert>
-        )}
-
-        {error && (
-          <MuiAlert severity="error" onClose={() => {}}>
-            Error cargando datos del dashboard
           </MuiAlert>
         )}
 
@@ -196,7 +197,7 @@ export const AdminDashboard = () => {
               icon: <Users size={20} />,
               content: (
                 <UserManagement
-                  users={data.users}
+                  users={data.users || []}
                   onAddUser={setShowAddUser}
                   showAddForm={showAddUser}
                   onCancel={() => setShowAddUser(false)}
@@ -206,7 +207,7 @@ export const AdminDashboard = () => {
             {
               label: 'Reportes',
               icon: <BarChart3 size={20} />,
-              content: <ReportsView reports={data.reports} />,
+              content: <ReportsView reports={data.reports || []} />,
             },
             {
               label: 'OCR Status',

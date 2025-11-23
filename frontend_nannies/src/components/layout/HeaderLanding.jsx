@@ -1,10 +1,16 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { NotificationCenter, UserProfileMenu } from "@components/layout";
 
 export default function HeaderLanding({ isLoggedIn, username }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const rawRole = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
   const role = rawRole ? String(rawRole).toLowerCase() : null;
+  
+  // Detectar si estamos en páginas de autenticación
+  const isAuthPage = ['/login/', '/register/', '/forgot-password/', '/reset-password/'].some(
+    path => location.pathname.startsWith(path.replace(/\/$/, ''))
+  );
 
   return (
     <header className="flex justify-between items-center px-8 py-6 bg-white shadow-md">
@@ -54,20 +60,22 @@ export default function HeaderLanding({ isLoggedIn, username }) {
             <UserProfileMenu />
           </div>
         ) : (
-          <>
-            <button
-              onClick={() => navigate("/login")}
-              className="px-4 py-2 text-sm font-medium text-white bg-pink-500 rounded-lg hover:bg-pink-600 transition-colors duration-300"
-            >
-              Iniciar sesión
-            </button>
-            <button
-              onClick={() => navigate("/register")}
-              className="px-4 py-2 text-sm font-medium border border-pink-500 text-pink-500 rounded-lg hover:bg-pink-50"
-            >
-              Registrarse
-            </button>
-          </>
+          !isAuthPage && (
+            <>
+              <button
+                onClick={() => navigate("/login")}
+                className="px-4 py-2 text-sm font-medium text-white bg-pink-500 rounded-lg hover:bg-pink-600 transition-colors duration-300"
+              >
+                Iniciar sesión
+              </button>
+              <button
+                onClick={() => navigate("/register")}
+                className="px-4 py-2 text-sm font-medium border border-pink-500 text-pink-500 rounded-lg hover:bg-pink-50"
+              >
+                Registrarse
+              </button>
+            </>
+          )
         )}
       </div>
     </header>

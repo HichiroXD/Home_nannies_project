@@ -131,3 +131,34 @@ def nanny_dashboard(request):
     }
     
     return Response(dashboard_data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def nanny_profile(request):
+    """
+    Endpoint para obtener y actualizar el perfil de niñera.
+    GET: Obtiene el perfil completo
+    PUT/PATCH: Actualiza el perfil
+    """
+    try:
+        nanny = NannyProfile.objects.get(user=request.user)
+    except NannyProfile.DoesNotExist:
+        return Response(
+            {'error': 'No tienes un perfil de niñera'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    if request.method == 'GET':
+        serializer = NannyProfileSerializer(nanny)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    elif request.method in ['PUT', 'PATCH']:
+        partial = request.method == 'PATCH'
+        serializer = NannyProfileSerializer(nanny, data=request.data, partial=partial)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

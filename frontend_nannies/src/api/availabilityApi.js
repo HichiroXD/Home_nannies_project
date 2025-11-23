@@ -17,6 +17,14 @@ export const createAvailability = async (data) => {
 };
 
 /**
+ * Actualizar disponibilidad
+ */
+export const updateAvailability = async (id, data) => {
+  const response = await API.put(`/bookings/availabilities/${id}/`, data);
+  return response.data;
+};
+
+/**
  * Eliminar disponibilidad
  */
 export const deleteAvailability = async (id) => {

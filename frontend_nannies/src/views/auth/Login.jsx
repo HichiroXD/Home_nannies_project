@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { loginUser } from "@api/userApi";
 import { AuthLayout, AuthMessage, AuthForm } from "@components/auth";
-import { MainLayout, Loader, PageContainer } from "@components/layout";
+import { MainLayout, Loader } from "@components/layout";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -64,19 +64,27 @@ export default function Login() {
 
   return (
     <MainLayout>
-      <PageContainer className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+      <div className="flex items-center justify-center py-8 min-h-[calc(100vh-4rem)]">
         <AuthLayout title="Iniciar Sesión">
           <AuthMessage type="info" message={infoMessage} />
           <AuthMessage type="error" message={error} />
           <AuthForm fields={fields} onSubmit={handleLogin} buttonText="Entrar" disabled={isLoading} />
-          <p className="text-center text-gray-600 text-sm mt-6">
+          
+          {/* Link para recuperar contraseña */}
+          <div className="text-center mt-3">
+            <Link to="/forgot-password" className="text-sm text-pink-600 hover:text-pink-700 hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+          
+          <p className="text-center text-gray-600 text-sm mt-4">
             ¿No tienes cuenta?{" "}
             <Link to="/register" className="text-pink-500 hover:text-pink-700 font-medium underline">
               Regístrate aquí
             </Link>
           </p>
         </AuthLayout>
-      </PageContainer>
+      </div>
     </MainLayout>
   );
 }

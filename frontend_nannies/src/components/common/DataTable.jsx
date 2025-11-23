@@ -173,7 +173,7 @@ export const DataTable = ({
                   }}
                 >
                   {col.label}
-                  {sortConfig?.key === col.key && (
+                  {sortConfig && sortConfig.key === col.key && (
                     <span sx={{ ml: 1 }}>
                       {sortConfig.direction === 'asc' ? ' ▲' : ' ▼'}
                     </span>

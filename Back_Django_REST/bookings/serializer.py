@@ -86,6 +86,11 @@ class AvailabilitySerializer(serializers.ModelSerializer):
             start_time__lt=data["end_time"],
             end_time__gt=data["start_time"]
         )
+        
+        # Excluir la instancia actual si estamos actualizando
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        
         if qs.exists():
             raise serializers.ValidationError("Ya existe disponibilidad en este rango.")
         return data

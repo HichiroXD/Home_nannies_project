@@ -22,6 +22,7 @@ export default function Catalog() {
     verified: false,
   });
   const navigate = useNavigate();
+  const userRole = localStorage.getItem("role");
 
   // Cargar niñeras
   const fetchNannies = useCallback(async (appliedFilters = filters) => {
@@ -118,8 +119,15 @@ export default function Catalog() {
       navigate("/login", { state: { redirectTo: `/catalog?nanny=${nannyId}` } });
       return;
     }
+
+    // Verificar que el usuario no sea una niñera
+    if (userRole === "nanny") {
+      showAlert("Las niñeras no pueden contactar a otras niñeras", "error");
+      return;
+    }
+
     navigate(`/bookings/create/${nannyId}`);
-  }, [navigate]);
+  }, [navigate, userRole, showAlert]);
 
   // Memoizar nannies favoriteadas para evitar recalculos
   const nannyFavoriteStatusMap = useMemo(() => {

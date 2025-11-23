@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { registerUser } from "@api/userApi";
 import { AuthLayout, AuthMessage, AuthForm } from "@components/auth";
-import { MainLayout, Loader, PageContainer } from "@components/layout";
+import { MainLayout, Loader } from "@components/layout";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -113,19 +113,32 @@ export default function Register() {
 
   return (
     <MainLayout>
-      <PageContainer className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+      <div className="flex items-center justify-center py-8 min-h-[calc(100vh-4rem)]">
         <AuthLayout title="Crear cuenta">
           <AuthMessage type="success" message={successMessage} />
           <AuthMessage type="error" message={error} />
           <AuthForm fields={fields} onSubmit={handleSubmit} buttonText="Registrarse" />
-          <p className="text-center text-gray-600 text-sm mt-6">
+          
+          {/* Link a términos y condiciones */}
+          <p className="text-xs text-gray-500 text-center mt-3">
+            Al registrarte, aceptas nuestros{" "}
+            <Link to="/terms" className="text-pink-600 hover:text-pink-700 underline">
+              Términos y Condiciones
+            </Link>
+            {" "}y nuestra{" "}
+            <Link to="/privacy" className="text-pink-600 hover:text-pink-700 underline">
+              Política de Privacidad
+            </Link>
+          </p>
+          
+          <p className="text-center text-gray-600 text-sm mt-4">
             ¿Ya tienes cuenta?{" "}
             <Link to="/login" className="text-pink-500 hover:text-pink-700 font-medium underline">
               Inicia sesión aquí
             </Link>
           </p>
         </AuthLayout>
-      </PageContainer>
+      </div>
     </MainLayout>
   );
 }

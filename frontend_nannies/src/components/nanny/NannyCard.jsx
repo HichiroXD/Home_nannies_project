@@ -10,6 +10,9 @@ import { Heart, User } from "lucide-react";
  * @param {boolean} isLoading - Indica si se está procesando la acción
  */
 export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = false, isLoading = false }) {
+  const userRole = localStorage.getItem("role");
+  const isNanny = userRole === "nanny";
+
   // Determinar badge de estado
   const getStatusBadge = () => {
     if (nanny.verified) {
@@ -36,9 +39,9 @@ export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = fal
           {/* Nombre y Favorito */}
           <div className="flex items-start justify-between mb-1">
             <h3 className="text-sm font-bold text-gray-900 truncate pr-2">
-              {nanny.user?.first_name && nanny.user?.last_name
-                ? `${nanny.user.first_name} ${nanny.user.last_name}`
-                : nanny.user?.username || "Niñera"}
+              {nanny.first_name && nanny.last_name
+                ? `${nanny.first_name} ${nanny.last_name}`
+                : nanny.username || "Niñera"}
             </h3>
             <button
               onClick={() => onFavorite(nanny.id)}
@@ -79,14 +82,20 @@ export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = fal
       <div className="px-3 pb-3">
         <button
           onClick={() => onBook(nanny.id)}
-          disabled={isLoading || !nanny.verified}
+          disabled={isLoading || !nanny.verified || isNanny}
           className={`w-full py-1.5 px-3 rounded-lg font-medium text-xs transition-all ${
-            isLoading || !nanny.verified
+            isLoading || !nanny.verified || isNanny
               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
               : "bg-pink-400 text-white hover:bg-pink-500 active:scale-95"
           }`}
         >
-          {isLoading ? "Procesando..." : !nanny.verified ? "No disponible" : "Contactar"}
+          {isLoading 
+            ? "Procesando..." 
+            : isNanny 
+            ? "No disponible para niñeras" 
+            : !nanny.verified 
+            ? "No disponible" 
+            : "Contactar"}
         </button>
       </div>
     </div>

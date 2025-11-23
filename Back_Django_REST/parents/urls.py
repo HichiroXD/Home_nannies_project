@@ -1,6 +1,6 @@
 from django.urls import path
-from . import views
+from .views import parent_profile
 
 urlpatterns = [
-    # Futuras rutas para ParentProfile API
+    path('profile/', parent_profile, name='parent-profile'),
 ]

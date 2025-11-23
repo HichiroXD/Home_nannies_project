@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import { Plus, Trash2, Clock, ArrowLeft } from "lucide-react";
-import { getAvailabilities, createAvailability, deleteAvailability } from "@api/availabilityApi";
+import { Plus, Trash2, Clock, ArrowLeft, Edit2, X, Check, Copy, RefreshCw } from "lucide-react";
+import { getAvailabilities, createAvailability, deleteAvailability, updateAvailability } from "@api/availabilityApi";
 import { AlertToast } from "@components/common";
 import { Loader, PageHeader } from "@components/layout";
 import { AvailabilityForm, AvailabilityCalendar } from "@components/availability";
@@ -16,6 +16,9 @@ export default function AvailabilityManagement() {
   const [timeSlot, setTimeSlot] = useState({ start: "08:00", end: "17:00" });
   const [alert, setAlert] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editTimeSlot, setEditTimeSlot] = useState({ start: "", end: "" });
+  const [repeating, setRepeating] = useState(false);
 
   useEffect(() => {
     loadAvailabilities();
@@ -93,6 +96,141 @@ export default function AvailabilityManagement() {
         message: "Error al eliminar franja",
       });
       console.error(error);
+    }
+  };
+
+  const handleStartEdit = (avail) => {
+    setEditingId(avail.id);
+    // Normalizar el formato de tiempo (eliminar segundos si existen)
+    const normalizeTime = (time) => {
+      if (!time) return "";
+      // Si viene en formato HH:MM:SS, convertir a HH:MM
+      return time.split(':').slice(0, 2).join(':');
+    };
+    setEditTimeSlot({
+      start: normalizeTime(avail.start_time),
+      end: normalizeTime(avail.end_time),
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditTimeSlot({ start: "", end: "" });
+  };
+
+  const handleSaveEdit = async (avail) => {
+    if (!editTimeSlot.start || !editTimeSlot.end) {
+      setAlert({
+        type: "warning",
+        message: "Por favor completa los horarios",
+      });
+      return;
+    }
+
+    try {
+      // Asegurar que el formato de tiempo incluya segundos si el backend lo requiere
+      const formatTime = (time) => {
+        if (!time) return "";
+        // Si el formato es HH:MM, agregar :00 para segundos
+        return time.length === 5 ? `${time}:00` : time;
+      };
+
+      const payload = {
+        day: avail.day,
+        start_time: formatTime(editTimeSlot.start),
+        end_time: formatTime(editTimeSlot.end),
+      };
+
+      const updatedAvail = await updateAvailability(avail.id, payload);
+      
+      // Actualizar el estado local inmediatamente
+      setAvailabilities(prevAvails => 
+        prevAvails.map(a => a.id === avail.id ? updatedAvail : a)
+      );
+      
+      setAlert({
+        type: "success",
+        message: "Horario actualizado exitosamente",
+      });
+      setEditingId(null);
+      setEditTimeSlot({ start: "", end: "" });
+      
+      // Recargar disponibilidades para asegurar sincronización
+      await loadAvailabilities();
+    } catch (error) {
+      console.error("Error completo:", error);
+      console.error("Response data:", error?.response?.data);
+      
+      let errorMessage = "Error al actualizar horario";
+      if (error?.response?.data) {
+        // Intentar extraer el mensaje de error más específico
+        const data = error.response.data;
+        if (typeof data === 'object') {
+          errorMessage = Object.values(data).flat().join(', ') || errorMessage;
+        } else if (typeof data === 'string') {
+          errorMessage = data;
+        }
+      }
+      
+      setAlert({
+        type: "error",
+        message: errorMessage,
+      });
+    }
+  };
+
+  const handleRepeatWeekly = async (avail) => {
+    if (!window.confirm("¿Deseas repetir esta franja para la próxima semana?")) {
+      return;
+    }
+
+    try {
+      setRepeating(true);
+      
+      // Calcular la fecha de la próxima semana (7 días después)
+      const currentDate = new Date(avail.day);
+      const nextWeekDate = new Date(currentDate);
+      nextWeekDate.setDate(currentDate.getDate() + 7);
+      
+      const dateStr = nextWeekDate.toISOString().split("T")[0];
+      
+      // Formatear tiempos con segundos
+      const formatTime = (time) => {
+        if (!time) return "";
+        return time.length === 5 ? `${time}:00` : time;
+      };
+
+      const payload = {
+        day: dateStr,
+        start_time: formatTime(avail.start_time),
+        end_time: formatTime(avail.end_time),
+      };
+
+      await createAvailability(payload);
+      setAlert({
+        type: "success",
+        message: "Franja repetida para la próxima semana",
+      });
+      await loadAvailabilities();
+    } catch (error) {
+      console.error("Error al repetir franja:", error);
+      
+      let errorMessage = "Error al repetir franja";
+      if (error?.response?.data) {
+        const data = error.response.data;
+        if (typeof data === 'object') {
+          errorMessage = Object.values(data).flat().join(', ') || errorMessage;
+        } else if (typeof data === 'string') {
+          errorMessage = data;
+        }
+      }
+      
+      setAlert({
+        type: "error",
+        message: errorMessage,
+      });
+    } finally {
+      setRepeating(false);
     }
   };
 
@@ -219,22 +357,98 @@ export default function AvailabilityManagement() {
               {availabilities.map((avail) => (
                 <div
                   key={avail.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200"
+                  className="p-3 bg-gray-50 rounded-md border border-gray-200"
                 >
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {formatDate(avail.day)}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {avail.start_time} - {avail.end_time}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteAvailability(avail.id)}
-                    className="text-red-500 hover:text-red-700 transition"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  {editingId === avail.id ? (
+                    // Modo edición
+                    <div className="space-y-3">
+                      <p className="font-medium text-gray-900">
+                        {formatDate(avail.day)}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">
+                            Inicio
+                          </label>
+                          <input
+                            type="time"
+                            value={editTimeSlot.start}
+                            onChange={(e) =>
+                              setEditTimeSlot({ ...editTimeSlot, start: e.target.value })
+                            }
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">
+                            Fin
+                          </label>
+                          <input
+                            type="time"
+                            value={editTimeSlot.end}
+                            onChange={(e) =>
+                              setEditTimeSlot({ ...editTimeSlot, end: e.target.value })
+                            }
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleSaveEdit(avail)}
+                          className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition"
+                        >
+                          <Check size={16} />
+                          Guardar
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-gray-400 hover:bg-gray-500 text-white text-sm rounded transition"
+                        >
+                          <X size={16} />
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // Modo vista
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {formatDate(avail.day)}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {avail.start_time} - {avail.end_time}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleRepeatWeekly(avail)}
+                            disabled={repeating}
+                            className="text-purple-500 hover:text-purple-700 transition disabled:opacity-50"
+                            title="Repetir para la próxima semana"
+                          >
+                            <RefreshCw size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleStartEdit(avail)}
+                            className="text-blue-500 hover:text-blue-700 transition"
+                            title="Editar horario"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteAvailability(avail.id)}
+                            className="text-red-500 hover:text-red-700 transition"
+                            title="Eliminar franja"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
