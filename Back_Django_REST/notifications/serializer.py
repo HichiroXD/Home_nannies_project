@@ -86,6 +86,7 @@ class NotificationListSerializer(serializers.ModelSerializer):
             'id',
             'template_name',
             'subject',
+            'message',
             'status',
             'related_document_id',
             'related_booking_id',

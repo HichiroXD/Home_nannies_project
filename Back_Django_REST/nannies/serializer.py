@@ -3,6 +3,7 @@ from .models import NannyProfile
 
 
 class NannyProfileSerializer(serializers.ModelSerializer):
+    user_id = serializers.ReadOnlyField(source='user.id')
     username = serializers.ReadOnlyField(source='user.username')
     email = serializers.ReadOnlyField(source='user.email')
     first_name = serializers.CharField(source='user.first_name', required=False, allow_blank=True)
@@ -15,7 +16,7 @@ class NannyProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = NannyProfile
         fields = [
-            'id', 'username', 'email', 'first_name', 'last_name', 'role',
+            'id', 'user_id', 'username', 'email', 'first_name', 'last_name', 'role',
             'experience_years', 'hourly_rate', 'description', 'verified',
             'age', 'certifications', 'rating_avg', 'reviews',
             'total_bookings', 'acceptance_rate'

@@ -37,17 +37,38 @@ export default function BookingCreate() {
         const nannyData = await getNannyById(nannyId);
         setNanny(nannyData);
 
-        // Llamar al endpoint con query param nanny
-        const data = await getAvailabilities({ nanny: nannyId });
-        // El backend devuelve objetos con day, start_time, end_time en Date/Time string
-        // Normalizar: si viene con formato ISO, separar
+        // Usar user_id para consultar disponibilidades (Availability usa User, no NannyProfile)
+        const userIdToQuery = nannyData.user_id || nannyId;
+        console.log("Fetching availabilities for user ID:", userIdToQuery, "(nanny profile ID:", nannyId, ")");
+        const data = await getAvailabilities({ nanny: userIdToQuery });
+        console.log("Availabilities from API (raw):", data);
+        console.log("Number of availabilities:", data?.length || 0);
+        
+        if (!data || data.length === 0) {
+          console.warn("No availabilities found for user:", userIdToQuery);
+        }
+        
+        // El backend devuelve objetos con day (YYYY-MM-DD), start_time (HH:MM:SS), end_time (HH:MM:SS)
+        // Normalizar para asegurar el formato correcto, incluyendo estado de reserva
         const normalized = data.map((a) => ({
           id: a.id,
-          day: a.day,
-          start_time: a.start_time,
-          end_time: a.end_time,
+          day: a.day, // Ya viene en formato YYYY-MM-DD
+          start_time: a.start_time, // Ya viene en formato HH:MM:SS
+          end_time: a.end_time, // Ya viene en formato HH:MM:SS
+          is_booked: a.is_booked || false, // Si está reservado
+          booked_by_current_user: a.booked_by_current_user || false, // Si el usuario actual lo reservó
         }));
+        console.log("Normalized availabilities:", normalized);
+        console.log("Setting availabilities state with:", normalized.length, "items");
         setAvailabilities(normalized);
+        
+        if (normalized.length === 0) {
+          setAlert({ 
+            visible: true, 
+            message: "Esta niñera no tiene horarios disponibles publicados", 
+            type: "info" 
+          });
+        }
       } catch (err) {
         console.error("Error al cargar datos:", err);
         setAlert({ visible: true, message: "No se pudo cargar la información.", type: "error" });
@@ -68,19 +89,61 @@ export default function BookingCreate() {
 
     setBookingLoading(true);
     try {
-      // Construir start/end as ISO datetimes
-      const startISO = new Date(`${slot.day}T${slot.start_time}`).toISOString();
-      const endISO = new Date(`${slot.day}T${slot.end_time}`).toISOString();
+      // Construir datetime en formato ISO pero sin convertir zona horaria
+      // Django espera formato ISO y aplica la zona horaria configurada (America/Santiago)
+      const startDateTime = `${slot.day}T${slot.start_time}`;
+      const endDateTime = `${slot.day}T${slot.end_time}`;
 
-      await createBooking(nannyId, startISO, endISO);
+      // Usar user_id porque Booking.nanny es ForeignKey a User, no a NannyProfile
+      const nannyUserId = nanny.user_id || nannyId;
+      console.log("Creating booking:");
+      console.log("- Nanny User ID:", nannyUserId);
+      console.log("- Start:", startDateTime);
+      console.log("- End:", endDateTime);
+      console.log("- Slot:", slot);
+      
+      await createBooking(nannyUserId, startDateTime, endDateTime);
+      
+      // Recargar disponibilidades para actualizar el estado de reserva
+      try {
+        const data = await getAvailabilities({ nanny: nannyUserId });
+        const normalized = data.map((a) => ({
+          id: a.id,
+          day: a.day,
+          start_time: a.start_time,
+          end_time: a.end_time,
+          is_booked: a.is_booked || false,
+          booked_by_current_user: a.booked_by_current_user || false,
+        }));
+        setAvailabilities(normalized);
+      } catch (reloadErr) {
+        console.error("Error recargando disponibilidades:", reloadErr);
+      }
+      
       setAlert({ visible: true, message: "Reserva creada! ✅", type: "success" });
       // Redirigir a Mis Reservas
       setTimeout(() => navigate("/bookings"), 1000);
     } catch (err) {
       console.error("Error creando reserva:", err);
+      console.error("Error response:", err.response?.data);
+      
+      // Obtener mensaje de error detallado
+      let errorMessage = "No se pudo crear la reserva.";
+      if (err.response?.data) {
+        // Si es un objeto con múltiples errores
+        if (typeof err.response.data === 'object' && !err.response.data.detail) {
+          const errors = Object.entries(err.response.data)
+            .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+            .join('; ');
+          errorMessage = errors || errorMessage;
+        } else {
+          errorMessage = err.response.data.detail || err.response.data.error || err.response.data.message || JSON.stringify(err.response.data);
+        }
+      }
+      
       setAlert({
         visible: true,
-        message: err.response?.data?.detail || err.response?.data?.error || "No se pudo crear la reserva.",
+        message: errorMessage,
         type: "error",
       });
     } finally {
@@ -216,41 +279,56 @@ export default function BookingCreate() {
                   {activeTab === "schedule" && (
                     <div>
                       <h2 className="text-xl font-bold text-gray-800 mb-4">Horarios disponibles</h2>
-                      {availabilities.length === 0 ? (
-                        <p className="text-gray-500 text-center py-8">
-                          No hay horarios disponibles publicados
-                        </p>
-                      ) : (
-                        <div className="space-y-3">
-                          {availabilities.map((slot) => (
-                            <div
-                              key={slot.id}
-                              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                            >
-                              <div>
-                                <p className="font-medium text-gray-800">
-                                  {new Date(slot.day).toLocaleDateString("es-ES", {
-                                    weekday: "long",
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                  })}
-                                </p>
-                                <p className="text-sm text-gray-600 mt-1">
-                                  {slot.start_time} - {slot.end_time}
-                                </p>
-                              </div>
-                              <button
-                                onClick={() => handleSelectSlot(slot)}
-                                disabled={bookingLoading}
-                                className="px-4 py-2 bg-pink-500 text-white rounded-lg text-sm font-medium hover:bg-pink-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      {(() => {
+                        // Filtrar solo disponibilidades futuras
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const futureAvailabilities = availabilities.filter(slot => {
+                          const slotDate = new Date(slot.day);
+                          slotDate.setHours(0, 0, 0, 0);
+                          return slotDate >= today;
+                        });
+
+                        if (futureAvailabilities.length === 0) {
+                          return (
+                            <p className="text-gray-500 text-center py-8">
+                              No hay horarios disponibles publicados
+                            </p>
+                          );
+                        }
+
+                        return (
+                          <div className="space-y-3">
+                            {futureAvailabilities.map((slot) => (
+                              <div
+                                key={slot.id}
+                                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                               >
-                                Reservar
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                                <div>
+                                  <p className="font-medium text-gray-800">
+                                    {new Date(slot.day + 'T00:00:00').toLocaleDateString("es-ES", {
+                                      weekday: "long",
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                    })}
+                                  </p>
+                                  <p className="text-sm text-gray-600 mt-1">
+                                    {slot.start_time.slice(0, 5)} - {slot.end_time.slice(0, 5)}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => handleSelectSlot(slot)}
+                                  disabled={bookingLoading}
+                                  className="px-4 py-2 bg-pink-500 text-white rounded-lg text-sm font-medium hover:bg-pink-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Reservar
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>

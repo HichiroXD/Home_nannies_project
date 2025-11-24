@@ -34,11 +34,27 @@ class BookingListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         booking = serializer.save(parent=self.request.user)
+        
+        # Crear notificación para la niñera
+        # Convertir a hora local de Chile
+        from zoneinfo import ZoneInfo
+        
+        chile_tz = ZoneInfo('America/Santiago')
+        start_time_local = booking.start_time.astimezone(chile_tz)
+        end_time_local = booking.end_time.astimezone(chile_tz)
+        
+        message = (f"Tienes una nueva solicitud de reserva de {self.request.user.username} "
+                  f"para el {start_time_local.strftime('%d/%m/%Y')} de {start_time_local.strftime('%H:%M')} a {end_time_local.strftime('%H:%M')}.")
+        
         Notification.objects.create(
             user=booking.nanny,
-            message=f"Tienes una nueva solicitud de reserva de {self.request.user.username} "
-                    f"para el {booking.start_time} - {booking.end_time}."
+            subject="Nueva solicitud de reserva",
+            message=message,
+            channel='in_app',
+            status='sent',
+            related_booking_id=str(booking.id)
         )
+        
         # Log booking creation
         try:
             logger = logging.getLogger('bookings')
@@ -69,8 +85,8 @@ class AvailabilityListCreateView(generics.ListCreateAPIView):
         # de esa niñera (uso de lectura pública por usuarios autenticados).
         nanny_id = self.request.query_params.get('nanny')
         if nanny_id:
-            return Availability.objects.filter(nanny__id=nanny_id)
-        return Availability.objects.filter(nanny=self.request.user)
+            return Availability.objects.filter(nanny__id=nanny_id).select_related('nanny')
+        return Availability.objects.filter(nanny=self.request.user).select_related('nanny')
 
     def perform_create(self, serializer):
         serializer.save(nanny=self.request.user)
@@ -130,18 +146,34 @@ def _update_booking_status(booking, new_status, request_user, recipient_role):
     # Determinar el destinatario de la notificación
     recipient = booking.parent if recipient_role == 'parent' else booking.nanny
     
-    # Mapeo de mensajes legibles
-    status_messages = {
-        'confirmed': 'confirmada',
-        'rejected': 'rechazada',
-        'cancelled': 'cancelada',
-        'completed': 'completada'
+    # Convertir a hora local de Chile
+    from zoneinfo import ZoneInfo
+    
+    chile_tz = ZoneInfo('America/Santiago')
+    start_time_local = booking.start_time.astimezone(chile_tz)
+    end_time_local = booking.end_time.astimezone(chile_tz)
+    
+    # Mapeo de mensajes y asuntos
+    status_info = {
+        'confirmed': {'action': 'confirmada', 'subject': 'Reserva Confirmada'},
+        'rejected': {'action': 'rechazada', 'subject': 'Reserva Rechazada'},
+        'cancelled': {'action': 'cancelada', 'subject': 'Reserva Cancelada'},
+        'completed': {'action': 'completada', 'subject': 'Reserva Completada'}
     }
     
-    message = (f"Tu reserva con {request_user.username} ha sido {status_messages.get(new_status, new_status)} "
-               f"para el {booking.start_time.strftime('%d/%m/%Y %H:%M')} - {booking.end_time.strftime('%d/%m/%Y %H:%M')}.")
+    info = status_info.get(new_status, {'action': new_status, 'subject': 'Actualización de Reserva'})
+    message = (f"Tu reserva con {request_user.username} ha sido {info['action']} "
+               f"para el {start_time_local.strftime('%d/%m/%Y')} de {start_time_local.strftime('%H:%M')} a {end_time_local.strftime('%H:%M')}.")
     
-    Notification.objects.create(user=recipient, message=message)
+    Notification.objects.create(
+        user=recipient, 
+        subject=info['subject'],
+        message=message,
+        channel='in_app',
+        status='sent',
+        related_booking_id=str(booking.id)
+    )
+    
     try:
         logger = logging.getLogger('bookings')
         logger.info(f"booking_status_updated id={booking.id} status={new_status} by={request_user.username}")

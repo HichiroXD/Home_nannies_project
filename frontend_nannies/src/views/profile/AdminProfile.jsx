@@ -196,6 +196,12 @@ export default function AdminProfile() {
             Seguridad
           </h2>
           <div className="space-y-3">
+            <button 
+              onClick={() => navigate('/notifications')}
+              className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+            >
+              Ver Notificaciones
+            </button>
             <button className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg hover:bg-gray-100 transition">
               Cambiar Contraseña
             </button>

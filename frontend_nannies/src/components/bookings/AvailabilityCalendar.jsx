@@ -11,12 +11,21 @@ import 'react-calendar/dist/Calendar.css';
 export default function AvailabilityCalendar({ availabilities = [], onSelect }) {
   const [date, setDate] = useState(null);
 
-  // Agrupar availabilities por día
+  // Filtrar solo disponibilidades futuras y agrupar por día
   const grouped = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     const g = {};
     availabilities.forEach(a => {
-      g[a.day] = g[a.day] || [];
-      g[a.day].push(a);
+      // Verificar que sea una fecha futura
+      const slotDate = new Date(a.day);
+      slotDate.setHours(0, 0, 0, 0);
+      
+      if (slotDate >= today) {
+        g[a.day] = g[a.day] || [];
+        g[a.day].push(a);
+      }
     });
     return g;
   }, [availabilities]);
@@ -43,39 +52,62 @@ export default function AvailabilityCalendar({ availabilities = [], onSelect }) 
 
   const handleDayClick = (d) => {
     const dayKey = formatLocalDate(d);
-    setDate(dayKey);
+    setDate(d); // Guardamos el objeto Date directamente
   };
 
-  const slotsForDay = date ? (grouped[date] || []) : [];
+  // Convertir el objeto Date a string para buscar slots
+  const dateKey = date ? formatLocalDate(date) : null;
+  const slotsForDay = dateKey ? (grouped[dateKey] || []) : [];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
         <Calendar
           onClickDay={handleDayClick}
-          value={date ? new Date(date) : null}
+          value={date}
           tileContent={tileContent}
         />
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-3">{date ? new Date(date).toLocaleDateString('es-ES', { weekday: 'long', month: 'short', day: 'numeric' }) : 'Selecciona un día'}</h3>
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">{date ? date.toLocaleDateString('es-ES', { weekday: 'long', month: 'short', day: 'numeric' }) : 'Selecciona un día'}</h3>
         {slotsForDay.length === 0 ? (
           <p className="text-gray-500">No hay slots disponibles para este día.</p>
         ) : (
           <div className="flex flex-col gap-2">
-            {slotsForDay.map(slot => (
-              <button key={slot.id} onClick={() => onSelect(slot)}
-                className="text-left px-4 py-2 bg-white border rounded-md hover:bg-pink-50 transition-colors">
-                <div className="flex justify-between">
-                  <div>
-                    <div className="font-medium text-gray-800">{slot.start_time.slice(0,5)} - {slot.end_time.slice(0,5)}</div>
-                    <div className="text-xs text-gray-500">Duración: {Math.round((parseTime(slot.end_time)-parseTime(slot.start_time))/60)} min</div>
+            {slotsForDay.map(slot => {
+              const isBooked = slot.is_booked;
+              const bookedByCurrentUser = slot.booked_by_current_user;
+              
+              return (
+                <button 
+                  key={slot.id} 
+                  onClick={() => !isBooked && onSelect(slot)}
+                  disabled={isBooked}
+                  className={`text-left px-4 py-2 border rounded-md transition-colors ${
+                    isBooked 
+                      ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-60' 
+                      : 'bg-white hover:bg-pink-50'
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-medium text-gray-800">{slot.start_time.slice(0,5)} - {slot.end_time.slice(0,5)}</div>
+                      <div className="text-xs text-gray-500">Duración: {Math.round((parseTime(slot.end_time)-parseTime(slot.start_time))/60)} min</div>
+                    </div>
+                    <div>
+                      {isBooked ? (
+                        <span className={`text-sm font-medium ${bookedByCurrentUser ? 'text-blue-600' : 'text-gray-500'}`}>
+                          {bookedByCurrentUser ? 'Ya reservaste' : 'Reservado'}
+                        </span>
+                      ) : (
+                        <span className="text-pink-600 font-semibold">Reservar</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-pink-600 font-semibold">Reservar</div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

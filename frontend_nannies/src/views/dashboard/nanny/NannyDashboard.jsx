@@ -23,12 +23,27 @@ export const NannyDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [showAddAvailability, setShowAddAvailability] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
+  const [availabilities, setAvailabilities] = useState([]);
   const [loading, setLoading] = useState(false);
   const { showAlert, alert, setAlert } = useAlert();
 
   const handleAddAvailability = () => {
     navigate('/availability/');
   };
+
+  // Obtener disponibilidades
+  useEffect(() => {
+    const fetchAvailabilities = async () => {
+      try {
+        const response = await API.get('/bookings/availabilities/');
+        setAvailabilities(response.data || []);
+      } catch (err) {
+        console.error('Error fetching availabilities:', err);
+      }
+    };
+    
+    fetchAvailabilities();
+  }, []);
 
   // Obtener datos del dashboard
   useEffect(() => {
@@ -178,17 +193,88 @@ export const NannyDashboard = () => {
 
             <div className="p-6">
               {activeTab === 0 && (
-                <div className="text-center py-8">
-                  <Calendar className="mx-auto text-gray-400 mb-4" size={48} />
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Calendario de Disponibilidad</h3>
-                  <p className="text-gray-600 mb-4">No tienes horarios de disponibilidad configurados</p>
-                  <button
-                    onClick={handleAddAvailability}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-                  >
-                    <Plus size={18} />
-                    AGREGAR HORARIO
-                  </button>
+                <div>
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800">Calendario de Disponibilidad</h3>
+                    <button
+                      onClick={handleAddAvailability}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                    >
+                      <Plus size={18} />
+                      Agregar Disponibilidad
+                    </button>
+                  </div>
+                  
+                  {availabilities.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Calendar className="mx-auto text-gray-400 mb-4" size={48} />
+                      <p className="text-gray-600 mb-4">No tienes horarios de disponibilidad configurados</p>
+                      <button
+                        onClick={handleAddAvailability}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                      >
+                        <Plus size={18} />
+                        AGREGAR HORARIO
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-600 mb-4">
+                        Tienes {availabilities.length} horario{availabilities.length !== 1 ? 's' : ''} disponible{availabilities.length !== 1 ? 's' : ''} configurado{availabilities.length !== 1 ? 's' : ''}
+                      </p>
+                      <div className="grid gap-3">
+                        {availabilities
+                          .filter(slot => {
+                            // Mostrar solo disponibilidades futuras
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const slotDate = new Date(slot.day);
+                            slotDate.setHours(0, 0, 0, 0);
+                            return slotDate >= today;
+                          })
+                          .slice(0, 5)
+                          .map((slot) => (
+                            <div
+                              key={slot.id}
+                              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200"
+                            >
+                              <div>
+                                <p className="font-medium text-gray-800">
+                                  {new Date(slot.day + 'T00:00:00').toLocaleDateString("es-ES", {
+                                    weekday: "long",
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  })}
+                                </p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {slot.start_time.slice(0, 5)} - {slot.end_time.slice(0, 5)}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                  Disponible
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                      {availabilities.filter(slot => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const slotDate = new Date(slot.day);
+                        slotDate.setHours(0, 0, 0, 0);
+                        return slotDate >= today;
+                      }).length > 5 && (
+                        <button
+                          onClick={handleAddAvailability}
+                          className="w-full mt-3 py-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
+                        >
+                          Ver todos los horarios →
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
               {activeTab === 1 && (

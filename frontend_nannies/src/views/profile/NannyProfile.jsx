@@ -228,6 +228,28 @@ export default function NannyProfile() {
             </div>
           </ProfileSection>
         )}
+
+        {/* Acciones de Cuenta */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Acciones de Cuenta</h2>
+          <div className="space-y-3">
+            <button 
+              onClick={() => navigate('/notifications')}
+              className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+            >
+              Ver Notificaciones
+            </button>
+            <button className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg hover:bg-gray-100 transition">
+              Cambiar Contraseña
+            </button>
+            <button className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg hover:bg-gray-100 transition">
+              Preferencias de Notificación
+            </button>
+            <button className="w-full px-4 py-2 text-left border border-red-300 rounded-lg hover:bg-red-50 transition text-red-600">
+              Eliminar Cuenta
+            </button>
+          </div>
+        </div>
         </div>
       </PageContainer>
     </MainLayout>

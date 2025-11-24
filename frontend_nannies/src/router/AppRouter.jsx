@@ -43,6 +43,9 @@ const AvailabilityManagement = lazy(() => import("@views/AvailabilityManagement"
 const NannyRequests = lazy(() => import("@views/NannyRequests"));
 const NannyBookingHistory = lazy(() => import("@views/NannyBookingHistory"));
 
+// === LAZY LOADING: Notificaciones ===
+const Notifications = lazy(() => import("@views/Notifications"));
+
 export default function AppRouter() {
   return (
     <BrowserRouter>
@@ -103,6 +106,9 @@ export default function AppRouter() {
 
         {/* Historial de reservas completadas */}
         <Route path="/history/" element={<NannyBookingHistory />} />
+
+        {/* ==================== NOTIFICACIONES ==================== */}
+        <Route path="/notifications/" element={<Notifications />} />
 
         {/* ==================== 404 ==================== */}
         <Route path="*" element={<h1>404 Not Found</h1>} />
