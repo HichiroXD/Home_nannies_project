@@ -48,3 +48,28 @@ export const verifyUser = async (uid, token) => {
   const response = await API.get(`/users/verify/${uid}/${token}/`);
   return response.data;
 };
+
+// Solicitar recuperación de contraseña
+export const requestPasswordReset = async (email) => {
+  try {
+    const response = await API.post("/users/password-reset/", { email });
+    return response.data;
+  } catch (error) {
+    console.error("Error en requestPasswordReset:", error.response?.data || error.message);
+    throw error.response?.data || { detail: "Error al solicitar recuperación de contraseña" };
+  }
+};
+
+// Restablecer contraseña
+export const resetPassword = async (uid, token, password, password2) => {
+  try {
+    const response = await API.post(`/users/password-reset/${uid}/${token}/`, {
+      password,
+      password2,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error en resetPassword:", error.response?.data || error.message);
+    throw error.response?.data || { detail: "Error al restablecer contraseña" };
+  }
+};

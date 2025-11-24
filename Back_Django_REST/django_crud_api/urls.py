@@ -29,6 +29,9 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
+    # Core - Phase 1: Validación Institucional
+    path('api/core/', include('core.urls')),
+
     # Usuarios
     path('api/users/', include('users.urls')),
 
@@ -43,10 +46,25 @@ urlpatterns = [
     # Nannies
     path('api/nannies/', include('nannies.urls')),
 
+    # Parents
+    path('api/parents/', include('parents.urls')),
+
+    # Dashboards
+    path('api/dashboard/', include('django_crud_api.dashboard_urls')),
+
     # Favoritos
     path('api/favorites/', include('favorites.urls')),
 
     # Reseñas
     path('api/reviews/', include('reviews.urls')),
+
+    # Notificaciones - Phase 3
+    path('api/', include('notifications.urls')),
+
+    # Validación Académica - Phase 3
+    path('api/academic/', include('academic.urls')),
+
+    # Reportes y Análisis - Phase 3
+    path('api/reports/', include('reports.urls')),
 
 ]

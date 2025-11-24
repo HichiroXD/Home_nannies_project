@@ -1,0 +1,235 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { MainLayout, PageHeader, Loader, AlertToast, PageContainer } from "@components/layout";
+import { ProfileSection, FormInput, FormTextarea } from "@components/profile";
+import { Star, MapPin, Briefcase, Heart } from "lucide-react";
+import { getNannyProfile, updateNannyProfile } from "@api/profileApi";
+
+export default function NannyProfile() {
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    experience_years: 0,
+    certifications: "",
+    description: "",
+    hourly_rate: "",
+    age: "",
+    rating_avg: 0,
+    total_bookings: 0,
+    acceptance_rate: null,
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [alert, setAlert] = useState(null);
+
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+    const roleNormalized = role ? String(role).toLowerCase() : null;
+    
+    if (!roleNormalized || !(roleNormalized.includes("nanny") || roleNormalized.includes("niñ"))) {
+      navigate("/dashboard/");
+      return;
+    }
+
+    loadProfile();
+  }, [navigate]);
+
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
+      const data = await getNannyProfile();
+      setProfile(data);
+    } catch (error) {
+      setAlert({ type: "error", message: "Error al cargar el perfil" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setProfile((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await updateNannyProfile(profile);
+      setAlert({ type: "success", message: "Perfil actualizado correctamente" });
+      setIsEditing(false);
+      await loadProfile(); // Recargar datos actualizados
+    } catch (error) {
+      setAlert({ type: "error", message: error.detail || "Error al guardar el perfil" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <Loader />;
+
+  return (
+    <MainLayout>
+      <PageContainer>
+        <div className="space-y-6">
+          <PageHeader
+            title="Mi Perfil de Niñera"
+            description="Completa tu información para que los padres te encuentren"
+          />
+
+        {alert && (
+          <AlertToast
+            isVisible={true}
+            type={alert.type}
+            message={alert.message}
+            onClose={() => setAlert(null)}
+          />
+        )}
+
+        {/* Información Personal */}
+        <ProfileSection
+          title="Información Personal"
+          isEditing={isEditing}
+          onEdit={() => setIsEditing(!isEditing)}
+          onSave={handleSave}
+          isSaving={saving}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormInput
+              label="Nombre"
+              name="first_name"
+              value={profile.first_name || ""}
+              onChange={handleChange}
+              disabled={!isEditing}
+            />
+            <FormInput
+              label="Apellidos"
+              name="last_name"
+              value={profile.last_name || ""}
+              onChange={handleChange}
+              disabled={!isEditing}
+            />
+            <FormInput
+              label="Email"
+              name="email"
+              type="email"
+              value={profile.email || ""}
+              onChange={handleChange}
+              disabled={true}
+            />
+            <FormInput
+              label="Edad"
+              name="age"
+              type="number"
+              value={profile.age || ""}
+              onChange={handleChange}
+              disabled={!isEditing}
+              placeholder="Ej: 25"
+            />
+          </div>
+        </ProfileSection>
+
+        {/* Experiencia Profesional */}
+        <ProfileSection
+          title="Experiencia Profesional"
+          isEditing={isEditing}
+          onEdit={() => setIsEditing(!isEditing)}
+          onSave={handleSave}
+          isSaving={saving}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormInput
+              label="Años de Experiencia"
+              name="experience_years"
+              type="number"
+              value={profile.experience_years || ""}
+              onChange={handleChange}
+              disabled={!isEditing}
+              placeholder="Ej: 5"
+            />
+            <FormInput
+              label="Tarifa por Hora (€)"
+              name="hourly_rate"
+              type="number"
+              step="0.01"
+              value={profile.hourly_rate || ""}
+              onChange={handleChange}
+              disabled={!isEditing}
+              placeholder="Ej: 15.00"
+            />
+          </div>
+          <div className="mt-4">
+            <FormInput
+              label="Certificaciones"
+              name="certifications"
+              value={profile.certifications || ""}
+              onChange={handleChange}
+              disabled={!isEditing}
+              placeholder="Primeros auxilios, RCP infantil, etc."
+            />
+          </div>
+        </ProfileSection>
+
+        {/* Descripción */}
+        <ProfileSection
+          title="Sobre Mí"
+          isEditing={isEditing}
+          onEdit={() => setIsEditing(!isEditing)}
+          onSave={handleSave}
+          isSaving={saving}
+        >
+          <FormTextarea
+            label="Descripción"
+            name="description"
+            value={profile.description || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            placeholder="Cuéntanos sobre tu experiencia y por qué te apasiona cuidar niños..."
+            rows={5}
+          />
+        </ProfileSection>
+
+        {/* Estadísticas (Solo lectura) */}
+        { !isEditing && (
+          <ProfileSection
+            title="Estadísticas"
+            isEditing={false}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-center gap-2 text-gray-600 mb-1">
+                  <Star className="w-4 h-4" />
+                  <span className="text-sm">Calificación</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">
+                  {profile.rating_avg > 0 ? profile.rating_avg.toFixed(1) : "Sin calificaciones"}
+                </p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-center gap-2 text-gray-600 mb-1">
+                  <Briefcase className="w-4 h-4" />
+                  <span className="text-sm">Reservas Completadas</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">
+                  {profile.total_bookings || 0}
+                </p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-center gap-2 text-gray-600 mb-1">
+                  <Heart className="w-4 h-4" />
+                  <span className="text-sm">Tasa de Aceptación</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">
+                  {profile.acceptance_rate !== null ? `${profile.acceptance_rate}%` : "N/A"}
+                </p>
+              </div>
+            </div>
+          </ProfileSection>
+        )}
+        </div>
+      </PageContainer>
+    </MainLayout>
+  );
+}

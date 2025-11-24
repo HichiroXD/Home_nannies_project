@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Booking, Availability, Notification
+from .models import Booking, Availability
+from notifications.models import Notification
 # Favorite model/serializer now lives in the `favorites` app. Import serializer from there.
 from favorites.serializer import FavoriteSerializer
 from django.utils import timezone
@@ -85,6 +86,11 @@ class AvailabilitySerializer(serializers.ModelSerializer):
             start_time__lt=data["end_time"],
             end_time__gt=data["start_time"]
         )
+        
+        # Excluir la instancia actual si estamos actualizando
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        
         if qs.exists():
             raise serializers.ValidationError("Ya existe disponibilidad en este rango.")
         return data

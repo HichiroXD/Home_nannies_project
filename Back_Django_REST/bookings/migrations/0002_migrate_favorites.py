@@ -6,15 +6,25 @@ from django.db import migrations, connection
 
 def forwards(apps, schema_editor):
     """Copy favorites from bookings_favorite to favorites_favorite using raw SQL."""
+    db_engine = connection.settings_dict.get('ENGINE', '')
+    
     with connection.cursor() as cursor:
-        # Check if bookings_favorite table exists
-        cursor.execute("""
-            SELECT EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_name = 'bookings_favorite'
-            );
-        """)
-        table_exists = cursor.fetchone()[0]
+        # Check if bookings_favorite table exists (compatible with both PostgreSQL and SQLite)
+        if 'postgresql' in db_engine:
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'bookings_favorite'
+                );
+            """)
+            table_exists = cursor.fetchone()[0]
+        else:
+            # SQLite
+            cursor.execute("""
+                SELECT name FROM sqlite_master 
+                WHERE type='table' AND name='bookings_favorite'
+            """)
+            table_exists = cursor.fetchone() is not None
         
         if not table_exists:
             # No legacy data, skip
@@ -22,21 +32,38 @@ def forwards(apps, schema_editor):
         
         # Copy data from bookings_favorite to favorites_favorite
         # Map bookings.Favorite.nanny (User) -> favorites.Favorite.nanny (NannyProfile)
-        cursor.execute("""
-            INSERT INTO favorites_favorite (parent_id, nanny_id, created_at)
-            SELECT 
-                bf.parent_id,
-                np.id,
-                bf.created_at
-            FROM bookings_favorite bf
-            INNER JOIN nannies_nannyprofile np ON np.user_id = bf.nanny_id
-            WHERE NOT EXISTS (
-                SELECT 1 FROM favorites_favorite ff
-                WHERE ff.parent_id = bf.parent_id 
-                AND ff.nanny_id = np.id
-            )
-            ON CONFLICT DO NOTHING;
-        """)
+        if 'postgresql' in db_engine:
+            cursor.execute("""
+                INSERT INTO favorites_favorite (parent_id, nanny_id, created_at)
+                SELECT 
+                    bf.parent_id,
+                    np.id,
+                    bf.created_at
+                FROM bookings_favorite bf
+                INNER JOIN nannies_nannyprofile np ON np.user_id = bf.nanny_id
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM favorites_favorite ff
+                    WHERE ff.parent_id = bf.parent_id 
+                    AND ff.nanny_id = np.id
+                )
+                ON CONFLICT DO NOTHING;
+            """)
+        else:
+            # SQLite version without ON CONFLICT
+            cursor.execute("""
+                INSERT INTO favorites_favorite (parent_id, nanny_id, created_at)
+                SELECT 
+                    bf.parent_id,
+                    np.id,
+                    bf.created_at
+                FROM bookings_favorite bf
+                INNER JOIN nannies_nannyprofile np ON np.user_id = bf.nanny_id
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM favorites_favorite ff
+                    WHERE ff.parent_id = bf.parent_id 
+                    AND ff.nanny_id = np.id
+                )
+            """)
 
 
 def backwards(apps, schema_editor):

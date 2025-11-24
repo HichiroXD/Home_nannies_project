@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getNannies } from "@api/nannyApi";
 import { addFavorite, deleteFavorite, getFavorites } from "@api/favoriteApi";
 import { NannyFilters, NannyCard } from "@components/nanny";
-import { MainLayout, AlertToast } from "@components/layout";
+import { MainLayout } from "@components/layout";
+import { AlertToast, useAlert } from "@components/common";
 import { Loader } from "@components/layout";
 
 export default function Catalog() {
@@ -13,7 +14,7 @@ export default function Catalog() {
   // store Favorite objects: { id, nanny, created_at }
   const [favorites, setFavorites] = useState([]);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
-  const [alert, setAlert] = useState({ visible: false, message: "", type: "info" });
+  const { showAlert, alert, setAlert } = useAlert();
   const [filters, setFilters] = useState({
     search: "",
     max_rate: "",
@@ -21,31 +22,29 @@ export default function Catalog() {
     verified: false,
   });
   const navigate = useNavigate();
+  const userRole = localStorage.getItem("role");
 
   // Cargar niñeras
-  const fetchNannies = async () => {
+  const fetchNannies = useCallback(async (appliedFilters = filters) => {
     try {
+      setLoading(true);
       const params = {};
-      if (filters.search) params.search = filters.search;
-      if (filters.max_rate) params.max_rate = filters.max_rate;
-      if (filters.min_experience) params.min_experience = filters.min_experience;
-      if (filters.verified) params.verified = true;
+      if (appliedFilters.search) params.search = appliedFilters.search;
+      if (appliedFilters.max_rate) params.max_rate = appliedFilters.max_rate;
+      if (appliedFilters.min_experience) params.min_experience = appliedFilters.min_experience;
+      if (appliedFilters.verified) params.verified = true;
 
       const data = await getNannies(params);
       setNannies(data);
     } catch (err) {
-      setAlert({
-        visible: true,
-        message: "No se pudieron cargar las niñeras.",
-        type: "error",
-      });
+      showAlert("No se pudieron cargar las niñeras.", "error");
     } finally {
       setLoading(false);
     }
-  };
+  }, [showAlert]);
 
   // Cargar favoritos del usuario (guardamos objetos completos)
-  const fetchFavorites = async () => {
+  const fetchFavorites = useCallback(async () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) return setFavorites([]);
@@ -61,35 +60,30 @@ export default function Catalog() {
       // if 401 the api interceptor will redirect to login; keep favorites empty
       setFavorites([]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchNannies();
     fetchFavorites();
-  }, [filters]);
+  }, [fetchFavorites]);
 
-  const handleFilterChange = (e) => {
+  const handleFilterChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
-    setFilters({
-      ...filters,
+    setFilters(prev => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
-    });
-  };
+    }));
+  }, []);
 
-  const handleSearch = (e) => {
+  const handleSearch = useCallback((e) => {
     e.preventDefault();
-    setLoading(true);
-    fetchNannies();
-  };
+    fetchNannies(filters);
+  }, [filters, fetchNannies]);
 
-  const handleFavorite = async (nannyId) => {
+  const handleFavorite = useCallback(async (nannyId) => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
-      setAlert({
-        visible: true,
-        message: "Debes iniciar sesión para usar favoritos.",
-        type: "warning",
-      });
+      showAlert("Debes iniciar sesión para usar favoritos.", "warning");
       navigate("/login");
       return;
     }
@@ -102,62 +96,78 @@ export default function Catalog() {
         // eliminar usando el id del Favorite
         await deleteFavorite(existing.id);
         setFavorites(favorites.filter((f) => f.nanny?.id !== nannyId));
-        setAlert({ visible: true, message: "Niñera eliminada de favoritos.", type: "info" });
+        showAlert("Niñera eliminada de favoritos.", "info");
       } else {
         // crear favorito; backend devuelve el objeto Favorite
         const created = await addFavorite(nannyId);
         if (created) setFavorites([...favorites, created]);
-        setAlert({ visible: true, message: "¡Niñera añadida a favoritos! ❤️", type: "success" });
+        showAlert("¡Niñera añadida a favoritos! ❤️", "success");
       }
     } catch (err) {
       console.error("Error con favoritos:", err, err.response?.data);
       const msg = err.response?.data?.detail || err.response?.data || err.message || "No se pudo procesar la acción.";
-      setAlert({ visible: true, message: msg, type: "error" });
+      showAlert(msg, "error");
     } finally {
       setFavoriteLoading(false);
     }
-  };
+  }, [favorites, navigate, showAlert]);
 
-  const handleBookingClick = (nannyId) => {
+  const handleBookingClick = useCallback((nannyId) => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
       localStorage.setItem("redirect_after_login", `/catalog?nanny=${nannyId}`);
       navigate("/login", { state: { redirectTo: `/catalog?nanny=${nannyId}` } });
       return;
     }
+
+    // Verificar que el usuario no sea una niñera
+    if (userRole === "nanny") {
+      showAlert("Las niñeras no pueden contactar a otras niñeras", "error");
+      return;
+    }
+
     navigate(`/bookings/create/${nannyId}`);
-  };
+  }, [navigate, userRole, showAlert]);
+
+  // Memoizar nannies favoriteadas para evitar recalculos
+  const nannyFavoriteStatusMap = useMemo(() => {
+    const map = new Map();
+    favorites.forEach(fav => {
+      if (fav.nanny?.id) {
+        map.set(fav.nanny.id, true);
+      }
+    });
+    return map;
+  }, [favorites]);
 
   return (
     <MainLayout>
-      <AlertToast
-        message={alert.message}
-        type={alert.type}
-        isVisible={alert.visible}
-        onClose={() => setAlert({ ...alert, visible: false })}
-      />
+      <AlertToast {...alert} onClose={() => setAlert({})} />
 
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50 py-10 px-6">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-center bg-gradient-to-r from-pink-600 to-rose-500 bg-clip-text text-transparent mb-4">
-            Catálogo de Niñeras
-          </h1>
-          <p className="text-center text-gray-600 mb-8 text-lg">
-            Encuentra la niñera perfecta para tu familia
-          </p>
+      <div className="min-h-screen bg-pink-100 py-8 px-4">
+        <div className="container mx-auto max-w-7xl">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-pink-200 to-pink-300 rounded-2xl p-6 mb-6 shadow-sm">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Catálogo
+            </h1>
+            <p className="text-gray-700">
+              Encuentra a la niñera perfecta para tu infante
+            </p>
+          </div>
 
-        <NannyFilters
-          filters={filters}
-          onChange={handleFilterChange}
-          onSubmit={handleSearch}
-        />
+          <NannyFilters
+            filters={filters}
+            onChange={handleFilterChange}
+            onSubmit={handleSearch}
+          />
 
-        {loading ? (
-          <Loader />
-        ) : error ? (
-          <p className="text-center mt-10 text-red-600">{error}</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          {loading ? (
+            <Loader />
+          ) : error ? (
+            <p className="text-center mt-10 text-red-600">{error}</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
             {nannies.length > 0 ? (
               nannies.map((nanny) => (
                 <NannyCard
@@ -165,7 +175,7 @@ export default function Catalog() {
                   nanny={nanny}
                   onFavorite={handleFavorite}
                   onBook={handleBookingClick}
-                  isFavorited={favorites.includes(nanny.id)}
+                  isFavorited={nannyFavoriteStatusMap.has(nanny.id)}
                   isLoading={favoriteLoading}
                 />
               ))
@@ -174,8 +184,23 @@ export default function Catalog() {
                 No se encontraron niñeras con los filtros seleccionados.
               </p>
             )}
-          </div>
-        )}
+            </div>
+          )}
+
+          {/* Botón cargar más */}
+          {!loading && nannies.length > 0 && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={() => {
+                  // Aquí se puede implementar paginación en el futuro
+                  showAlert("Mostrando todas las niñeras disponibles", "info");
+                }}
+                className="px-8 py-3 bg-white text-pink-600 font-medium rounded-lg border-2 border-pink-300 hover:bg-pink-50 transition-colors"
+              >
+                Cargar más personas
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </MainLayout>

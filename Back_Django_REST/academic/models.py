@@ -28,9 +28,9 @@ class AcademicProvider(models.Model):
     description = models.TextField(blank=True)
     
     # Configuración de conexión
-    api_endpoint = models.URLField(blank=True, null=True, help_text='URL del API (si aplica)')
-    api_key = models.CharField(max_length=255, blank=True, null=True)
-    api_secret = models.CharField(max_length=255, blank=True, null=True)
+    api_endpoint = models.URLField(blank=True, help_text='URL del API (si aplica)')
+    api_key = models.CharField(max_length=255, blank=True)
+    api_secret = models.CharField(max_length=255, blank=True)
     timeout = models.IntegerField(default=10, help_text='Timeout en segundos')
     
     # Estado
@@ -49,7 +49,7 @@ class AcademicProvider(models.Model):
         ),
         default='pending'
     )
-    last_error = models.TextField(blank=True, null=True)
+    last_error = models.TextField(blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -103,7 +103,7 @@ class AcademicStudent(models.Model):
     email = models.EmailField(blank=True)
     
     program_name = models.CharField(max_length=255, blank=True)
-    program_code = models.CharField(max_length=50, blank=True, null=True)
+    program_code = models.CharField(max_length=50, blank=True)
     career_name = models.CharField(max_length=255, blank=True)
     
     enrollment_status = models.CharField(
@@ -114,19 +114,18 @@ class AcademicStudent(models.Model):
     enrollment_date = models.DateField(null=True, blank=True)
     graduation_year = models.IntegerField(null=True, blank=True)
     
-    current_semester = models.CharField(max_length=10, blank=True, null=True)
+    current_semester = models.CharField(max_length=10, blank=True)
     current_year = models.IntegerField(null=True, blank=True)
     
     # Validación
     is_verified = models.BooleanField(default=False)
     verification_date = models.DateTimeField(null=True, blank=True)
-    verification_method = models.CharField(max_length=50, blank=True, null=True)
+    verification_method = models.CharField(max_length=50, blank=True)
     
     # Metadata
     raw_data = models.JSONField(
         default=dict,
         blank=True,
-        null=True,
         help_text='Datos crudos del proveedor'
     )
     
@@ -171,7 +170,7 @@ class AcademicProgram(models.Model):
     program_code = models.CharField(max_length=50)
     program_name = models.CharField(max_length=255)
     career_name = models.CharField(max_length=255, blank=True)
-    faculty = models.CharField(max_length=255, blank=True, null=True)
+    faculty = models.CharField(max_length=255, blank=True)
     
     # Tipo de programa
     degree_type = models.CharField(
@@ -225,7 +224,7 @@ class AcademicVerification(models.Model):
     rut = models.CharField(max_length=12)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    program_name = models.CharField(max_length=255, blank=True, null=True)
+    program_name = models.CharField(max_length=255, blank=True)
     
     # Resultados
     status = models.CharField(
@@ -249,14 +248,14 @@ class AcademicVerification(models.Model):
     )
     
     # Datos verificados
-    verified_data = models.JSONField(default=dict, blank=True, null=True)
-    mismatch_details = models.JSONField(default=dict, blank=True, null=True)
-    error_message = models.TextField(blank=True, null=True)
+    verified_data = models.JSONField(default=dict, blank=True)
+    mismatch_details = models.JSONField(default=dict, blank=True)
+    error_message = models.TextField(blank=True)
     
     # Auditoría
-    attempted_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    attempted_at = models.DateTimeField(auto_now_add=True)
     verified_at = models.DateTimeField(null=True, blank=True)
-    verification_method = models.CharField(max_length=50, blank=True, null=True)
+    verification_method = models.CharField(max_length=50, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

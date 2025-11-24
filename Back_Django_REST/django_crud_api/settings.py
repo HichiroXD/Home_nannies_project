@@ -19,8 +19,8 @@ load_dotenv()
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # TODO > Cambiar la clave secreta a un .env por seguridad
-SECRET_KEY = os.getenv("SECRET_KEY")
-DEBUG=True
+SECRET_KEY = os.getenv("SECRET_KEY", "b)+h)pgkb7s^cg%j%6(r!mhnlog%#z94uti)!hqfz1mcnz#z^z")
+DEBUG = os.getenv("DEBUG", "False") == "True"  # False por defecto para optimizar startup
 
 ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
 
@@ -43,11 +43,16 @@ INSTALLED_APPS = [
     'drf_spectacular',
 
     # Apps
+    'core',  # Phase 1: Validación Institucional
     'users',
     'bookings',
     'nannies',
+    'parents',
     'favorites',
     'reviews',
+    'notifications',  # Phase 3: Notificaciones automáticas
+    'academic',  # Phase 3: Validación académica
+    'reports',  # Phase 3: Reportes y análisis
 ]
 
 # Configuración REST Framework
@@ -97,16 +102,25 @@ WSGI_APPLICATION = 'django_crud_api.wsgi.application'
 
 # settings.py en Django 
 # TODO > Cambiar las credenciales a un .env por seguridad
+# Usar SQLite para desarrollo, PostgreSQL para producción
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv("DB_NAME"),
-        'USER': os.getenv("DB_USER"),
-        'PASSWORD': os.getenv("DB_PASSWORD"),
-        'HOST': os.getenv("DB_HOST", "localhost"),
-        'PORT': os.getenv("DB_PORT", "5432"),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Configuración PostgreSQL (comentada para desarrollo)
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv("DB_NAME"),
+#         'USER': os.getenv("DB_USER"),
+#         'PASSWORD': os.getenv("DB_PASSWORD"),
+#         'HOST': os.getenv("DB_HOST", "localhost"),
+#         'PORT': os.getenv("DB_PORT", "5432"),
+#     }
+# }
 
 
 # Password validation
@@ -118,13 +132,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
     },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    # Remover CommonPasswordValidator en desarrollo por rendimiento
+    # Mantener solo en producción si es necesario
 ]
 
 
@@ -172,12 +185,10 @@ CORS_ALLOW_CREDENTIALS = True
 # Configuración de usuario personalizado
 AUTH_USER_MODEL = 'users.User'
 
-# Configuración de algoritmos de hash para contraseñas
+# Configuración de algoritmos de hash para contraseñas - Optimizado para startup
 PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.Argon2PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
-    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.Argon2PasswordHasher',    # Primario - más seguro
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',    # Fallback para compatibilidad
 ]
 
 # Configuración de Simple JWT
@@ -215,37 +226,75 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '[{levelname}] {asctime} {name} {message}',
+            'format': '[{levelname}] {asctime} {name} {module}.{funcName}:{lineno} {message}',
             'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
         },
         'simple': {
             'format': '[{levelname}] {message}',
             'style': '{',
         },
     },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
+            'filters': ['require_debug_true'],
         },
         'file': {
             'class': 'logging.FileHandler',
             'filename': str(LOGS_DIR / 'home_nannies.log'),
             'formatter': 'verbose',
+            'level': 'DEBUG',
+        },
+        'bookings_file': {
+            'class': 'logging.FileHandler',
+            'filename': str(LOGS_DIR / 'bookings.log'),
+            'formatter': 'verbose',
+        },
+        'users_file': {
+            'class': 'logging.FileHandler',
+            'filename': str(LOGS_DIR / 'users.log'),
+            'formatter': 'verbose',
+        },
+        'errors_file': {
+            'class': 'logging.FileHandler',
+            'filename': str(LOGS_DIR / 'errors.log'),
+            'formatter': 'verbose',
+            'level': 'WARNING',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console', 'file', 'errors_file'],
             'level': 'INFO',
+            'propagate': False,
         },
         'bookings': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console', 'bookings_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'users': {
+            'handlers': ['console', 'users_file'],
             'level': 'INFO',
             'propagate': False,
         },
         'favorites': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console', 'bookings_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'notifications': {
+            'handlers': ['console', 'bookings_file'],
             'level': 'INFO',
             'propagate': False,
         },

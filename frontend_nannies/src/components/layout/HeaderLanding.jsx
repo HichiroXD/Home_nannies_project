@@ -1,18 +1,16 @@
-import { useNavigate } from "react-router-dom";
-import { NotificationCenter } from "@components/layout";
+import { useNavigate, useLocation } from "react-router-dom";
+import { NotificationCenter, UserProfileMenu } from "@components/layout";
 
 export default function HeaderLanding({ isLoggedIn, username }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const rawRole = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
   const role = rawRole ? String(rawRole).toLowerCase() : null;
-
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('username');
-    localStorage.removeItem('role');
-    navigate('/');
-  };
+  
+  // Detectar si estamos en páginas de autenticación
+  const isAuthPage = ['/login/', '/register/', '/forgot-password/', '/reset-password/'].some(
+    path => location.pathname.startsWith(path.replace(/\/$/, ''))
+  );
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-lg bg-white/80 border-b border-pink-100/50 shadow-sm">
@@ -73,24 +71,47 @@ export default function HeaderLanding({ isLoggedIn, username }) {
               >
                 Salir
               </button>
-            </div>
-          ) : (
+            )}
+            <button
+              onClick={() => navigate("/favorites")}
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+            >
+              Favoritos
+            </button>
+            <button
+              onClick={() => navigate("/bookings")}
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+            >
+              Mis Reservas
+            </button>
+          </>
+        )}
+        {isLoggedIn ? (
+          <div className="flex items-center space-x-4 border-l border-gray-200 pl-4">
+            {/* Centro de Notificaciones */}
+            <NotificationCenter />
+            
+            {/* Menú de Perfil */}
+            <UserProfileMenu />
+          </div>
+        ) : (
+          !isAuthPage && (
             <>
               <button
                 onClick={() => navigate("/login")}
-                className="px-4 md:px-6 py-2 text-sm font-semibold text-white bg-gradient-to-r from-pink-500 to-rose-500 rounded-lg hover:from-pink-600 hover:to-rose-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+                className="px-4 py-2 text-sm font-medium text-white bg-pink-500 rounded-lg hover:bg-pink-600 transition-colors duration-300"
               >
                 Iniciar sesión
               </button>
               <button
                 onClick={() => navigate("/register")}
-                className="px-4 md:px-6 py-2 text-sm font-semibold border-2 border-pink-500 text-pink-600 rounded-lg hover:bg-pink-50 hover:border-pink-600 transition-all duration-300"
+                className="px-4 py-2 text-sm font-medium border border-pink-500 text-pink-500 rounded-lg hover:bg-pink-50"
               >
                 Registrarse
               </button>
             </>
-          )}
-        </div>
+          )
+        )}
       </div>
     </header>
   );

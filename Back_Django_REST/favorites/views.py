@@ -24,7 +24,7 @@ class FavoriteListCreateView(generics.ListCreateAPIView):
         try:
             obj = serializer.instance
             logger = logging.getLogger('favorites')
-            logger.info(f"favorite_created id={obj.id} parent={obj.parent.username} nanny={obj.nanny.username}")
+            logger.info(f"favorite_created id={obj.id} parent={obj.parent.username} nanny={obj.nanny.user.username}")
         except Exception:
             pass
 

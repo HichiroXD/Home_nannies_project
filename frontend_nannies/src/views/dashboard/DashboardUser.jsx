@@ -1,53 +1,43 @@
-import React, { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  DashboardLayout,
-  TokenDisplay,
-  LogoutButton,
-} from "@components/dashboard";
 
-export default function Dashboard() {
-  const [token, setToken] = useState(null);
-  const [role, setRole] = useState(null);
+/**
+ * Componente de redirección de dashboard genérico
+ * Redirige al usuario al dashboard correcto según su rol
+ */
+export default function DashboardUser() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("accessToken");
-    const storedRole = localStorage.getItem("role");
-    const roleNormalized = storedRole ? String(storedRole).toLowerCase() : null;
+    // Obtener el rol del usuario desde localStorage
+    const userRole = localStorage.getItem("user_role");
 
-    if (storedToken) {
-      setToken(storedToken);
-      setRole(storedRole);
+    if (!userRole) {
+      // Si no hay rol, redirigir a login
+      navigate("/login/", { replace: true });
+      return;
+    }
 
-      // Redirigir a dashboard específico según rol (acepta varias formas)
-      if (roleNormalized && (roleNormalized.includes("nanny") || roleNormalized.includes("niñ"))) {
-        navigate("/dashboard/nanny/");
-      }
-    } else {
-      navigate("/login");
+    // Redirigir según el rol
+    switch (userRole) {
+      case "parent":
+        navigate("/dashboard/parent/", { replace: true });
+        break;
+      case "nanny":
+        navigate("/dashboard/nanny/", { replace: true });
+        break;
+      case "admin":
+        navigate("/admin/dashboard/", { replace: true });
+        break;
+      default:
+        // Rol desconocido, redirigir a login
+        navigate("/login/", { replace: true });
     }
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("role");
-    navigate("/login");
-  };
-
   return (
-    <DashboardLayout>
-      <h1 className="text-3xl font-bold text-indigo-600 mb-4">
-        Bienvenido al Dashboard 🚀
-      </h1>
-      <p className="text-gray-700 mb-6">
-        Este es un panel de prueba. Si ves esto después de iniciar sesión,
-        significa que el login y la redirección funcionan correctamente.
-      </p>
-      {role && <p className="text-gray-700 mb-6">Tu rol: <strong>{role}</strong></p>}
-      <TokenDisplay token={token} />
-      <LogoutButton onLogout={handleLogout} />
-    </DashboardLayout>
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+      <p>Redirigiendo al dashboard...</p>
+    </div>
   );
 }
