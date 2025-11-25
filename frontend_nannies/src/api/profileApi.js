@@ -14,6 +14,8 @@ export const getNannyProfile = async () => {
 // Actualizar perfil de niñera
 export const updateNannyProfile = async (profileData) => {
   try {
+    console.log("updateNannyProfile - Datos antes de enviar:", profileData);
+    console.log("updateNannyProfile - hourly_rate:", profileData.hourly_rate, typeof profileData.hourly_rate, Array.isArray(profileData.hourly_rate));
     const response = await API.patch("/nannies/profile/", profileData);
     return response.data;
   } catch (error) {

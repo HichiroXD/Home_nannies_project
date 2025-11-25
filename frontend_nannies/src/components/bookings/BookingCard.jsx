@@ -1,5 +1,5 @@
 import React from "react";
-import { Edit2, Trash2, Check, X, CheckCircle } from "lucide-react";
+import { Edit2, Trash2, Check, X, CheckCircle, Star } from "lucide-react";
 
 /**
  * Componente para mostrar una reserva con acciones
@@ -9,6 +9,7 @@ import { Edit2, Trash2, Check, X, CheckCircle } from "lucide-react";
  * @param {function} onDelete - Callback para eliminar
  * @param {function} onAccept - Callback para aceptar (solo niñera)
  * @param {function} onReject - Callback para rechazar (solo niñera)
+ * @param {function} onReview - Callback para dejar reseña (solo padre)
  * @param {string} userRole - Rol del usuario ('parent' o 'nanny')
  * @param {boolean} isLoading - Indica si está procesando
  */
@@ -18,6 +19,7 @@ export default function BookingCard({
   onDelete,
   onAccept,
   onReject,
+  onReview,
   userRole,
   isLoading = false,
 }) {
@@ -173,6 +175,18 @@ export default function BookingCard({
           >
             <Trash2 size={14} />
             Cancelar
+          </button>
+        )}
+
+        {/* Calificar - Padre puede calificar si está completada y no tiene reseña */}
+        {userRole === "parent" && booking.status === "completed" && !booking.has_review && onReview && (
+          <button
+            onClick={() => onReview(booking)}
+            disabled={isLoading}
+            className="flex items-center gap-1 px-3 py-1 bg-yellow-500 text-white text-xs rounded hover:bg-yellow-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            <Star size={14} />
+            Calificar
           </button>
         )}
       </div>

@@ -8,7 +8,7 @@ class NannyProfile(models.Model):
         related_name='nanny_profile'
     )
     experience_years = models.PositiveIntegerField(default=0)
-    hourly_rate = models.DecimalField(max_digits=6, decimal_places=2)
+    hourly_rate = models.PositiveIntegerField(default=0)  # Hasta 7 dígitos, sin decimales
     description = models.TextField(blank=True)
     verified = models.BooleanField(default=False)
     age = models.PositiveIntegerField(null=True, blank=True)

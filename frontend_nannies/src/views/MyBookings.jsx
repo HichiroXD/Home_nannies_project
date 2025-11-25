@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { MainLayout, Loader, PageContainer } from "@components/layout";
 import { AlertToast, useAlert } from "@components/common";
-import { EditBookingModal, BookingCard, ConfirmationModal } from "@components/bookings";
+import { EditBookingModal, BookingCard, ConfirmationModal, ReviewModal } from "@components/bookings";
 import {
   getBookings,
   updateBooking,
@@ -10,6 +10,7 @@ import {
   rejectBooking,
   completeBooking,
 } from "@api/bookingApi";
+import { createReview } from "@api/reviewApi";
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState([]);
@@ -21,6 +22,8 @@ export default function MyBookings() {
   const [confirmedBooking, setConfirmedBooking] = useState(null);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [filter, setFilter] = useState("all"); // all, pending, confirmed, completed
+  const [reviewingBooking, setReviewingBooking] = useState(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   const userRole = localStorage.getItem("role");
 
@@ -158,6 +161,40 @@ export default function MyBookings() {
     }
   };
 
+  // Manejar apertura de modal de reseña
+  const handleReviewClick = (booking) => {
+    setReviewingBooking(booking);
+    setIsReviewModalOpen(true);
+  };
+
+  // Manejar envío de reseña
+  const handleSubmitReview = async (reviewData) => {
+    setActionLoading(true);
+    try {
+      await createReview(
+        reviewingBooking.nanny.nanny_profile_id,
+        reviewData.rating,
+        reviewData.comment
+      );
+      
+      // Actualizar la reserva para indicar que tiene reseña
+      setBookings(
+        bookings.map((b) =>
+          b.id === reviewingBooking.id ? { ...b, has_review: true } : b
+        )
+      );
+
+      showAlert("¡Reseña enviada exitosamente! ⭐", "success");
+      setIsReviewModalOpen(false);
+      setReviewingBooking(null);
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail || "Error al enviar la reseña.";
+      showAlert(errorMsg, "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <MainLayout>
       <AlertToast {...alert} onClose={() => setAlert({})} />
@@ -173,6 +210,17 @@ export default function MyBookings() {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         onSave={handleSaveEdit}
+        isLoading={actionLoading}
+      />
+
+      <ReviewModal
+        booking={reviewingBooking}
+        isOpen={isReviewModalOpen}
+        onClose={() => {
+          setIsReviewModalOpen(false);
+          setReviewingBooking(null);
+        }}
+        onSubmit={handleSubmitReview}
         isLoading={actionLoading}
       />
 
@@ -290,6 +338,7 @@ export default function MyBookings() {
                         key={booking.id}
                         booking={booking}
                         onEdit={handleEditClick}
+                        onReview={handleReviewClick}
                         onDelete={handleDelete}
                         onAccept={handleAccept}
                         onReject={handleReject}

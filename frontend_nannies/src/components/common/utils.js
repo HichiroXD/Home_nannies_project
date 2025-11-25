@@ -46,8 +46,8 @@ export const validators = {
  * Formatters
  */
 export const formatters = {
-  currency: (value, currency = 'USD') => {
-    return new Intl.NumberFormat('es-ES', {
+  currency: (value, currency = 'CLP') => {
+    return new Intl.NumberFormat('es-CL', {
       style: 'currency',
       currency,
     }).format(value);

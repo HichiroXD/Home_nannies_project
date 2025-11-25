@@ -41,6 +41,8 @@ export default function NannyProfile() {
     try {
       setLoading(true);
       const data = await getNannyProfile();
+      console.log("Datos recibidos del backend:", data);
+      console.log("Tipo de hourly_rate:", typeof data.hourly_rate, data.hourly_rate);
       setProfile(data);
     } catch (error) {
       setAlert({ type: "error", message: "Error al cargar el perfil" });
@@ -51,17 +53,41 @@ export default function NannyProfile() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    console.log(`handleChange - ${name}:`, value, typeof value);
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async () => {
     try {
       setSaving(true);
-      await updateNannyProfile(profile);
+      
+      console.log("Profile antes de enviar:", profile);
+      
+      // Manejar hourly_rate si es un array (tomar el primer elemento)
+      let hourlyRateValue = profile.hourly_rate;
+      if (Array.isArray(hourlyRateValue)) {
+        hourlyRateValue = hourlyRateValue[0];
+      }
+      
+      // Enviar solo los campos editables
+      const profileData = {
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        experience_years: parseInt(profile.experience_years) || 0,
+        hourly_rate: parseInt(hourlyRateValue) || 0,
+        description: profile.description,
+        age: parseInt(profile.age) || null,
+        certifications: profile.certifications,
+      };
+      
+      console.log("ProfileData a enviar:", profileData);
+      
+      await updateNannyProfile(profileData);
       setAlert({ type: "success", message: "Perfil actualizado correctamente" });
       setIsEditing(false);
       await loadProfile(); // Recargar datos actualizados
     } catch (error) {
+      console.error("Error completo:", error);
       setAlert({ type: "error", message: error.detail || "Error al guardar el perfil" });
     } finally {
       setSaving(false);
@@ -150,14 +176,14 @@ export default function NannyProfile() {
               placeholder="Ej: 5"
             />
             <FormInput
-              label="Tarifa por Hora (€)"
+              label="Tarifa por Hora ($)"
               name="hourly_rate"
               type="number"
-              step="0.01"
               value={profile.hourly_rate || ""}
               onChange={handleChange}
               disabled={!isEditing}
-              placeholder="Ej: 15.00"
+              placeholder="Ej: 15000"
+              maxLength={7}
             />
           </div>
           <div className="mt-4">
@@ -204,7 +230,7 @@ export default function NannyProfile() {
                   <span className="text-sm">Calificación</span>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {profile.rating_avg > 0 ? profile.rating_avg.toFixed(1) : "Sin calificaciones"}
+                  {profile.rating_avg > 0 ? Number(profile.rating_avg).toFixed(1) : "Sin calificaciones"}
                 </p>
               </div>
               <div className="bg-gray-50 p-4 rounded-lg">

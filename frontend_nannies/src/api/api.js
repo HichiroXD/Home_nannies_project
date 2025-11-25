@@ -13,6 +13,14 @@ API.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // Debug: log the request data
+  if (config.url.includes('/profile/') && (config.method === 'patch' || config.method === 'put')) {
+    console.log("AXIOS INTERCEPTOR - Request config:", config);
+    console.log("AXIOS INTERCEPTOR - Request data:", config.data);
+    console.log("AXIOS INTERCEPTOR - Data stringified:", JSON.stringify(config.data));
+  }
+  
   return config;
 });
 

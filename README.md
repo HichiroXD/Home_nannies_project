@@ -400,6 +400,81 @@ Security Issues:     0 ✅
 
 ---
 
+## 🚢 Despliegue en Producción
+
+### Railway Deployment (Recomendado)
+
+Este proyecto está completamente configurado para desplegarse en **Railway** con PostgreSQL.
+
+#### 📖 Guía Completa
+👉 **[VER GUÍA COMPLETA DE DESPLIEGUE](./RAILWAY_DEPLOYMENT.md)**
+
+#### ⚡ Resumen Rápido
+
+1. **Requisitos previos instalados:**
+   - ✅ `gunicorn` - Servidor WSGI para producción
+   - ✅ `whitenoise` - Servir archivos estáticos
+   - ✅ `dj-database-url` - Configuración de PostgreSQL
+   - ✅ `psycopg2-binary` - Adaptador PostgreSQL
+   - ✅ `Procfile` - Comandos de web y release
+   - ✅ `runtime.txt` - Python 3.13.4
+
+2. **Desplegar Backend:**
+   ```bash
+   # 1. Crear proyecto en Railway y conectar repo GitHub
+   # 2. Añadir plugin PostgreSQL (auto-genera DATABASE_URL)
+   # 3. Configurar variables de entorno en Railway:
+   
+   SECRET_KEY=genera-clave-secreta-nueva
+   DEBUG=False
+   ALLOWED_HOSTS=.railway.app,tudominio.com
+   CSRF_TRUSTED_ORIGINS=https://tu-backend.up.railway.app
+   CORS_ALLOWED_ORIGINS=https://tu-frontend.vercel.app
+   FRONTEND_URL=https://tu-frontend.vercel.app
+   
+   # 4. Railway ejecutará automáticamente:
+   #    - Migraciones (migrate --noinput)
+   #    - Collectstatic (collectstatic --noinput)
+   #    - Gunicorn server
+   ```
+
+3. **Desplegar Frontend:**
+   - **Opción A (Recomendada):** [Vercel](https://vercel.com) - Deploy automático
+   - **Opción B:** Railway - Servicio Node separado
+   
+   Variables de entorno frontend:
+   ```bash
+   VITE_API_URL=https://tu-backend.up.railway.app
+   ```
+
+4. **Archivos de configuración incluidos:**
+   - ✅ `Procfile` - Configurado con comandos de web y release
+   - ✅ `.env.example` - Template de variables de entorno
+   - ✅ `RAILWAY_DEPLOYMENT.md` - Guía detallada paso a paso
+   - ✅ `settings.py` - Configuración dinámica con env vars
+
+#### 🔒 Variables de Entorno Requeridas
+
+Copia `.env.example` y configura:
+
+```bash
+# Seguridad
+SECRET_KEY=tu-clave-secreta-super-segura
+DEBUG=False
+
+# Hosts (Railway auto-provee DATABASE_URL)
+ALLOWED_HOSTS=.railway.app,tudominio.com
+CSRF_TRUSTED_ORIGINS=https://tu-backend.up.railway.app
+CORS_ALLOWED_ORIGINS=https://tu-frontend.vercel.app
+```
+
+#### 📚 Documentación Adicional
+- [Guía Completa Railway](./RAILWAY_DEPLOYMENT.md) - 500+ líneas de documentación
+- [Template Variables .env](./.env.example) - Todas las variables disponibles
+- [Django Deployment Checklist](https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/)
+
+---
+
 ## 💻 Stack Tecnológico
 
 ### Backend
