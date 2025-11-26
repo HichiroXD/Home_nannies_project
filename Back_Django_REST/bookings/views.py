@@ -6,6 +6,15 @@ import logging
 from .models import Booking, Availability
 from notifications.models import Notification
 from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer
+from .constants import (
+    BOOKING_STATUS_CONFIRMED,
+    BOOKING_STATUS_REJECTED,
+    BOOKING_STATUS_CANCELLED,
+    BOOKING_STATUS_COMPLETED,
+    BOOKING_MESSAGES
+)
+
+logger = logging.getLogger(__name__)
 
 # --- BOOKING ---
 class BookingListCreateView(generics.ListCreateAPIView):
@@ -27,9 +36,9 @@ class BookingListCreateView(generics.ListCreateAPIView):
         # Un padre ve las reservas que hizo, una niñera las que recibió
         user = self.request.user
         if user.role == "parent":
-            return Booking.objects.filter(parent=user)
+            return Booking.objects.filter(parent=user).select_related('parent', 'nanny')
         elif user.role == "nanny":
-            return Booking.objects.filter(nanny=user)
+            return Booking.objects.filter(nanny=user).select_related('parent', 'nanny')
         return Booking.objects.none()
 
     def perform_create(self, serializer):
@@ -56,11 +65,7 @@ class BookingListCreateView(generics.ListCreateAPIView):
         )
         
         # Log booking creation
-        try:
-            logger = logging.getLogger('bookings')
-            logger.info(f"booking_created id={booking.id} parent={booking.parent.username} nanny={booking.nanny.username} start={booking.start_time} end={booking.end_time}")
-        except Exception:
-            pass
+        logger.info(f"booking_created id={booking.id} parent={booking.parent.username} nanny={booking.nanny.username} start={booking.start_time} end={booking.end_time}")
 
 class BookingDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Vista para obtener, actualizar o eliminar una reserva específica."""
@@ -91,12 +96,8 @@ class AvailabilityListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(nanny=self.request.user)
         # Log availability created
-        try:
-            obj = serializer.instance
-            logger = logging.getLogger('bookings')
-            logger.info(f"availability_created id={obj.id} nanny={obj.nanny.username} day={obj.day} start={obj.start_time} end={obj.end_time}")
-        except Exception:
-            pass
+        obj = serializer.instance
+        logger.info(f"availability_created id={obj.id} nanny={obj.nanny.username} day={obj.day} start={obj.start_time} end={obj.end_time}")
 
 class AvailabilityDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Vista para actualizar o eliminar un slot de disponibilidad."""
@@ -189,11 +190,11 @@ def accept_booking(request, pk):
     try:
         booking = Booking.objects.get(pk=pk, nanny=request.user)
     except Booking.DoesNotExist:
-        return Response({"error": "Reserva no encontrada o no autorizada."},
+        return Response({"error": BOOKING_MESSAGES['NOT_FOUND']},
                         status=status.HTTP_404_NOT_FOUND)
 
-    _update_booking_status(booking, "confirmed", request.user, 'parent')
-    return Response({"message": "Reserva aceptada."}, status=status.HTTP_200_OK)
+    _update_booking_status(booking, BOOKING_STATUS_CONFIRMED, request.user, 'parent')
+    return Response({"message": BOOKING_MESSAGES['ACCEPTED']}, status=status.HTTP_200_OK)
 
 
 @extend_schema(request=None, responses=None)
@@ -204,11 +205,11 @@ def reject_booking(request, pk):
     try:
         booking = Booking.objects.get(pk=pk, nanny=request.user)
     except Booking.DoesNotExist:
-        return Response({"error": "Reserva no encontrada o no autorizada."},
+        return Response({"error": BOOKING_MESSAGES['NOT_FOUND']},
                         status=status.HTTP_404_NOT_FOUND)
 
-    _update_booking_status(booking, "rejected", request.user, 'parent')
-    return Response({"message": "Reserva rechazada."}, status=status.HTTP_200_OK)
+    _update_booking_status(booking, BOOKING_STATUS_REJECTED, request.user, 'parent')
+    return Response({"message": BOOKING_MESSAGES['REJECTED']}, status=status.HTTP_200_OK)
 
 
 @extend_schema(request=None, responses=None)
@@ -219,11 +220,11 @@ def cancel_booking(request, pk):
     try:
         booking = Booking.objects.get(pk=pk, parent=request.user)
     except Booking.DoesNotExist:
-        return Response({"error": "Reserva no encontrada o no autorizada."},
+        return Response({"error": BOOKING_MESSAGES['NOT_FOUND']},
                         status=status.HTTP_404_NOT_FOUND)
 
-    _update_booking_status(booking, "cancelled", request.user, 'nanny')
-    return Response({"message": "Reserva cancelada."}, status=status.HTTP_200_OK)
+    _update_booking_status(booking, BOOKING_STATUS_CANCELLED, request.user, 'nanny')
+    return Response({"message": BOOKING_MESSAGES['CANCELLED']}, status=status.HTTP_200_OK)
 
 
 @extend_schema(request=None, responses=None)
@@ -234,10 +235,10 @@ def complete_booking(request, pk):
     try:
         booking = Booking.objects.get(pk=pk, nanny=request.user)
     except Booking.DoesNotExist:
-        return Response({"error": "Reserva no encontrada o no autorizada."},
+        return Response({"error": BOOKING_MESSAGES['NOT_FOUND']},
                         status=status.HTTP_404_NOT_FOUND)
 
-    _update_booking_status(booking, "completed", request.user, 'parent')
-    return Response({"message": "Reserva completada."}, status=status.HTTP_200_OK)
+    _update_booking_status(booking, BOOKING_STATUS_COMPLETED, request.user, 'parent')
+    return Response({"message": BOOKING_MESSAGES['COMPLETED']}, status=status.HTTP_200_OK)
 
 # Favorites have been moved to the `favorites` app; use /api/favorites/ endpoints.

@@ -4,6 +4,9 @@ from rest_framework.exceptions import ValidationError
 from .models import Review
 from .serializer import ReviewSerializer, ReviewCreateSerializer
 from nannies.models import NannyProfile
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ReviewListCreateView(generics.ListCreateAPIView):
     """
@@ -18,13 +21,27 @@ class ReviewListCreateView(generics.ListCreateAPIView):
     - Actualiza automáticamente la calificación promedio de la niñera
     """
     permission_classes = [permissions.IsAuthenticated]
+    
+    def dispatch(self, request, *args, **kwargs):
+        if request.method == 'POST':
+            logger.info(f"[DISPATCH] Review POST received - User: {request.user if request.user.is_authenticated else 'Anonymous'}")
+            logger.info(f"[DISPATCH] Request body: {request.body}")
+            logger.info(f"[DISPATCH] Content-Type: {request.content_type}")
+        return super().dispatch(request, *args, **kwargs)
+    
+    def handle_exception(self, exc):
+        logger.error(f"[EXCEPTION] Error en ReviewListCreateView: {exc}")
+        logger.error(f"[EXCEPTION] Type: {type(exc)}")
+        import traceback
+        logger.error(f"[EXCEPTION] Traceback: {traceback.format_exc()}")
+        return super().handle_exception(exc)
 
     def get_queryset(self):
         user = self.request.user
         if user.role == 'parent':
-            return Review.objects.filter(parent=user)
+            return Review.objects.filter(parent=user).select_related('nanny', 'nanny__user')
         elif user.role == 'nanny':
-            return Review.objects.filter(nanny__user=user)
+            return Review.objects.filter(nanny__user=user).select_related('parent', 'nanny', 'nanny__user')
         return Review.objects.none()
 
     def get_serializer_class(self):
@@ -32,14 +49,45 @@ class ReviewListCreateView(generics.ListCreateAPIView):
             return ReviewCreateSerializer
         return ReviewSerializer
 
-    def perform_create(self, serializer):
-        nanny_id = self.request.data.get('nanny')
-        try:
-            nanny_profile = NannyProfile.objects.get(pk=nanny_id)
-        except NannyProfile.DoesNotExist:
-            raise ValidationError({"nanny": "Niñera no encontrada."})
+    def create(self, request, *args, **kwargs):
+        logger.info(f"Review POST request data: {request.data}")
+        logger.info(f"User: {request.user} (role: {request.user.role})")
         
-        serializer.save(parent=self.request.user, nanny=nanny_profile)
+        # Validar datos con el serializer
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        validated_data = serializer.validated_data
+        nanny_id = validated_data.get('nanny')
+        logger.info(f"Nanny ID from validated_data: {nanny_id}")
+        
+        # Obtener la instancia de NannyProfile
+        nanny_profile = NannyProfile.objects.get(pk=nanny_id)
+        
+        # Verificar que no exista una reseña previa del mismo padre para esta niñera
+        existing_review = Review.objects.filter(
+            parent=request.user,
+            nanny=nanny_profile
+        ).first()
+        
+        if existing_review:
+            raise ValidationError({"detail": "Ya has dejado una reseña para esta niñera."})
+        
+        # Crear la reseña
+        review = Review.objects.create(
+            parent=request.user,
+            nanny=nanny_profile,
+            rating=validated_data.get('rating'),
+            comment=validated_data.get('comment', '')
+        )
+        
+        logger.info(f"Review created successfully: {review.id}")
+        
+        # Serializar la respuesta usando ReviewSerializer
+        response_serializer = ReviewSerializer(review)
+        headers = self.get_success_headers(response_serializer.data)
+        
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class ReviewDetailView(generics.RetrieveDestroyAPIView):

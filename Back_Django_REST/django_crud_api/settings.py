@@ -20,7 +20,7 @@ load_dotenv()
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY", "b)+h)pgkb7s^cg%j%6(r!mhnlog%#z94uti)!hqfz1mcnz#z^z")
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = os.getenv("DEBUG", "True") == "True"
 
 # ALLOWED_HOSTS: leer desde variable de entorno (separado por comas)
 # En Railway, configurar: ALLOWED_HOSTS=.railway.app,tudominio.com
@@ -180,7 +180,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS origins dinámicos desde variable de entorno
 CORS_ALLOWED_ORIGINS_STR = os.getenv(
     "CORS_ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://127.0.0.1:3000,http://127.0.0.1:5174"
+    "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:5174"
 )
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS_STR.split(",")]
 
@@ -189,6 +189,29 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 # Permitir cookies/credenciales en requests cross-site
 CORS_ALLOW_CREDENTIALS = True
+
+# Headers permitidos en requests CORS
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Métodos HTTP permitidos
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 # CSRF Trusted Origins (requerido para POST/PUT/DELETE en producción)
 CSRF_TRUSTED_ORIGINS_STR = os.getenv("CSRF_TRUSTED_ORIGINS", "")

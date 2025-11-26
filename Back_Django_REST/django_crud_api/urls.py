@@ -59,7 +59,7 @@ urlpatterns = [
     path('api/reviews/', include('reviews.urls')),
 
     # Notificaciones - Phase 3
-    path('api/', include('notifications.urls')),
+    path('api/notifications/', include('notifications.urls')),
 
     # Validación Académica - Phase 3
     path('api/academic/', include('academic.urls')),

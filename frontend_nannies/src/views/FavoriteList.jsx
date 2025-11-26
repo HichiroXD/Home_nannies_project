@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getFavorites, deleteFavorite } from "@api/favoriteApi";
 import {
   FavoriteCard,
@@ -7,6 +8,7 @@ import {
 import { MainLayout, Loader, PageContainer, AlertToast } from "@components/layout";
 
 export default function FavoriteList() {
+  const navigate = useNavigate();
   const [favorites, setFavorites] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [alert, setAlert] = useState({ visible: false, message: "", type: "info" });
@@ -49,6 +51,11 @@ export default function FavoriteList() {
     }
   };
 
+  const handleClick = (nannyId) => {
+    // Navegar a la página de disponibilidad/reserva de la niñera
+    navigate(`/bookings/create/${nannyId}`);
+  };
+
   return (
     <MainLayout>
       <AlertToast
@@ -69,7 +76,11 @@ export default function FavoriteList() {
             ) : (
               favorites.map((fav) => (
                 <li key={fav.id}>
-                  <FavoriteCard fav={fav} onDelete={handleDelete} />
+                  <FavoriteCard 
+                    fav={fav} 
+                    onDelete={handleDelete}
+                    onDoubleClick={handleClick}
+                  />
                 </li>
               ))
             )}

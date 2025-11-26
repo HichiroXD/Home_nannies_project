@@ -71,18 +71,56 @@ class BookingSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
-        rep["parent"] = {
+        
+        # Incluir información del padre/madre con su perfil
+        parent_data = {
             "id": instance.parent.id,
             "username": instance.parent.username,
             "email": instance.parent.email,
             "role": instance.parent.role,
         }
-        rep["nanny"] = {
+        
+        # Agregar información del perfil de padre si existe
+        try:
+            from parents.models import ParentProfile
+            parent_profile = ParentProfile.objects.get(user=instance.parent)
+            parent_data["parent_profile_id"] = parent_profile.id
+            parent_data["first_name"] = parent_profile.first_name or instance.parent.username
+            parent_data["last_name"] = parent_profile.last_name or ""
+        except ParentProfile.DoesNotExist:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"ParentProfile not found for user {instance.parent.id}")
+            parent_data["parent_profile_id"] = None
+            parent_data["first_name"] = instance.parent.username
+            parent_data["last_name"] = ""
+        
+        rep["parent"] = parent_data
+        
+        # Incluir información de la niñera con su perfil
+        nanny_data = {
             "id": instance.nanny.id,
             "username": instance.nanny.username,
             "email": instance.nanny.email,
             "role": instance.nanny.role,
         }
+        
+        # Agregar información del perfil de niñera si existe
+        try:
+            from nannies.models import NannyProfile
+            nanny_profile = NannyProfile.objects.get(user=instance.nanny)
+            nanny_data["nanny_profile_id"] = nanny_profile.id
+            nanny_data["first_name"] = instance.nanny.first_name or instance.nanny.username
+            nanny_data["last_name"] = instance.nanny.last_name or ""
+        except NannyProfile.DoesNotExist:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"NannyProfile not found for user {instance.nanny.id}")
+            nanny_data["nanny_profile_id"] = None
+            nanny_data["first_name"] = instance.nanny.first_name or instance.nanny.username
+            nanny_data["last_name"] = instance.nanny.last_name or ""
+        
+        rep["nanny"] = nanny_data
         return rep
 
 

@@ -32,16 +32,16 @@ export const NannyDashboard = () => {
   };
 
   // Obtener disponibilidades
+  const fetchAvailabilities = async () => {
+    try {
+      const response = await API.get('/bookings/availabilities/');
+      setAvailabilities(response.data || []);
+    } catch (err) {
+      console.error('Error fetching availabilities:', err);
+    }
+  };
+
   useEffect(() => {
-    const fetchAvailabilities = async () => {
-      try {
-        const response = await API.get('/bookings/availabilities/');
-        setAvailabilities(response.data || []);
-      } catch (err) {
-        console.error('Error fetching availabilities:', err);
-      }
-    };
-    
     fetchAvailabilities();
   }, []);
 
@@ -61,6 +61,13 @@ export const NannyDashboard = () => {
     };
 
     fetchDashboardData();
+    
+    // Actualizar disponibilidades periódicamente
+    const interval = setInterval(() => {
+      fetchAvailabilities();
+    }, 30000); // cada 30 segundos
+
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -236,7 +243,11 @@ export const NannyDashboard = () => {
                           .map((slot) => (
                             <div
                               key={slot.id}
-                              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200"
+                              className={`flex items-center justify-between p-4 rounded-lg transition-colors border ${
+                                slot.is_booked
+                                  ? "bg-orange-50 border-orange-200 hover:bg-orange-100"
+                                  : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                              }`}
                             >
                               <div>
                                 <p className="font-medium text-gray-800">
@@ -252,9 +263,15 @@ export const NannyDashboard = () => {
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                                  Disponible
-                                </span>
+                                {slot.is_booked ? (
+                                  <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                                    📅 Reservado
+                                  </span>
+                                ) : (
+                                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                    ✅ Disponible
+                                  </span>
+                                )}
                               </div>
                             </div>
                           ))}

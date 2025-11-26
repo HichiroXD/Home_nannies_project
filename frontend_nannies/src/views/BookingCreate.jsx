@@ -104,7 +104,18 @@ export default function BookingCreate() {
       
       await createBooking(nannyUserId, startDateTime, endDateTime);
       
-      // Recargar disponibilidades para actualizar el estado de reserva
+      // Marcar el slot como reservado inmediatamente en el estado local
+      setAvailabilities(prevAvailabilities => 
+        prevAvailabilities.map(a => 
+          a.id === slot.id 
+            ? { ...a, is_booked: true, booked_by_current_user: true }
+            : a
+        )
+      );
+      
+      setAlert({ visible: true, message: "Reserva creada exitosamente! ✅ Puedes verla en 'Mis Reservas'", type: "success" });
+      
+      // Recargar disponibilidades en segundo plano para sincronizar con el servidor
       try {
         const data = await getAvailabilities({ nanny: nannyUserId });
         const normalized = data.map((a) => ({
@@ -119,10 +130,6 @@ export default function BookingCreate() {
       } catch (reloadErr) {
         console.error("Error recargando disponibilidades:", reloadErr);
       }
-      
-      setAlert({ visible: true, message: "Reserva creada! ✅", type: "success" });
-      // Redirigir a Mis Reservas
-      setTimeout(() => navigate("/bookings"), 1000);
     } catch (err) {
       console.error("Error creando reserva:", err);
       console.error("Error response:", err.response?.data);

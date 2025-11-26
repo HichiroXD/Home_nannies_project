@@ -10,6 +10,7 @@ import 'react-calendar/dist/Calendar.css';
  */
 export default function AvailabilityCalendar({ availabilities = [], onSelect }) {
   const [date, setDate] = useState(null);
+  const [processingSlot, setProcessingSlot] = useState(null);
 
   // Filtrar solo disponibilidades futuras y agrupar por día
   const grouped = useMemo(() => {
@@ -78,14 +79,25 @@ export default function AvailabilityCalendar({ availabilities = [], onSelect }) 
             {slotsForDay.map(slot => {
               const isBooked = slot.is_booked;
               const bookedByCurrentUser = slot.booked_by_current_user;
+              const isProcessing = processingSlot === slot.id;
+              const isDisabled = isBooked || isProcessing;
               
               return (
                 <button 
                   key={slot.id} 
-                  onClick={() => !isBooked && onSelect(slot)}
-                  disabled={isBooked}
+                  onClick={async () => {
+                    if (!isDisabled) {
+                      setProcessingSlot(slot.id);
+                      try {
+                        await onSelect(slot);
+                      } finally {
+                        setProcessingSlot(null);
+                      }
+                    }
+                  }}
+                  disabled={isDisabled}
                   className={`text-left px-4 py-2 border rounded-md transition-colors ${
-                    isBooked 
+                    isDisabled
                       ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-60' 
                       : 'bg-white hover:bg-pink-50'
                   }`}
@@ -96,7 +108,9 @@ export default function AvailabilityCalendar({ availabilities = [], onSelect }) 
                       <div className="text-xs text-gray-500">Duración: {Math.round((parseTime(slot.end_time)-parseTime(slot.start_time))/60)} min</div>
                     </div>
                     <div>
-                      {isBooked ? (
+                      {isProcessing ? (
+                        <span className="text-sm font-medium text-blue-600">Procesando...</span>
+                      ) : isBooked ? (
                         <span className={`text-sm font-medium ${bookedByCurrentUser ? 'text-blue-600' : 'text-gray-500'}`}>
                           {bookedByCurrentUser ? 'Ya reservaste' : 'Reservado'}
                         </span>

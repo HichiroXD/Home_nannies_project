@@ -14,7 +14,7 @@ from .views import (
 app_name = 'notifications'
 
 router = DefaultRouter()
-router.register(r'notifications', NotificationViewSet, basename='notification')
+router.register(r'', NotificationViewSet, basename='notification')
 router.register(r'templates', NotificationTemplateViewSet, basename='template')
 router.register(r'webhooks', WebhookEndpointViewSet, basename='webhook')
 router.register(r'preferences', NotificationPreferenceView, basename='preference')
