@@ -26,10 +26,8 @@ class BookingSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("La fecha y hora de inicio debe ser futura.")
 
         if nanny:
-            if not hasattr(nanny, 'role'):
-                raise serializers.ValidationError(f"El usuario con ID {nanny.id} no tiene rol definido.")
-            if nanny.role != "nanny":
-                raise serializers.ValidationError(f"El usuario seleccionado tiene rol '{nanny.role}', no es una niñera.")
+            from users.validators import validate_user_role
+            validate_user_role(nanny, 'nanny', "La niñera seleccionada")
 
         # Verificar disponibilidad de la niñera
         if start and end and nanny:
@@ -70,57 +68,23 @@ class BookingSerializer(serializers.ModelSerializer):
         return data
 
     def to_representation(self, instance):
+        """Incluye información extendida de parent y nanny con sus perfiles."""
+        from parents.models import ParentProfile
+        from nannies.models import NannyProfile
+        from .utils import get_user_profile_data
+        
         rep = super().to_representation(instance)
         
         # Incluir información del padre/madre con su perfil
-        parent_data = {
-            "id": instance.parent.id,
-            "username": instance.parent.username,
-            "email": instance.parent.email,
-            "role": instance.parent.role,
-        }
-        
-        # Agregar información del perfil de padre si existe
-        try:
-            from parents.models import ParentProfile
-            parent_profile = ParentProfile.objects.get(user=instance.parent)
-            parent_data["parent_profile_id"] = parent_profile.id
-            parent_data["first_name"] = parent_profile.first_name or instance.parent.username
-            parent_data["last_name"] = parent_profile.last_name or ""
-        except ParentProfile.DoesNotExist:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.warning(f"ParentProfile not found for user {instance.parent.id}")
-            parent_data["parent_profile_id"] = None
-            parent_data["first_name"] = instance.parent.username
-            parent_data["last_name"] = ""
-        
-        rep["parent"] = parent_data
+        rep["parent"] = get_user_profile_data(
+            instance.parent, ParentProfile, 'parent_profile_id'
+        )
         
         # Incluir información de la niñera con su perfil
-        nanny_data = {
-            "id": instance.nanny.id,
-            "username": instance.nanny.username,
-            "email": instance.nanny.email,
-            "role": instance.nanny.role,
-        }
+        rep["nanny"] = get_user_profile_data(
+            instance.nanny, NannyProfile, 'nanny_profile_id'
+        )
         
-        # Agregar información del perfil de niñera si existe
-        try:
-            from nannies.models import NannyProfile
-            nanny_profile = NannyProfile.objects.get(user=instance.nanny)
-            nanny_data["nanny_profile_id"] = nanny_profile.id
-            nanny_data["first_name"] = instance.nanny.first_name or instance.nanny.username
-            nanny_data["last_name"] = instance.nanny.last_name or ""
-        except NannyProfile.DoesNotExist:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.warning(f"NannyProfile not found for user {instance.nanny.id}")
-            nanny_data["nanny_profile_id"] = None
-            nanny_data["first_name"] = instance.nanny.first_name or instance.nanny.username
-            nanny_data["last_name"] = instance.nanny.last_name or ""
-        
-        rep["nanny"] = nanny_data
         return rep
 
 

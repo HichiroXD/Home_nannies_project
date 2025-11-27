@@ -4,7 +4,6 @@ from rest_framework.decorators import api_view, permission_classes
 from drf_spectacular.utils import extend_schema
 import logging
 from .models import Booking, Availability
-from notifications.models import Notification
 from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer
 from .constants import (
     BOOKING_STATUS_CONFIRMED,
@@ -42,27 +41,12 @@ class BookingListCreateView(generics.ListCreateAPIView):
         return Booking.objects.none()
 
     def perform_create(self, serializer):
+        from .services import NotificationService
+        
         booking = serializer.save(parent=self.request.user)
         
-        # Crear notificación para la niñera
-        # Convertir a hora local de Chile
-        from zoneinfo import ZoneInfo
-        
-        chile_tz = ZoneInfo('America/Santiago')
-        start_time_local = booking.start_time.astimezone(chile_tz)
-        end_time_local = booking.end_time.astimezone(chile_tz)
-        
-        message = (f"Tienes una nueva solicitud de reserva de {self.request.user.username} "
-                  f"para el {start_time_local.strftime('%d/%m/%Y')} de {start_time_local.strftime('%H:%M')} a {end_time_local.strftime('%H:%M')}.")
-        
-        Notification.objects.create(
-            user=booking.nanny,
-            subject="Nueva solicitud de reserva",
-            message=message,
-            channel='in_app',
-            status='sent',
-            related_booking_id=str(booking.id)
-        )
+        # Crear notificación para la niñera usando el servicio
+        NotificationService.notify_new_booking(booking, self.request.user)
         
         # Log booking creation
         logger.info(f"booking_created id={booking.id} parent={booking.parent.username} nanny={booking.nanny.username} start={booking.start_time} end={booking.end_time}")
@@ -133,7 +117,7 @@ class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 def _update_booking_status(booking, new_status, request_user, recipient_role):
     """
-    Función auxiliar para actualizar el estado de una reserva y crear notificación.
+    Actualiza el estado de una reserva y crea notificación.
     
     Args:
         booking: Objeto Booking a actualizar
@@ -141,45 +125,23 @@ def _update_booking_status(booking, new_status, request_user, recipient_role):
         request_user: Usuario que realiza la acción
         recipient_role: 'parent' o 'nanny' (destinatario de la notificación)
     """
+    from .services import NotificationService
+    
     booking.status = new_status
     booking.save()
     
     # Determinar el destinatario de la notificación
     recipient = booking.parent if recipient_role == 'parent' else booking.nanny
     
-    # Convertir a hora local de Chile
-    from zoneinfo import ZoneInfo
-    
-    chile_tz = ZoneInfo('America/Santiago')
-    start_time_local = booking.start_time.astimezone(chile_tz)
-    end_time_local = booking.end_time.astimezone(chile_tz)
-    
-    # Mapeo de mensajes y asuntos
-    status_info = {
-        'confirmed': {'action': 'confirmada', 'subject': 'Reserva Confirmada'},
-        'rejected': {'action': 'rechazada', 'subject': 'Reserva Rechazada'},
-        'cancelled': {'action': 'cancelada', 'subject': 'Reserva Cancelada'},
-        'completed': {'action': 'completada', 'subject': 'Reserva Completada'}
-    }
-    
-    info = status_info.get(new_status, {'action': new_status, 'subject': 'Actualización de Reserva'})
-    message = (f"Tu reserva con {request_user.username} ha sido {info['action']} "
-               f"para el {start_time_local.strftime('%d/%m/%Y')} de {start_time_local.strftime('%H:%M')} a {end_time_local.strftime('%H:%M')}.")
-    
-    Notification.objects.create(
-        user=recipient, 
-        subject=info['subject'],
-        message=message,
-        channel='in_app',
-        status='sent',
-        related_booking_id=str(booking.id)
+    # Crear notificación usando el servicio
+    NotificationService.notify_booking_status_change(
+        booking=booking,
+        new_status=new_status,
+        notifier=request_user,
+        recipient=recipient
     )
     
-    try:
-        logger = logging.getLogger('bookings')
-        logger.info(f"booking_status_updated id={booking.id} status={new_status} by={request_user.username}")
-    except Exception:
-        pass
+    logger.info(f"booking_status_updated id={booking.id} status={new_status} by={request_user.username}")
 
 
 @extend_schema(request=None, responses=None)
