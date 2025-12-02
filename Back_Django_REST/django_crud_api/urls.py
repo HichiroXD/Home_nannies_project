@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -24,11 +26,13 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('tasks/', include('tasks.urls')),
 
     # JWT
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # Core - Phase 1: Validación Institucional
+    path('api/core/', include('core.urls')),
 
     # Usuarios
     path('api/users/', include('users.urls')),
@@ -40,4 +44,33 @@ urlpatterns = [
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+
+    # Nannies
+    path('api/nannies/', include('nannies.urls')),
+
+    # Parents
+    path('api/parents/', include('parents.urls')),
+
+    # Dashboards
+    path('api/dashboard/', include('django_crud_api.dashboard_urls')),
+
+    # Favoritos
+    path('api/favorites/', include('favorites.urls')),
+
+    # Reseñas
+    path('api/reviews/', include('reviews.urls')),
+
+    # Notificaciones - Phase 3
+    path('api/notifications/', include('notifications.urls')),
+
+    # Validación Académica - Phase 3
+    path('api/academic/', include('academic.urls')),
+
+    # Reportes y Análisis - Phase 3
+    path('api/reports/', include('reports.urls')),
+
 ]
+
+# Servir archivos media en desarrollo
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

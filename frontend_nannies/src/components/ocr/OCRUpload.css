@@ -1,0 +1,267 @@
+/**
+ * OCRUpload Styles
+ */
+
+.ocr-upload-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.ocr-upload-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+
+.ocr-upload-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Header */
+.ocr-upload-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem;
+  text-align: center;
+}
+
+.ocr-upload-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.ocr-upload-header p {
+  margin: 0;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+/* Drag & Drop Zone */
+.ocr-drag-drop-zone {
+  padding: 3rem 2rem;
+  border: 2px dashed #e0e0e0;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 2rem;
+  background: #fafafa;
+}
+
+.ocr-drag-drop-zone:hover {
+  border-color: #667eea;
+  background: #f5f5ff;
+}
+
+.ocr-drag-drop-zone.drag-over {
+  border-color: #667eea;
+  background: #eef2ff;
+  transform: scale(1.02);
+}
+
+.drag-drop-content {
+  pointer-events: none;
+}
+
+.drag-drop-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.drag-drop-content h3 {
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.drag-drop-content p {
+  margin: 0.5rem 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.file-formats {
+  font-size: 0.85rem;
+  color: #999;
+  margin-top: 1rem !important;
+}
+
+/* File Preview */
+.ocr-file-preview {
+  margin: 2rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.file-icon {
+  font-size: 2rem;
+}
+
+.file-details {
+  flex: 1;
+  text-align: left;
+}
+
+.file-name {
+  margin: 0;
+  font-weight: 600;
+  color: #333;
+  word-break: break-word;
+}
+
+.file-size {
+  margin: 0.3rem 0 0 0;
+  font-size: 0.85rem;
+  color: #999;
+}
+
+/* Upload Progress */
+.upload-progress {
+  margin-top: 1rem;
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Error Message */
+.ocr-error-message {
+  margin: 0 2rem;
+  padding: 1rem;
+  background: #fee;
+  border-left: 4px solid #e74c3c;
+  border-radius: 4px;
+  color: #c0392b;
+  font-size: 0.9rem;
+}
+
+.ocr-error-message span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Action Buttons */
+.ocr-upload-actions {
+  display: flex;
+  gap: 1rem;
+  margin: 2rem;
+  justify-content: center;
+}
+
+.btn-upload,
+.btn-cancel {
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-upload {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  flex: 1;
+  max-width: 300px;
+}
+
+.btn-upload:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-upload:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  background: #f0f0f0;
+  color: #333;
+  flex: 0.5;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Info Section */
+.ocr-upload-info {
+  background: #f0f8ff;
+  border-top: 1px solid #e0e0e0;
+  padding: 1.5rem 2rem;
+  border-radius: 0 0 12px 12px;
+}
+
+.ocr-upload-info h4 {
+  margin: 0 0 1rem 0;
+  color: #667eea;
+  font-size: 0.95rem;
+}
+
+.ocr-upload-info ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.ocr-upload-info li {
+  margin: 0.3rem 0;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .ocr-upload-card {
+    margin: 0;
+  }
+
+  .ocr-upload-header {
+    padding: 1.5rem;
+  }
+
+  .ocr-upload-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .ocr-drag-drop-zone {
+    padding: 2rem 1rem;
+    margin: 1rem;
+  }
+
+  .ocr-upload-actions {
+    flex-direction: column;
+    margin: 1rem;
+  }
+
+  .btn-upload,
+  .btn-cancel {
+    width: 100%;
+  }
+}

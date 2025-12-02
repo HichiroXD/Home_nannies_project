@@ -45,20 +45,3 @@ class Availability(models.Model):
     def __str__(self):
         return f"{self.nanny} disponible el {self.day} de {self.start_time} a {self.end_time}" 
     
-class Notification(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="notifications"
-    )
-    message = models.TextField()
-    is_read = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"Notif → {self.user.username}: {self.message[:40]}..."
-    class Meta:
-        ordering = ["-created_at"]
-        verbose_name = "Notificación"
-        verbose_name_plural = "Notificaciones"

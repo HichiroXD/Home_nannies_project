@@ -13,14 +13,22 @@ from .views import (
 )
 
 urlpatterns = [
-    path('booking/', BookingListCreateView.as_view(), name='booking-list'),
+    # Bookings
+    # Exposed as /api/bookings/ from project urls
+    path('', BookingListCreateView.as_view(), name='booking-list'),
     path('<int:pk>/', BookingDetailView.as_view(), name='booking-detail'),
     path('<int:pk>/accept/', accept_booking, name='booking-accept'),
     path('<int:pk>/reject/', reject_booking, name='booking-reject'),
     path('<int:pk>/cancel/', cancel_booking, name='booking-cancel'),
     path('<int:pk>/complete/', complete_booking, name='booking-complete'),
+
+    # Availability exposed as /api/bookings/availabilities/
     path('availabilities/', AvailabilityListCreateView.as_view(), name='availability-list'),
     path('availabilities/<int:pk>/', AvailabilityDetailView.as_view(), name='availability-detail'),
+
+    # Notifications
     path('notifications/', NotificationListView.as_view(), name='notification-list'),
     path('notifications/<int:pk>/', NotificationDetailView.as_view(), name='notification-detail'),
+
+    # Favorites handled by the dedicated `favorites` app at /api/favorites/
 ]
