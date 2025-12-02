@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from core.mixins import RoleBasedQuerysetWithNestedMixin
 from .models import Review
 from .serializer import ReviewSerializer, ReviewCreateSerializer
 from nannies.models import NannyProfile
@@ -8,7 +9,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class ReviewListCreateView(generics.ListCreateAPIView):
+class ReviewListCreateView(RoleBasedQuerysetWithNestedMixin, generics.ListCreateAPIView):
     """
     Vista para listar y crear reseñas.
     
@@ -21,6 +22,12 @@ class ReviewListCreateView(generics.ListCreateAPIView):
     - Actualiza automáticamente la calificación promedio de la niñera
     """
     permission_classes = [permissions.IsAuthenticated]
+    queryset = Review.objects.all()
+    
+    # Configuración del mixin
+    parent_filter_field = 'parent'
+    nanny_nested_field = 'nanny__user'  # Review -> NannyProfile -> User
+    select_related_fields = ('parent', 'nanny', 'nanny__user')
     
     def dispatch(self, request, *args, **kwargs):
         if request.method == 'POST':
@@ -35,14 +42,6 @@ class ReviewListCreateView(generics.ListCreateAPIView):
         import traceback
         logger.error(f"[EXCEPTION] Traceback: {traceback.format_exc()}")
         return super().handle_exception(exc)
-
-    def get_queryset(self):
-        user = self.request.user
-        if user.role == 'parent':
-            return Review.objects.filter(parent=user).select_related('nanny', 'nanny__user')
-        elif user.role == 'nanny':
-            return Review.objects.filter(nanny__user=user).select_related('parent', 'nanny', 'nanny__user')
-        return Review.objects.none()
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -83,27 +82,13 @@ class ReviewListCreateView(generics.ListCreateAPIView):
         
         logger.info(f"Review created successfully: {review.id}")
         
-        # Crear notificaciones
-        from notifications.models import Notification
+        # Crear notificaciones usando el servicio centralizado
+        from notifications.services import NotificationService
         
-        # Notificación para el padre (confirmación)
-        Notification.objects.create(
-            user=request.user,
-            channel='in_app',
-            subject='Reseña publicada',
-            message=f'Has dejado una reseña de {review.rating} estrellas para {nanny_profile.user.get_full_name() or nanny_profile.user.username}.',
-            status='sent',
-            context_data={'review_id': review.id, 'rating': review.rating}
-        )
-        
-        # Notificación para la niñera (nueva reseña recibida)
-        Notification.objects.create(
-            user=nanny_profile.user,
-            channel='in_app',
-            subject='Nueva reseña recibida',
-            message=f'{request.user.get_full_name() or request.user.username} te ha dejado una reseña de {review.rating} estrellas.',
-            status='sent',
-            context_data={'review_id': review.id, 'rating': review.rating, 'parent_name': request.user.get_full_name() or request.user.username}
+        NotificationService.notify_review_created(
+            review=review,
+            parent=request.user,
+            nanny=nanny_profile.user
         )
         
         logger.info(f"Notifications created for review {review.id}")

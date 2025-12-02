@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from drf_spectacular.utils import extend_schema
 import logging
+from core.mixins import RoleBasedQuerysetMixin
 from .models import Booking, Availability
 from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer
 from .constants import (
@@ -16,7 +17,7 @@ from .constants import (
 logger = logging.getLogger(__name__)
 
 # --- BOOKING ---
-class BookingListCreateView(generics.ListCreateAPIView):
+class BookingListCreateView(RoleBasedQuerysetMixin, generics.ListCreateAPIView):
     """
     Vista para listar y crear reservas.
     
@@ -30,17 +31,25 @@ class BookingListCreateView(generics.ListCreateAPIView):
     """
     serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        # Un padre ve las reservas que hizo, una niñera las que recibió
-        user = self.request.user
-        if user.role == "parent":
-            return Booking.objects.filter(parent=user).select_related('parent', 'nanny')
-        elif user.role == "nanny":
-            return Booking.objects.filter(nanny=user).select_related('parent', 'nanny')
-        return Booking.objects.none()
+    queryset = Booking.objects.all()
+    
+    # Configuración del mixin
+    parent_filter_field = 'parent'
+    nanny_filter_field = 'nanny'
+    select_related_fields = ('parent', 'nanny')
 
     def perform_create(self, serializer):
+        """
+        Crea una nueva reserva y notifica a la niñera.
+        
+        Args:
+            serializer: BookingSerializer con datos validados
+            
+        Side effects:
+            - Guarda booking con parent = usuario autenticado
+            - Crea notificación para la niñera usando NotificationService
+            - Registra evento en logs
+        """
         from .services import NotificationService
         
         booking = serializer.save(parent=self.request.user)
@@ -49,10 +58,25 @@ class BookingListCreateView(generics.ListCreateAPIView):
         NotificationService.notify_new_booking(booking, self.request.user)
         
         # Log booking creation
-        logger.info(f"booking_created id={booking.id} parent={booking.parent.username} nanny={booking.nanny.username} start={booking.start_time} end={booking.end_time}")
+        logger.info(
+            f"booking_created id={booking.id} parent={booking.parent.username} "
+            f"nanny={booking.nanny.username} start={booking.start_time} end={booking.end_time}"
+        )
+
 
 class BookingDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """Vista para obtener, actualizar o eliminar una reserva específica."""
+    """
+    Vista para gestionar una reserva específica.
+    
+    Endpoints:
+        GET: Obtiene detalles de la reserva
+        PATCH/PUT: Actualiza la reserva
+        DELETE: Elimina la reserva
+        
+    Permissions:
+        - Usuario debe estar autenticado
+        - Solo el creador (parent) o destinatario (nanny) pueden acceder
+    """
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]

@@ -1,75 +1,81 @@
+/**
+ * User API - Funciones para autenticación y gestión de usuarios
+ * 
+ * Todas las funciones usan el interceptor de API para manejo de errores centralizado.
+ * No es necesario envolver en try/catch - el interceptor ya maneja errores HTTP.
+ */
 import API from "./api";
 
-// Registrar usuario
+/**
+ * Registrar nuevo usuario
+ * @param {Object} userData - Datos del usuario (username, email, password, role, etc.)
+ * @returns {Promise<Object>} Datos del usuario creado
+ */
 export const registerUser = async (userData) => {
-  try {
-    const response = await API.post("/users/register/", userData);
-    return response.data;
-  } catch (error) {
-    console.error("Error en registerUser:", error.response?.data || error.message);
-    throw error.response?.data || { detail: "Error al registrar usuario" };
-  }
+  const response = await API.post("/users/register/", userData);
+  return response.data;
 };
 
-// Login de usuario
+/**
+ * Login de usuario
+ * @param {string} username - Nombre de usuario
+ * @param {string} password - Contraseña
+ * @returns {Promise<Object>} Tokens (access, refresh) y datos del usuario (username, role)
+ */
 export const loginUser = async (username, password) => {
-  try {
-    const response = await API.post("/users/login/", { username, password });
-    // Devuelve el cuerpo JSON completo (access, refresh, username, role)
-    return response.data;
-  } catch (error) {
-    console.error("Error en loginUser:", error.response?.data || error.message);
-    throw error.response?.data || { detail: "Error al iniciar sesión" };
-  }
+  const response = await API.post("/users/login/", { username, password });
+  return response.data;
 };
 
-// Obtener perfil del usuario autenticado
+/**
+ * Obtener perfil del usuario autenticado
+ * @returns {Promise<Object>} Datos del perfil del usuario
+ * @throws {Error} Si no existe token de acceso
+ */
 export const getProfile = async () => {
-  try {
-    // Recuperamos el token almacenado
-    const token = localStorage.getItem("accessToken");
-
-    // Verificamos si el token existe
-    if (!token) {
-      throw new Error("Token de acceso no encontrado");
-    }
-
-    const response = await API.get("/users/me/");
-
-    return response.data;
-  } catch (error) {
-    console.error("Error en getProfile:", error.response?.data || error.message);
-    throw error.response?.data || { detail: "Error al obtener perfil" };
+  const token = localStorage.getItem("accessToken");
+  
+  if (!token) {
+    throw new Error("Token de acceso no encontrado");
   }
+  
+  const response = await API.get("/users/me/");
+  return response.data;
 };
 
-// Verificar usuario
+/**
+ * Verificar usuario mediante link de email
+ * @param {string} uid - User ID
+ * @param {string} token - Token de verificación
+ * @returns {Promise<Object>} Resultado de la verificación
+ */
 export const verifyUser = async (uid, token) => {
   const response = await API.get(`/users/verify/${uid}/${token}/`);
   return response.data;
 };
 
-// Solicitar recuperación de contraseña
+/**
+ * Solicitar recuperación de contraseña
+ * @param {string} email - Email del usuario
+ * @returns {Promise<Object>} Confirmación del envío
+ */
 export const requestPasswordReset = async (email) => {
-  try {
-    const response = await API.post("/users/password-reset/", { email });
-    return response.data;
-  } catch (error) {
-    console.error("Error en requestPasswordReset:", error.response?.data || error.message);
-    throw error.response?.data || { detail: "Error al solicitar recuperación de contraseña" };
-  }
+  const response = await API.post("/users/password-reset/", { email });
+  return response.data;
 };
 
-// Restablecer contraseña
+/**
+ * Restablecer contraseña con token
+ * @param {string} uid - User ID
+ * @param {string} token - Token de recuperación
+ * @param {string} password - Nueva contraseña
+ * @param {string} password2 - Confirmación de contraseña
+ * @returns {Promise<Object>} Confirmación del cambio
+ */
 export const resetPassword = async (uid, token, password, password2) => {
-  try {
-    const response = await API.post(`/users/password-reset/${uid}/${token}/`, {
-      password,
-      password2,
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error en resetPassword:", error.response?.data || error.message);
-    throw error.response?.data || { detail: "Error al restablecer contraseña" };
-  }
+  const response = await API.post(`/users/password-reset/${uid}/${token}/`, {
+    password,
+    password2,
+  });
+  return response.data;
 };
