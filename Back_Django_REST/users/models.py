@@ -137,6 +137,46 @@ class User(AbstractUser):
         if self.locked_until is None:
             return False
         return self.locked_until > timezone.now()
+    
+    # === MÉTODOS PARA ROLES MÚLTIPLES (PHASE 4) ===
+    
+    def get_all_roles(self):
+        """Obtiene todos los roles del usuario (principal + adicionales)"""
+        roles = [self.role]
+        additional = self.additional_roles.filter(is_active=True).values_list('role', flat=True)
+        roles.extend(additional)
+        return list(set(roles))  # Eliminar duplicados
+    
+    def has_role(self, role):
+        """Verifica si el usuario tiene un rol específico"""
+        if self.role == role:
+            return True
+        return self.additional_roles.filter(role=role, is_active=True).exists()
+    
+    def add_role(self, role):
+        """Agrega un rol adicional al usuario"""
+        from users.role_models import UserRole
+        if role == self.role:
+            return False  # Ya es el rol principal
+        role_obj, created = UserRole.objects.get_or_create(
+            user=self,
+            role=role,
+            defaults={'is_active': True}
+        )
+        if not created and not role_obj.is_active:
+            role_obj.is_active = True
+            role_obj.save()
+        return created or role_obj.is_active
+    
+    def remove_role(self, role):
+        """Remueve un rol adicional del usuario"""
+        if role == self.role:
+            return False  # No puede remover el rol principal
+        return self.additional_roles.filter(role=role).update(is_active=False) > 0
+    
+    def can_access_as(self, role):
+        """Verifica si puede acceder con un rol específico"""
+        return self.has_role(role) and self.is_active and not self.is_account_locked()
 
     class Meta:
         verbose_name = "Usuario"

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MainLayout, PageHeader, Loader, AlertToast, PageContainer } from "@components/layout";
 import { ProfileSection, FormInput, FormTextarea } from "@components/profile";
+import ImageUploader from "@components/common/ImageUploader";
 import { Star, MapPin, Briefcase, Heart } from "lucide-react";
 import { getNannyProfile, updateNannyProfile } from "@api/profileApi";
 
@@ -19,7 +20,9 @@ export default function NannyProfile() {
     rating_avg: 0,
     total_bookings: 0,
     acceptance_rate: null,
+    profile_photo: null,
   });
+  const [profilePhoto, setProfilePhoto] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -57,6 +60,10 @@ export default function NannyProfile() {
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleImageSelect = (file) => {
+    setProfilePhoto(file);
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -69,22 +76,30 @@ export default function NannyProfile() {
         hourlyRateValue = hourlyRateValue[0];
       }
       
-      // Enviar solo los campos editables
-      const profileData = {
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        experience_years: parseInt(profile.experience_years) || 0,
-        hourly_rate: parseInt(hourlyRateValue) || 0,
-        description: profile.description,
-        age: parseInt(profile.age) || null,
-        certifications: profile.certifications,
-      };
+      // Crear FormData para enviar archivos
+      const formData = new FormData();
+      formData.append('first_name', profile.first_name);
+      formData.append('last_name', profile.last_name);
+      formData.append('experience_years', parseInt(profile.experience_years) || 0);
+      formData.append('hourly_rate', parseInt(hourlyRateValue) || 0);
+      formData.append('description', profile.description);
+      formData.append('certifications', profile.certifications);
       
-      console.log("ProfileData a enviar:", profileData);
+      if (profile.age) {
+        formData.append('age', parseInt(profile.age));
+      }
       
-      await updateNannyProfile(profileData);
+      // Agregar foto si se seleccionó una nueva
+      if (profilePhoto) {
+        formData.append('profile_photo', profilePhoto);
+      }
+      
+      console.log("FormData a enviar (con foto)");
+      
+      await updateNannyProfile(formData);
       setAlert({ type: "success", message: "Perfil actualizado correctamente" });
       setIsEditing(false);
+      setProfilePhoto(null);
       await loadProfile(); // Recargar datos actualizados
     } catch (error) {
       console.error("Error completo:", error);
@@ -122,6 +137,48 @@ export default function NannyProfile() {
           onSave={handleSave}
           isSaving={saving}
         >
+          {/* Foto de perfil - Siempre visible */}
+          <div className="mb-6">
+            {isEditing ? (
+              <ImageUploader
+                onImageSelect={handleImageSelect}
+                currentImage={profile.profile_photo}
+                label="Foto de Perfil"
+                maxSizeMB={5}
+              />
+            ) : (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-3">Foto de Perfil</p>
+                {profile.profile_photo ? (
+                  <div className="flex items-center gap-4">
+                    <img 
+                      src={profile.profile_photo} 
+                      alt="Foto de perfil" 
+                      className="w-32 h-32 rounded-full object-cover border-4 border-blue-100 shadow-md"
+                    />
+                    <div className="text-sm text-gray-600">
+                      <p className="font-medium mb-1">Foto actual</p>
+                      <p className="text-xs">Haz clic en "Editar" para cambiarla</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-4 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-4">
+                    <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center">
+                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <p className="font-medium mb-1 text-gray-700">Sin foto de perfil</p>
+                      <p className="text-xs">Haz clic en "Editar" para agregar una foto</p>
+                      <p className="text-xs text-gray-500 mt-1">Recomendado: Agrega una foto profesional</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
               label="Nombre"

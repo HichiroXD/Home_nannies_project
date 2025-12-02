@@ -301,9 +301,72 @@ export const NannyDashboard = () => {
                 </div>
               )}
               {activeTab === 2 && (
-                <div className="text-center py-8 text-gray-600">
-                  <Calendar className="mx-auto text-gray-400 mb-4" size={48} />
-                  <p>No tienes bookings activos</p>
+                <div>
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800">Mis Reservas</h3>
+                    <button
+                      onClick={() => navigate('/bookings/')}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    >
+                      Ver todas →
+                    </button>
+                  </div>
+                  
+                  {data.upcomingBookings && data.upcomingBookings.length > 0 ? (
+                    <div className="space-y-3">
+                      {data.upcomingBookings.slice(0, 3).map((booking) => (
+                        <div
+                          key={booking.id}
+                          className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                        >
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-800">
+                              {booking.parent__first_name || 'Cliente'} {booking.parent__last_name || ''}
+                            </p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              📅 {new Date(booking.start_time).toLocaleDateString('es-CL', {
+                                day: '2-digit',
+                                month: 'long',
+                                year: 'numeric'
+                              })}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              🕐 {new Date(booking.start_time).toLocaleTimeString('es-CL', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })} - {new Date(booking.end_time).toLocaleTimeString('es-CL', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                            booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {booking.status === 'pending' ? '⏳ Pendiente' :
+                             booking.status === 'confirmed' ? '✅ Confirmada' :
+                             booking.status}
+                          </span>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => navigate('/bookings/')}
+                        className="w-full py-3 text-center text-blue-600 hover:text-blue-700 font-medium text-sm border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                      >
+                        Ver todas las reservas →
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-600">
+                      <Calendar className="mx-auto text-gray-400 mb-4" size={48} />
+                      <p className="mb-2">No tienes reservas próximas</p>
+                      <p className="text-sm text-gray-500">
+                        Las solicitudes de reserva aparecerán aquí
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
               {activeTab === 3 && (

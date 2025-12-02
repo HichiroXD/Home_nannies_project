@@ -149,11 +149,20 @@ export default function Catalog() {
           {/* Header */}
           <div className="bg-gradient-to-r from-pink-200 to-pink-300 rounded-2xl p-6 mb-6 shadow-sm">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Catálogo
+              Catálogo de Niñeras
             </h1>
-            <p className="text-gray-700">
+            <p className="text-gray-700 mb-2">
               Encuentra a la niñera perfecta para tu infante
             </p>
+            <div className="bg-white/50 rounded-lg p-3 mt-3 border border-pink-300">
+              <p className="text-sm text-gray-700 flex items-start gap-2">
+                <span className="text-lg">💡</span>
+                <span>
+                  <strong>Precios mostrados:</strong> Los valores indicados son tarifas por hora en pesos chilenos (CLP). 
+                  El costo total de tu reserva se calculará automáticamente según el número de horas que contrates.
+                </span>
+              </p>
+            </div>
           </div>
 
           <NannyFilters

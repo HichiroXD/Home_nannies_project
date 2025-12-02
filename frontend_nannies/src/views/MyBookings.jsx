@@ -11,6 +11,7 @@ import {
   completeBooking,
 } from "@api/bookingApi";
 import { createReview } from "@api/reviewApi";
+import { ERROR_MESSAGES, SUCCESS_MESSAGES, WARNING_MESSAGES } from "@constants/messages";
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState([]);
@@ -36,7 +37,7 @@ export default function MyBookings() {
       console.log("Estados encontrados:", data.map(b => b.status));
       setBookings(data);
     } catch (err) {
-      showAlert("Error al cargar las reservas.", "error");
+      showAlert(ERROR_MESSAGES.generic, "error");
     } finally {
       setLoading(false);
     }
@@ -61,8 +62,21 @@ export default function MyBookings() {
     rejected: filteredBookings.filter((b) => b.status === "rejected"),
   };
 
+  // Verificar si se puede editar una reserva
+  const canEditBooking = (booking) => {
+    // Solo padres pueden editar
+    if (userRole !== "parent") return false;
+    // Solo se pueden editar reservas pendientes
+    if (booking.status !== "pending") return false;
+    return true;
+  };
+
   // Manejar edición de reserva
   const handleEditClick = (booking) => {
+    if (!canEditBooking(booking)) {
+      showAlert(ERROR_MESSAGES.booking.cannotEdit, "warning");
+      return;
+    }
     setEditingBooking(booking);
     setIsModalOpen(true);
   };
@@ -86,11 +100,11 @@ export default function MyBookings() {
         )
       );
 
-      showAlert("Reserva actualizada exitosamente ✅", "success");
+      showAlert(SUCCESS_MESSAGES.booking.updated, "success");
 
       handleModalClose();
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || err.response?.data?.error || "Error al actualizar la reserva.";
+      const errorMsg = err.response?.data?.detail || err.response?.data?.error || ERROR_MESSAGES.booking.updateFailed || ERROR_MESSAGES.generic;
       showAlert(errorMsg, "error");
     } finally {
       setActionLoading(false);
@@ -99,7 +113,7 @@ export default function MyBookings() {
 
   // Manejar eliminación/cancelación
   const handleDelete = async (bookingId) => {
-    if (!window.confirm("¿Estás seguro de que deseas cancelar esta reserva?")) {
+    if (!window.confirm(WARNING_MESSAGES.confirmCancel)) {
       return;
     }
 
@@ -357,7 +371,7 @@ export default function MyBookings() {
                       <BookingCard
                         key={booking.id}
                         booking={booking}
-                        onEdit={userRole === "parent" ? handleEditClick : undefined}
+                        onEdit={canEditBooking(booking) ? handleEditClick : undefined}
                         onDelete={userRole === "parent" ? handleDelete : undefined}
                         onAccept={userRole === "nanny" ? handleAccept : undefined}
                         onReject={userRole === "nanny" ? handleReject : undefined}
@@ -380,7 +394,7 @@ export default function MyBookings() {
                       <BookingCard
                         key={booking.id}
                         booking={booking}
-                        onEdit={userRole === "parent" ? handleEditClick : undefined}
+                        onEdit={canEditBooking(booking) ? handleEditClick : undefined}
                         onDelete={userRole === "parent" ? handleDelete : undefined}
                         onComplete={userRole === "nanny" ? handleComplete : undefined}
                         userRole={userRole}

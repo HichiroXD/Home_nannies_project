@@ -8,17 +8,18 @@ class ParentProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name', required=False, allow_blank=True)
     last_name = serializers.CharField(source='user.last_name', required=False, allow_blank=True)
     full_name = serializers.SerializerMethodField()
+    role = serializers.CharField(source='user.role', read_only=True)
     total_bookings = serializers.SerializerMethodField()
     
     class Meta:
         model = ParentProfile
         fields = [
-            'id', 'username', 'email', 'first_name', 'last_name', 'full_name',
+            'id', 'username', 'email', 'first_name', 'last_name', 'full_name', 'role',
             'phone', 'address', 'emergency_contact',
             'children_count', 'preferences', 'total_bookings',
-            'created_at', 'updated_at'
+            'profile_photo', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at', 'role']
     
     def get_full_name(self, obj):
         return obj.user.get_full_name() or obj.user.username

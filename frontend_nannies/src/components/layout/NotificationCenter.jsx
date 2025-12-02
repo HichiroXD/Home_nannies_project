@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, X, CheckCircle, AlertCircle, Info, Clock, Ban } from "lucide-react";
+import { Bell, X, CheckCircle, AlertCircle, Info, Clock, Ban, Star } from "lucide-react";
 import { getNotifications, markNotificationsAsRead } from "@api/notificationApi";
 
 /**
@@ -59,6 +59,8 @@ export default function NotificationCenter({ onNotificationRead }) {
     if (message.includes('completada')) return 'Reserva Completada';
     if (message.includes('nueva solicitud')) return 'Nueva Reserva';
     if (message.includes('mensaje')) return 'Nuevo Mensaje';
+    if (message.includes('Reseña publicada') || message.includes('dejado una reseña')) return 'Reseña Publicada';
+    if (message.includes('Nueva reseña recibida') || message.includes('te ha dejado una reseña')) return 'Nueva Reseña';
     return 'Notificación';
   };
 
@@ -67,6 +69,7 @@ export default function NotificationCenter({ onNotificationRead }) {
     if (message.includes('confirmada') || message.includes('completada')) return 'success';
     if (message.includes('rechazada') || message.includes('cancelada')) return 'error';
     if (message.includes('nueva solicitud')) return 'info';
+    if (message.includes('reseña')) return 'success';
     return 'info';
   };
 
@@ -98,6 +101,7 @@ export default function NotificationCenter({ onNotificationRead }) {
   // Iconos según tipo
   const getIcon = (type, title) => {
     // Iconos más específicos según el título
+    if (title.includes('Reseña')) return <Star size={20} className="text-yellow-500" />;
     if (title.includes('Confirmada')) return <CheckCircle size={20} className="text-green-600" />;
     if (title.includes('Completada')) return <CheckCircle size={20} className="text-blue-600" />;
     if (title.includes('Rechazada')) return <Ban size={20} className="text-red-600" />;
@@ -116,8 +120,10 @@ export default function NotificationCenter({ onNotificationRead }) {
     }
   };
 
-  // Colores según tipo
-  const getColors = (type) => {
+  // Colores según tipo y título
+  const getColors = (type, title) => {
+    if (title?.includes('Reseña')) return "bg-yellow-50 border-yellow-200";
+    
     switch (type) {
       case "success":
         return "bg-green-50 border-green-200";

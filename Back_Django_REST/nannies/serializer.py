@@ -19,7 +19,7 @@ class NannyProfileSerializer(serializers.ModelSerializer):
             'id', 'user_id', 'username', 'email', 'first_name', 'last_name', 'role',
             'experience_years', 'hourly_rate', 'description', 'verified',
             'age', 'certifications', 'rating_avg', 'reviews',
-            'total_bookings', 'acceptance_rate'
+            'total_bookings', 'acceptance_rate', 'profile_photo'
         ]
 
     def get_reviews(self, obj):
@@ -45,7 +45,7 @@ class NannyProfileSerializer(serializers.ModelSerializer):
         user_data = validated_data.pop('user', {})
         
         # Actualizar perfil de niñera (solo campos del modelo NannyProfile)
-        profile_fields = ['experience_years', 'hourly_rate', 'description', 'age', 'certifications', 'rating_avg']
+        profile_fields = ['experience_years', 'hourly_rate', 'description', 'age', 'certifications', 'rating_avg', 'profile_photo']
         for attr in profile_fields:
             if attr in validated_data:
                 setattr(instance, attr, validated_data[attr])

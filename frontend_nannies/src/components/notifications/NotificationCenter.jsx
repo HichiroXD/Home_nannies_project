@@ -83,6 +83,29 @@ const NotificationCenter = ({ isOpen, onClose }) => {
     }
   };
 
+  // Manejar el cierre (x) de una notificación
+  const handleDismiss = async (notificationId, isRead) => {
+    try {
+      // Si no está leída, marcarla como leída primero
+      if (!isRead) {
+        await markNotificationsAsRead([notificationId]);
+      }
+      
+      // Si estamos en modo "solo no leídas", remover de la vista local
+      if (filter === 'unread') {
+        setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      } else {
+        // Recargar lista completa
+        loadNotifications();
+      }
+      
+      loadUnreadCount();
+    } catch (err) {
+      console.error('Error dismissing notification:', err);
+      setError('Error al procesar notificación');
+    }
+  };
+
   const getNotificationIcon = (templateName) => {
     const icons = {
       ocr_approved: '✅',
@@ -209,9 +232,16 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                     </button>
                   )}
                   <button
+                    className="action-btn dismiss-btn"
+                    onClick={() => handleDismiss(notif.id, notif.status === 'read')}
+                    title="Descartar (marcar como leída y ocultar)"
+                  >
+                    ✕
+                  </button>
+                  <button
                     className="action-btn delete-btn"
                     onClick={() => handleDelete(notif.id)}
-                    title="Eliminar"
+                    title="Eliminar permanentemente"
                   >
                     🗑️
                   </button>

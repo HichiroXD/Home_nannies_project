@@ -134,9 +134,34 @@ class AvailabilitySerializer(serializers.ModelSerializer):
         return bookings.exists()
 
     def validate(self, data):
-        if data["start_time"] >= data["end_time"]:
-            raise serializers.ValidationError("La hora de inicio debe ser menor a la de fin.")
+        from datetime import datetime, time
+        from .constants import ERROR_MESSAGES, AVAILABILITY_MESSAGES
+        
+        start_time = data["start_time"]
+        end_time = data["end_time"]
+        day = data["day"]
+        
+        # Validación 1: Hora de inicio antes de fin
+        if start_time >= end_time:
+            raise serializers.ValidationError({
+                "start_time": "La hora de inicio debe ser anterior a la hora de fin.",
+                "end_time": f"La hora de fin ({end_time.strftime('%H:%M')}) debe ser posterior a la de inicio ({start_time.strftime('%H:%M')})."
+            })
+        
+        # Validación 2: Horario razonable (6 AM - 11 PM)
+        if start_time < time(6, 0) or end_time > time(23, 0):
+            raise serializers.ValidationError({
+                "non_field_errors": ["⏰ " + ERROR_MESSAGES['unreasonable_hours']]
+            })
+        
+        # Validación 3: Duración mínima de 1 hora
+        duration = (datetime.combine(day, end_time) - datetime.combine(day, start_time)).seconds / 3600
+        if duration < 1:
+            raise serializers.ValidationError({
+                "non_field_errors": ["⏱️ " + ERROR_MESSAGES['minimum_duration']]
+            })
 
+        # Validación 4: Traslapes con disponibilidad existente
         qs = Availability.objects.filter(
             nanny=self.context["request"].user,
             day=data["day"],
@@ -149,7 +174,32 @@ class AvailabilitySerializer(serializers.ModelSerializer):
             qs = qs.exclude(pk=self.instance.pk)
         
         if qs.exists():
-            raise serializers.ValidationError("Ya existe disponibilidad en este rango.")
+            existing = qs.first()
+            error_lines = [
+                f"{AVAILABILITY_MESSAGES['conflict_detected']}:",
+                "",
+                AVAILABILITY_MESSAGES['existing_slot'].format(
+                    date=day.strftime('%d/%m/%Y'),
+                    start_time=existing.start_time.strftime('%H:%M'),
+                    end_time=existing.end_time.strftime('%H:%M')
+                ),
+                "",
+                AVAILABILITY_MESSAGES['overlap_explanation'].format(
+                    new_start=start_time.strftime('%H:%M'),
+                    new_end=end_time.strftime('%H:%M')
+                ),
+                "",
+                AVAILABILITY_MESSAGES['suggestions_header'],
+                AVAILABILITY_MESSAGES['suggestion_edit'],
+                AVAILABILITY_MESSAGES['suggestion_different_time'].format(
+                    before=existing.start_time.strftime('%H:%M'),
+                    after=existing.end_time.strftime('%H:%M')
+                )
+            ]
+            raise serializers.ValidationError({
+                "non_field_errors": error_lines
+            })
+        
         return data
 
     def create(self, validated_data):

@@ -83,6 +83,31 @@ class ReviewListCreateView(generics.ListCreateAPIView):
         
         logger.info(f"Review created successfully: {review.id}")
         
+        # Crear notificaciones
+        from notifications.models import Notification
+        
+        # Notificación para el padre (confirmación)
+        Notification.objects.create(
+            user=request.user,
+            channel='in_app',
+            subject='Reseña publicada',
+            message=f'Has dejado una reseña de {review.rating} estrellas para {nanny_profile.user.get_full_name() or nanny_profile.user.username}.',
+            status='sent',
+            context_data={'review_id': review.id, 'rating': review.rating}
+        )
+        
+        # Notificación para la niñera (nueva reseña recibida)
+        Notification.objects.create(
+            user=nanny_profile.user,
+            channel='in_app',
+            subject='Nueva reseña recibida',
+            message=f'{request.user.get_full_name() or request.user.username} te ha dejado una reseña de {review.rating} estrellas.',
+            status='sent',
+            context_data={'review_id': review.id, 'rating': review.rating, 'parent_name': request.user.get_full_name() or request.user.username}
+        )
+        
+        logger.info(f"Notifications created for review {review.id}")
+        
         # Serializar la respuesta usando ReviewSerializer
         response_serializer = ReviewSerializer(review)
         headers = self.get_success_headers(response_serializer.data)

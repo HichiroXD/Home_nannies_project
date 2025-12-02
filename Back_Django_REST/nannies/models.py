@@ -14,6 +14,12 @@ class NannyProfile(models.Model):
     age = models.PositiveIntegerField(null=True, blank=True)
     certifications = models.TextField(blank=True)
     rating_avg = models.DecimalField(max_digits=3, decimal_places=2, default=0.0)
+    profile_photo = models.ImageField(upload_to='nanny_profiles/', blank=True, null=True)
+
+    @property
+    def role(self):
+        """Retorna el rol del usuario asociado"""
+        return self.user.role
 
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name} - ${self.hourly_rate}/hr"
