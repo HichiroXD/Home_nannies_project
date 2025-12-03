@@ -108,6 +108,29 @@ class User(AbstractUser):
     # Auditoría
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+    
+    # === CAMPOS DE SUSPENSIÓN (SPRINT 3) ===
+    is_suspended = models.BooleanField(
+        default=False,
+        help_text="¿Usuario suspendido por admin?"
+    )
+    suspended_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Fecha y hora de suspensión"
+    )
+    suspended_by = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='suspended_users',
+        help_text="Admin que suspendió al usuario"
+    )
+    suspension_reason = models.TextField(
+        blank=True,
+        help_text="Razón de la suspensión"
+    )
 
     objects = UserManager()
 

@@ -63,14 +63,14 @@ class ReviewListCreateView(RoleBasedQuerysetWithNestedMixin, generics.ListCreate
         # Obtener la instancia de NannyProfile
         nanny_profile = NannyProfile.objects.get(pk=nanny_id)
         
-        # Verificar que no exista una reseña previa del mismo padre para esta niñera
-        existing_review = Review.objects.filter(
-            parent=request.user,
-            nanny=nanny_profile
-        ).first()
-        
-        if existing_review:
-            raise ValidationError({"detail": "Ya has dejado una reseña para esta niñera."})
+        # SPRINT 3: Permitir múltiples reseñas del mismo padre a la misma niñera
+        # (Comentado - ya no se valida duplicados)
+        # existing_review = Review.objects.filter(
+        #     parent=request.user,
+        #     nanny=nanny_profile
+        # ).first()
+        # if existing_review:
+        #     raise ValidationError({"detail": "Ya has dejado una reseña para esta niñera."})
         
         # Crear la reseña
         review = Review.objects.create(
@@ -98,6 +98,23 @@ class ReviewListCreateView(RoleBasedQuerysetWithNestedMixin, generics.ListCreate
         headers = self.get_success_headers(response_serializer.data)
         
         return Response(response_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class AdminAllReviewsView(generics.ListAPIView):
+    """
+    Vista exclusiva para administradores.
+    Lista TODAS las reseñas del sistema (de todos los padres y niñeras).
+    """
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Review.objects.all().select_related('parent', 'nanny', 'nanny__user').order_by('-created_at')
+    
+    def get_queryset(self):
+        # Verificar que el usuario sea administrador
+        if self.request.user.role != 'admin':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Solo los administradores pueden ver todas las reseñas.")
+        return super().get_queryset()
 
 
 class ReviewDetailView(generics.RetrieveDestroyAPIView):

@@ -19,6 +19,8 @@ import {
   TabsComponent,
   useToggle,
 } from '@/components/common';
+import { MainLayout } from '@/components/layout';
+import API from '@api/api';
 
 // Componentes del dashboard
 import AdminHeader from './components/AdminHeader';
@@ -32,9 +34,6 @@ export const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [showAddUser, setShowAddUser] = useToggle(false);
 
-  // Obtener token para auth
-  const token = localStorage.getItem('token');
-
   // Estados del dashboard
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -42,25 +41,30 @@ export const AdminDashboard = () => {
 
   // Obtener datos del dashboard
   useEffect(() => {
-    if (!token) return;
-
     const fetchAdminData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/dashboard/admin', {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        if (response.ok) {
-          setDashboardData(await response.json());
-        }
+        setError(null);
+        
+        const response = await API.get('/dashboard/admin/');
+        setDashboardData(response.data);
+        console.log('✅ Datos reales del dashboard cargados:', response.data);
       } catch (err) {
-        setError('Error de conexión con el servidor');
+        console.error('Error al cargar dashboard:', err);
+        if (err.response?.status === 401) {
+          setError('No tienes permisos de administrador o tu sesión expiró.');
+        } else if (err.response?.status === 403) {
+          setError('Acceso denegado. Solo administradores pueden ver este dashboard.');
+        } else {
+          setError('Error de conexión con el servidor. Mostrando datos de demostración.');
+        }
       } finally {
         setLoading(false);
       }
     };
+    
     fetchAdminData();
-  }, [token]);
+  }, []);
 
   // Datos de demostración (se usan solo si no hay datos reales del API)
   const demoData = {
@@ -150,27 +154,43 @@ export const AdminDashboard = () => {
 
   // Usar datos reales si están disponibles, si no usar datos demo
   const data = dashboardData || demoData;
+  const isUsingRealData = !!dashboardData;
 
   if (loading) {
     return (
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Typography variant="h6" sx={{ textAlign: 'center', py: 10 }}>
-          Cargando datos del dashboard...
-        </Typography>
-      </Container>
+      <MainLayout>
+        <Container maxWidth="xl" sx={{ py: 4 }}>
+          <Typography variant="h6" sx={{ textAlign: 'center', py: 10 }}>
+            Cargando datos del dashboard...
+          </Typography>
+        </Container>
+      </MainLayout>
     );
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <MainLayout>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
       <Stack spacing={4}>
         {/* Header */}
         <AdminHeader admin={data.admin} />
 
         {/* Alertas */}
+        {!isUsingRealData && (
+          <MuiAlert severity="warning">
+            Mostrando datos de demostración. Inicia sesión con credenciales de administrador para ver datos reales.
+          </MuiAlert>
+        )}
+        
+        {isUsingRealData && (
+          <MuiAlert severity="success">
+            ✓ Datos reales cargados correctamente desde la base de datos
+          </MuiAlert>
+        )}
+        
         {error && (
-          <MuiAlert severity="warning" onClose={() => setError(null)}>
-            {error} - Mostrando datos de demostración
+          <MuiAlert severity="error" onClose={() => setError(null)}>
+            {error}
           </MuiAlert>
         )}
 
@@ -243,6 +263,7 @@ export const AdminDashboard = () => {
         </Box>
       </Stack>
     </Container>
+    </MainLayout>
   );
 };
 

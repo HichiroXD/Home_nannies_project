@@ -68,22 +68,68 @@ class BookingSerializer(serializers.ModelSerializer):
         return data
 
     def to_representation(self, instance):
-        """Incluye información extendida de parent y nanny con sus perfiles."""
-        from parents.models import ParentProfile
+        """
+        Incluye información extendida de parent y nanny con sus perfiles.
+        
+        SPRINT 3 - PRIVACIDAD:
+        - Si el usuario es niñera y el booking está 'pending', oculta información del niño
+        - La información completa del niño solo se muestra cuando el booking es 'confirmed'
+        """
+        from parents.models import ParentProfile, Child
         from nannies.models import NannyProfile
         from .utils import get_user_profile_data
         
         rep = super().to_representation(instance)
+        request = self.context.get('request')
         
         # Incluir información del padre/madre con su perfil
-        rep["parent"] = get_user_profile_data(
+        parent_data = get_user_profile_data(
             instance.parent, ParentProfile, 'parent_profile_id'
         )
+        rep["parent"] = parent_data
         
         # Incluir información de la niñera con su perfil
         rep["nanny"] = get_user_profile_data(
             instance.nanny, NannyProfile, 'nanny_profile_id'
         )
+        
+        # === PRIVACIDAD DE DATOS DEL NIÑO (SPRINT 3) ===
+        # Si el usuario actual es la niñera y el booking NO está confirmado,
+        # ocultar información sensible del niño
+        if request and hasattr(request, 'user'):
+            user = request.user
+            is_nanny = user == instance.nanny
+            is_pending = instance.status == 'pending'
+            
+            if is_nanny and is_pending:
+                # Booking pendiente: ocultar datos del niño
+                rep['child_info_available'] = False
+                rep['child_privacy_message'] = (
+                    'La información del niño estará disponible cuando aceptes la reserva.'
+                )
+                # Eliminar campos sensibles si existen
+                rep.pop('child_name', None)
+                rep.pop('child_age', None)
+                rep.pop('child_details', None)
+            else:
+                # Booking confirmado o usuario es el padre: mostrar info completa
+                rep['child_info_available'] = True
+                
+                # Obtener información de los hijos del padre
+                if hasattr(instance.parent, 'parent_profile'):
+                    children = Child.objects.filter(
+                        parent=instance.parent.parent_profile
+                    )
+                    if children.exists():
+                        rep['children'] = [{
+                            'id': child.id,
+                            'name': child.name,
+                            'age': child.age,
+                            'allergies': child.allergies,
+                            'medical_conditions': child.medical_conditions,
+                            'special_needs': child.special_needs,
+                            'notes': child.notes,
+                        } for child in children]
         
         return rep
 

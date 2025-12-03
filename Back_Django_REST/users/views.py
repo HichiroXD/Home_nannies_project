@@ -367,40 +367,408 @@ def parent_dashboard(request):
 @permission_classes([IsAuthenticated])
 def admin_dashboard(request):
     """Endpoint para obtener datos del dashboard del admin."""
-    user = request.user
-    
-    if user.role != 'admin' and not user.is_superuser:
+    try:
+        user = request.user
+        
+        if user.role != 'admin' and not user.is_superuser:
+            return Response(
+                {'error': 'No tienes permisos de administrador'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        from django.db.models import Count, Q
+        from datetime import datetime, timedelta
+        
+        # Estadísticas generales
+        total_users = User.objects.count()
+        active_users = User.objects.filter(is_active=True).count()
+        total_nannies = User.objects.filter(role='nanny', is_verified=True).count()
+        total_parents = User.objects.filter(role='parent').count()
+        
+        # Bookings
+        total_bookings = Booking.objects.count()
+        pending_bookings = Booking.objects.filter(status='pending').count()
+        completed_bookings = Booking.objects.filter(status='completed').count()
+        
+        # Calcular tasa de éxito
+        success_rate = (completed_bookings / total_bookings * 100) if total_bookings > 0 else 0
+        
+        # Lista de usuarios (primeros 20)
+        users_list = []
+        for u in User.objects.all().order_by('-date_joined')[:20]:
+            bookings_count = 0
+            if u.role == 'nanny':
+                bookings_count = Booking.objects.filter(nanny=u).count()
+            elif u.role == 'parent':
+                bookings_count = Booking.objects.filter(parent=u).count()
+            
+            users_list.append({
+                'id': u.id,
+                'name': f"{u.first_name} {u.last_name}" if u.first_name and u.last_name else u.username,
+                'email': u.email,
+                'role': u.role,
+                'status': 'active' if u.is_active else 'inactive',
+                'joinDate': u.date_joined.strftime('%Y-%m-%d'),
+                'bookings': bookings_count,
+            })
+        
+        # Reportes mensuales (últimos 6 meses)
+        reports = []
+        for i in range(5, -1, -1):
+            date = datetime.now() - timedelta(days=30*i)
+            month_start = date.replace(day=1)
+            month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+            
+            bookings_count = Booking.objects.filter(
+                created_at__gte=month_start,
+                created_at__lte=month_end
+            ).count()
+            
+            users_count = User.objects.filter(
+                date_joined__gte=month_start,
+                date_joined__lte=month_end
+            ).count()
+            
+            # Calcular revenue estimado (bookings completados * tarifa promedio)
+            completed = Booking.objects.filter(
+                created_at__gte=month_start,
+                created_at__lte=month_end,
+                status='completed'
+            ).count()
+            revenue = completed * 50000  # Tarifa promedio estimada
+            
+            reports.append({
+                'month': date.strftime('%B'),
+                'bookings': bookings_count,
+                'revenue': revenue,
+                'users': users_count,
+            })
+        
+        # OCR Status - con manejo de errores
+        ocr_status_data = {
+            'total': 0,
+            'processed': 0,
+            'pending': 0,
+            'failed': 0,
+            'lastUpdate': 'N/A',
+        }
+        try:
+            from core.models import OCRExtraction
+            ocr_status_data['total'] = OCRExtraction.objects.count()
+            ocr_status_data['processed'] = OCRExtraction.objects.filter(status='validated').count()
+            ocr_status_data['pending'] = OCRExtraction.objects.filter(status='extracting').count()
+            ocr_status_data['failed'] = OCRExtraction.objects.filter(status='failed').count()
+            last_ocr = OCRExtraction.objects.order_by('-extracted_at').first()
+            if last_ocr:
+                ocr_status_data['lastUpdate'] = last_ocr.extracted_at.strftime('%Y-%m-%d %H:%M')
+        except Exception as e:
+            print(f"Error loading OCR status: {e}")
+        
+        # Academic Status - usando AcademicVerification que tiene status
+        academic_status_data = {
+            'total': 0,
+            'verified': 0,
+            'pending': 0,
+            'rejected': 0,
+            'lastUpdate': 'N/A',
+        }
+        try:
+            from academic.models import AcademicVerification
+            academic_status_data['total'] = AcademicVerification.objects.count()
+            academic_status_data['verified'] = AcademicVerification.objects.filter(status='verified').count()
+            academic_status_data['pending'] = AcademicVerification.objects.filter(status='pending').count()
+            academic_status_data['rejected'] = AcademicVerification.objects.filter(status='failed').count()
+            last_academic = AcademicVerification.objects.order_by('-created_at').first()
+            if last_academic:
+                academic_status_data['lastUpdate'] = last_academic.created_at.strftime('%Y-%m-%d %H:%M')
+        except Exception as e:
+            print(f"Error loading Academic status: {e}")
+        
+        dashboard_data = {
+            'admin': {
+                'name': f"{user.first_name} {user.last_name}" if user.first_name and user.last_name else user.username,
+                'avatar': (user.first_name[0] + user.last_name[0]) if user.first_name and user.last_name else user.username[0].upper(),
+                'role': 'Superadmin' if user.is_superuser else 'Admin',
+            },
+            'metrics': {
+                'totalUsers': total_users,
+                'activeUsers': active_users,
+                'totalNannies': total_nannies,
+                'totalParents': total_parents,
+                'totalBookings': total_bookings,
+                'pendingBookings': pending_bookings,
+                'successRate': round(success_rate, 1),
+            },
+            'users': users_list,
+            'reports': reports,
+            'ocrStatus': ocr_status_data,
+            'academicStatus': academic_status_data,
+            'systemHealth': {
+                'status': 'ok',
+                'uptime': '99.9%',
+            }
+        }
+        
+        return Response(dashboard_data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        import traceback
+        print(f"Error en admin_dashboard: {str(e)}")
+        print(traceback.format_exc())
         return Response(
-            {'error': 'No tienes permisos de administrador'},
+            {'error': f'Error interno del servidor: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+# === ENDPOINTS DE GESTIÓN DE USUARIOS (SPRINT 3) ===
+
+from rest_framework.decorators import api_view, permission_classes
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from notifications.models import Notification
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def suspend_user(request, user_id):
+    """
+    Suspende un usuario (solo admin).
+    
+    POST /api/users/{user_id}/suspend/
+    Body: {
+        "reason": "Motivo de la suspensión"
+    }
+    """
+    user = get_object_or_404(User, id=user_id)
+    
+    # No permitir suspender a otros admins
+    if user.role == 'admin':
+        return Response(
+            {'error': 'No se puede suspender a un administrador'},
             status=status.HTTP_403_FORBIDDEN
         )
     
-    # Estadísticas generales
-    total_users = User.objects.count()
-    total_nannies = User.objects.filter(role='nanny', is_verified=True).count()
-    total_parents = User.objects.filter(role='parent').count()
+    # No suspender si ya está suspendido
+    if user.is_suspended:
+        return Response(
+            {'error': 'El usuario ya está suspendido'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
     
-    # Bookings
-    total_bookings = Booking.objects.count()
-    pending_bookings = Booking.objects.filter(status='pending').count()
+    reason = request.data.get('reason', 'Sin motivo especificado')
     
-    dashboard_data = {
-        'admin': {
-            'name': f"{user.first_name} {user.last_name}",
-            'avatar': user.first_name[0] + user.last_name[0] if user.first_name and user.last_name else 'A',
-            'role': 'Superadmin' if user.is_superuser else 'Admin',
-        },
-        'stats': {
-            'totalUsers': total_users,
-            'totalNannies': total_nannies,
-            'totalParents': total_parents,
-            'totalBookings': total_bookings,
-            'pendingBookings': pending_bookings,
-        },
-        'systemHealth': {
-            'status': 'ok',
-            'uptime': '99.9%',
+    user.is_suspended = True
+    user.suspended_at = timezone.now()
+    user.suspended_by = request.user
+    user.suspension_reason = reason
+    user.is_active = False  # Desactivar cuenta
+    user.save()
+    
+    # Crear notificación para el usuario suspendido
+    try:
+        Notification.objects.create(
+            user=user,
+            title='Cuenta Suspendida',
+            message=f'Tu cuenta ha sido suspendida. Motivo: {reason}',
+            type='warning',
+            priority='high'
+        )
+    except Exception:
+        pass  # Si falla la notificación, continuar
+    
+    # Enviar email de notificación
+    try:
+        send_mail(
+            subject="Cuenta Suspendida - Home Nannies",
+            message=f"Tu cuenta ha sido suspendida.\n\nMotivo: {reason}\n\nContacta al administrador para más información.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
+    except Exception:
+        pass
+    
+    return Response({
+        'message': 'Usuario suspendido exitosamente',
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'is_suspended': user.is_suspended,
+            'suspended_at': user.suspended_at,
+            'suspension_reason': user.suspension_reason,
         }
-    }
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def reactivate_user(request, user_id):
+    """
+    Reactiva un usuario suspendido (solo admin).
     
-    return Response(dashboard_data, status=status.HTTP_200_OK)
+    POST /api/users/{user_id}/reactivate/
+    """
+    user = get_object_or_404(User, id=user_id)
+    
+    if not user.is_suspended:
+        return Response(
+            {'error': 'El usuario no está suspendido'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    user.is_suspended = False
+    user.suspended_at = None
+    user.suspended_by = None
+    user.suspension_reason = ''
+    user.is_active = True
+    user.save()
+    
+    # Crear notificación
+    try:
+        Notification.objects.create(
+            user=user,
+            title='Cuenta Reactivada',
+            message='Tu cuenta ha sido reactivada. Ya puedes acceder nuevamente.',
+            type='success',
+            priority='high'
+        )
+    except Exception:
+        pass
+    
+    # Enviar email
+    try:
+        send_mail(
+            subject="Cuenta Reactivada - Home Nannies",
+            message="Tu cuenta ha sido reactivada exitosamente.\n\nYa puedes acceder nuevamente al sistema.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
+    except Exception:
+        pass
+    
+    return Response({
+        'message': 'Usuario reactivado exitosamente',
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'is_active': user.is_active,
+            'is_suspended': user.is_suspended,
+        }
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def approve_user(request, user_id):
+    """
+    Aprueba un usuario pendiente (solo admin).
+    
+    POST /api/users/{user_id}/approve/
+    """
+    user = get_object_or_404(User, id=user_id)
+    
+    if user.verification_status == 'approved':
+        return Response(
+            {'error': 'El usuario ya está aprobado'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    user.verification_status = 'approved'
+    user.is_verified = True
+    user.pending_verification = False
+    user.save()
+    
+    # Crear notificación
+    try:
+        Notification.objects.create(
+            user=user,
+            title='Cuenta Aprobada',
+            message='Tu cuenta ha sido aprobada. Ya puedes usar todos los servicios.',
+            type='success',
+            priority='high'
+        )
+    except Exception:
+        pass
+    
+    # Enviar email
+    try:
+        send_mail(
+            subject="Cuenta Aprobada - Home Nannies",
+            message="¡Felicitaciones! Tu cuenta ha sido aprobada.\n\nYa puedes usar todos los servicios de Home Nannies.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
+    except Exception:
+        pass
+    
+    return Response({
+        'message': 'Usuario aprobado exitosamente',
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'verification_status': user.verification_status,
+            'is_verified': user.is_verified,
+        }
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def reject_user(request, user_id):
+    """
+    Rechaza un usuario pendiente (solo admin).
+    
+    POST /api/users/{user_id}/reject/
+    Body: {
+        "reason": "Motivo del rechazo"
+    }
+    """
+    user = get_object_or_404(User, id=user_id)
+    
+    if user.verification_status == 'rejected':
+        return Response(
+            {'error': 'El usuario ya está rechazado'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    reason = request.data.get('reason', 'Sin motivo especificado')
+    
+    user.verification_status = 'rejected'
+    user.is_active = False
+    user.save()
+    
+    # Crear notificación
+    try:
+        Notification.objects.create(
+            user=user,
+            title='Cuenta Rechazada',
+            message=f'Tu cuenta ha sido rechazada. Motivo: {reason}',
+            type='error',
+            priority='high'
+        )
+    except Exception:
+        pass
+    
+    # Enviar email
+    try:
+        send_mail(
+            subject="Cuenta Rechazada - Home Nannies",
+            message=f"Tu solicitud de cuenta ha sido rechazada.\n\nMotivo: {reason}\n\nContacta al administrador para más información.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
+    except Exception:
+        pass
+    
+    return Response({
+        'message': 'Usuario rechazado',
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'verification_status': user.verification_status,
+        }
+    }, status=status.HTTP_200_OK)

@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 import { Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { DataTable } from '@/components/common';
+import UserActionButtons from './UserActionButtons';
 
 export const UserManagement = ({
   users = [],
@@ -133,25 +134,15 @@ export const UserManagement = ({
           >
             Ver
           </Button>
-          <Button
-            size="small"
-            startIcon={<Edit size={14} />}
-            onClick={() => {
-              setFormData(row);
-              onAddUser();
-            }}
-          >
-            Editar
-          </Button>
-          <Button
-            size="small"
-            color="error"
-            startIcon={<Trash2 size={14} />}
-            onClick={() => console.log('Delete:', row.id)}
-          >
-            Eliminar
-          </Button>
         </Stack>
+      ),
+    },
+    {
+      key: 'management',
+      label: 'Gestión',
+      sortable: false,
+      render: (value, row) => (
+        <UserActionButtons user={row} onActionComplete={() => window.location.reload()} />
       ),
     },
   ];
