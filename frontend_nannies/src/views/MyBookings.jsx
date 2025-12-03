@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { MainLayout, Loader, PageContainer } from "@components/layout";
 import { AlertToast, useAlert } from "@components/common";
-import { EditBookingModal, BookingCard, ConfirmationModal } from "@components/bookings";
+import { EditBookingModal, BookingCard, ConfirmationModal, ReviewModal } from "@components/bookings";
 import {
   getBookings,
   updateBooking,
@@ -10,6 +10,8 @@ import {
   rejectBooking,
   completeBooking,
 } from "@api/bookingApi";
+import { createReview } from "@api/reviewApi";
+import { ERROR_MESSAGES, SUCCESS_MESSAGES, WARNING_MESSAGES } from "@constants/messages";
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState([]);
@@ -21,6 +23,8 @@ export default function MyBookings() {
   const [confirmedBooking, setConfirmedBooking] = useState(null);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [filter, setFilter] = useState("all"); // all, pending, confirmed, completed
+  const [reviewingBooking, setReviewingBooking] = useState(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   const userRole = localStorage.getItem("role");
 
@@ -29,9 +33,11 @@ export default function MyBookings() {
     try {
       setLoading(true);
       const data = await getBookings();
+      console.log("Reservas cargadas:", data);
+      console.log("Estados encontrados:", data.map(b => b.status));
       setBookings(data);
     } catch (err) {
-      showAlert("Error al cargar las reservas.", "error");
+      showAlert(ERROR_MESSAGES.generic, "error");
     } finally {
       setLoading(false);
     }
@@ -56,8 +62,21 @@ export default function MyBookings() {
     rejected: filteredBookings.filter((b) => b.status === "rejected"),
   };
 
+  // Verificar si se puede editar una reserva
+  const canEditBooking = (booking) => {
+    // Solo padres pueden editar
+    if (userRole !== "parent") return false;
+    // Solo se pueden editar reservas pendientes
+    if (booking.status !== "pending") return false;
+    return true;
+  };
+
   // Manejar edición de reserva
   const handleEditClick = (booking) => {
+    if (!canEditBooking(booking)) {
+      showAlert(ERROR_MESSAGES.booking.cannotEdit, "warning");
+      return;
+    }
     setEditingBooking(booking);
     setIsModalOpen(true);
   };
@@ -81,11 +100,11 @@ export default function MyBookings() {
         )
       );
 
-      showAlert("Reserva actualizada exitosamente ✅", "success");
+      showAlert(SUCCESS_MESSAGES.booking.updated, "success");
 
       handleModalClose();
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || err.response?.data?.error || "Error al actualizar la reserva.";
+      const errorMsg = err.response?.data?.detail || err.response?.data?.error || ERROR_MESSAGES.booking.updateFailed || ERROR_MESSAGES.generic;
       showAlert(errorMsg, "error");
     } finally {
       setActionLoading(false);
@@ -94,7 +113,7 @@ export default function MyBookings() {
 
   // Manejar eliminación/cancelación
   const handleDelete = async (bookingId) => {
-    if (!window.confirm("¿Estás seguro de que deseas cancelar esta reserva?")) {
+    if (!window.confirm(WARNING_MESSAGES.confirmCancel)) {
       return;
     }
 
@@ -135,6 +154,32 @@ export default function MyBookings() {
     }
   };
 
+  // Manejar completar reserva
+  const handleComplete = async (bookingId) => {
+    if (!window.confirm("¿Estás seguro de que deseas marcar esta reserva como completada?")) {
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      await completeBooking(bookingId);
+      
+      // Actualizar el estado local
+      setBookings(
+        bookings.map((b) =>
+          b.id === bookingId ? { ...b, status: "completed" } : b
+        )
+      );
+      
+      showAlert("Reserva completada ✅", "success");
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail || err.response?.data?.error || "Error al completar la reserva.";
+      showAlert(errorMsg, "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Manejar rechazo
   const handleReject = async (bookingId) => {
     if (!window.confirm("¿Estás seguro de que deseas rechazar esta reserva?")) {
@@ -158,6 +203,78 @@ export default function MyBookings() {
     }
   };
 
+  // Manejar apertura de modal de reseña
+  const handleReviewClick = (booking) => {
+    console.log("Opening review modal for booking:", booking);
+    console.log("Nanny data:", booking.nanny);
+    console.log("Nanny profile ID:", booking.nanny?.nanny_profile_id);
+    setReviewingBooking(booking);
+    setIsReviewModalOpen(true);
+  };
+
+  // Manejar envío de reseña
+  const handleSubmitReview = async (reviewData) => {
+    setActionLoading(true);
+    try {
+      const nannyProfileId = reviewingBooking.nanny?.nanny_profile_id;
+      
+      console.log("Enviando reseña:", {
+        nanny_profile_id: nannyProfileId,
+        rating: reviewData.rating,
+        comment: reviewData.comment
+      });
+      
+      // Validar que existe el nanny_profile_id
+      if (!nannyProfileId) {
+        showAlert("Error: No se encontró el perfil de la niñera. Por favor contacta al soporte.", "error");
+        setActionLoading(false);
+        return;
+      }
+      
+      await createReview(
+        nannyProfileId,
+        reviewData.rating,
+        reviewData.comment
+      );
+      
+      // Actualizar la reserva para indicar que tiene reseña
+      setBookings(
+        bookings.map((b) =>
+          b.id === reviewingBooking.id ? { ...b, has_review: true } : b
+        )
+      );
+
+      showAlert("¡Reseña enviada exitosamente! ⭐", "success");
+      setIsReviewModalOpen(false);
+      setReviewingBooking(null);
+    } catch (err) {
+      console.error("Error completo:", err);
+      console.error("Response data:", err.response?.data);
+      
+      let errorMsg = "Error al enviar la reseña.";
+      if (err.response?.data) {
+        // Manejar diferentes formatos de error
+        if (err.response.data.detail) {
+          errorMsg = err.response.data.detail;
+        } else if (err.response.data.nanny) {
+          errorMsg = Array.isArray(err.response.data.nanny) 
+            ? err.response.data.nanny[0] 
+            : err.response.data.nanny;
+        } else if (err.response.data.rating) {
+          errorMsg = Array.isArray(err.response.data.rating)
+            ? err.response.data.rating[0]
+            : err.response.data.rating;
+        } else {
+          errorMsg = JSON.stringify(err.response.data);
+        }
+      }
+      
+      showAlert(errorMsg, "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <MainLayout>
       <AlertToast {...alert} onClose={() => setAlert({})} />
@@ -173,6 +290,17 @@ export default function MyBookings() {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         onSave={handleSaveEdit}
+        isLoading={actionLoading}
+      />
+
+      <ReviewModal
+        booking={reviewingBooking}
+        isOpen={isReviewModalOpen}
+        onClose={() => {
+          setIsReviewModalOpen(false);
+          setReviewingBooking(null);
+        }}
+        onSubmit={handleSubmitReview}
         isLoading={actionLoading}
       />
 
@@ -243,10 +371,10 @@ export default function MyBookings() {
                       <BookingCard
                         key={booking.id}
                         booking={booking}
-                        onEdit={handleEditClick}
-                        onDelete={handleDelete}
-                        onAccept={handleAccept}
-                        onReject={handleReject}
+                        onEdit={canEditBooking(booking) ? handleEditClick : undefined}
+                        onDelete={userRole === "parent" ? handleDelete : undefined}
+                        onAccept={userRole === "nanny" ? handleAccept : undefined}
+                        onReject={userRole === "nanny" ? handleReject : undefined}
                         userRole={userRole}
                         isLoading={actionLoading}
                       />
@@ -266,10 +394,9 @@ export default function MyBookings() {
                       <BookingCard
                         key={booking.id}
                         booking={booking}
-                        onEdit={handleEditClick}
-                        onDelete={handleDelete}
-                        onAccept={handleAccept}
-                        onReject={handleReject}
+                        onEdit={canEditBooking(booking) ? handleEditClick : undefined}
+                        onDelete={userRole === "parent" ? handleDelete : undefined}
+                        onComplete={userRole === "nanny" ? handleComplete : undefined}
                         userRole={userRole}
                         isLoading={actionLoading}
                       />
@@ -289,10 +416,7 @@ export default function MyBookings() {
                       <BookingCard
                         key={booking.id}
                         booking={booking}
-                        onEdit={handleEditClick}
-                        onDelete={handleDelete}
-                        onAccept={handleAccept}
-                        onReject={handleReject}
+                        onReview={userRole === "parent" ? handleReviewClick : undefined}
                         userRole={userRole}
                         isLoading={actionLoading}
                       />
@@ -312,10 +436,6 @@ export default function MyBookings() {
                       <BookingCard
                         key={booking.id}
                         booking={booking}
-                        onEdit={handleEditClick}
-                        onDelete={handleDelete}
-                        onAccept={handleAccept}
-                        onReject={handleReject}
                         userRole={userRole}
                         isLoading={actionLoading}
                       />
@@ -335,10 +455,6 @@ export default function MyBookings() {
                       <BookingCard
                         key={booking.id}
                         booking={booking}
-                        onEdit={handleEditClick}
-                        onDelete={handleDelete}
-                        onAccept={handleAccept}
-                        onReject={handleReject}
                         userRole={userRole}
                         isLoading={actionLoading}
                       />

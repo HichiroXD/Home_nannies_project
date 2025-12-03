@@ -575,3 +575,69 @@ class OCRProcessorTest(TestCase):
             # pero la función debería retornar bool sin error
             self.assertIsInstance(result, bool)
 
+
+# ===== PHASE 4: TESTS PARA VALIDADORES BÁSICOS =====
+
+class ChileanPhoneValidatorTest(TestCase):
+    """Tests para validador de teléfonos chilenos"""
+    
+    def test_valid_mobile_with_country_code(self):
+        """Teléfono móvil válido con código de país"""
+        from .validators import validate_chilean_phone
+        try:
+            validate_chilean_phone('+56912345678')
+            validate_chilean_phone('+56987654321')
+        except Exception:
+            self.fail('validate_chilean_phone() raised exception unexpectedly!')
+    
+    def test_valid_mobile_without_country_code(self):
+        """Teléfono móvil válido sin código de país"""
+        from .validators import validate_chilean_phone
+        try:
+            validate_chilean_phone('912345678')
+            validate_chilean_phone('987654321')
+        except Exception:
+            self.fail('validate_chilean_phone() raised exception unexpectedly!')
+    
+    def test_invalid_too_short(self):
+        """Teléfono demasiado corto"""
+        from .validators import validate_chilean_phone
+        from django.core.exceptions import ValidationError
+        with self.assertRaises(ValidationError):
+            validate_chilean_phone('12345')
+    
+    def test_invalid_letters(self):
+        """Teléfono con letras"""
+        from .validators import validate_chilean_phone
+        from django.core.exceptions import ValidationError
+        with self.assertRaises(ValidationError):
+            validate_chilean_phone('91234abcd')
+
+
+class PositiveNonzeroValidatorTest(TestCase):
+    """Tests para validador de números positivos no-cero"""
+    
+    def test_valid_positive_numbers(self):
+        """Números positivos válidos"""
+        from .validators import validate_positive_nonzero
+        try:
+            validate_positive_nonzero(1)
+            validate_positive_nonzero(10)
+            validate_positive_nonzero(100)
+        except Exception:
+            self.fail('validate_positive_nonzero() raised exception unexpectedly!')
+    
+    def test_invalid_zero(self):
+        """Cero debe ser inválido"""
+        from .validators import validate_positive_nonzero
+        from django.core.exceptions import ValidationError
+        with self.assertRaises(ValidationError):
+            validate_positive_nonzero(0)
+    
+    def test_invalid_negative(self):
+        """Números negativos deben ser inválidos"""
+        from .validators import validate_positive_nonzero
+        from django.core.exceptions import ValidationError
+        with self.assertRaises(ValidationError):
+            validate_positive_nonzero(-1)
+

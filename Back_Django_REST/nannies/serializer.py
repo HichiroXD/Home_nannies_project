@@ -3,10 +3,11 @@ from .models import NannyProfile
 
 
 class NannyProfileSerializer(serializers.ModelSerializer):
+    user_id = serializers.ReadOnlyField(source='user.id')
     username = serializers.ReadOnlyField(source='user.username')
     email = serializers.ReadOnlyField(source='user.email')
-    first_name = serializers.CharField(source='user.first_name', required=False, allow_blank=True)
-    last_name = serializers.CharField(source='user.last_name', required=False, allow_blank=True)
+    first_name = serializers.CharField(source='user.first_name', required=False, allow_blank=True, max_length=150)
+    last_name = serializers.CharField(source='user.last_name', required=False, allow_blank=True, max_length=150)
     role = serializers.ReadOnlyField(source='user.role')
     reviews = serializers.SerializerMethodField()
     total_bookings = serializers.SerializerMethodField()
@@ -15,10 +16,10 @@ class NannyProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = NannyProfile
         fields = [
-            'id', 'username', 'email', 'first_name', 'last_name', 'role',
+            'id', 'user_id', 'username', 'email', 'first_name', 'last_name', 'role',
             'experience_years', 'hourly_rate', 'description', 'verified',
             'age', 'certifications', 'rating_avg', 'reviews',
-            'total_bookings', 'acceptance_rate'
+            'total_bookings', 'acceptance_rate', 'profile_photo'
         ]
 
     def get_reviews(self, obj):
@@ -40,17 +41,17 @@ class NannyProfileSerializer(serializers.ModelSerializer):
         return round((accepted / total) * 100, 1)
     
     def update(self, instance, validated_data):
-        # Actualizar datos del usuario si vienen
-        user_data = {}
-        if 'user' in validated_data:
-            user_data = validated_data.pop('user')
+        # Extraer datos del usuario si vienen anidados
+        user_data = validated_data.pop('user', {})
         
-        # Actualizar perfil de niñera
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+        # Actualizar perfil de niñera (solo campos del modelo NannyProfile)
+        profile_fields = ['experience_years', 'hourly_rate', 'description', 'age', 'certifications', 'rating_avg', 'profile_photo']
+        for attr in profile_fields:
+            if attr in validated_data:
+                setattr(instance, attr, validated_data[attr])
         instance.save()
         
-        # Actualizar datos de usuario
+        # Actualizar datos de usuario (first_name, last_name)
         if user_data:
             user = instance.user
             for attr, value in user_data.items():

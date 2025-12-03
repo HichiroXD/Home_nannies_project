@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
+import RoleProtectedRoute from "@components/auth/RoleProtectedRoute";
 
 // Fallback component para lazy loading
 const LoadingFallback = () => (
@@ -15,6 +16,7 @@ const Register = lazy(() => import("@views/auth/Register"));
 const Verify = lazy(() => import("@views/auth/Verify"));
 const ForgotPassword = lazy(() => import("@views/auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("@views/auth/ResetPassword"));
+const Unauthorized = lazy(() => import("@views/Unauthorized"));
 
 // === LAZY LOADING: Páginas legales ===
 const Terms = lazy(() => import("@views/Terms"));
@@ -43,6 +45,9 @@ const AvailabilityManagement = lazy(() => import("@views/AvailabilityManagement"
 const NannyRequests = lazy(() => import("@views/NannyRequests"));
 const NannyBookingHistory = lazy(() => import("@views/NannyBookingHistory"));
 
+// === LAZY LOADING: Notificaciones ===
+const Notifications = lazy(() => import("@views/Notifications"));
+
 export default function AppRouter() {
   return (
     <BrowserRouter>
@@ -65,23 +70,47 @@ export default function AppRouter() {
         <Route path="/dashboard/" element={<DashboardUser />} />
 
         {/* Dashboard padre */}
-        <Route path="/dashboard/parent/" element={<ParentDashboard />} />
+        <Route path="/dashboard/parent/" element={
+          <RoleProtectedRoute allowedRoles="parent">
+            <ParentDashboard />
+          </RoleProtectedRoute>
+        } />
 
         {/* Dashboard niñera y gestión de perfil */}
-        <Route path="/dashboard/nanny/" element={<NannyDashboard />} />
+        <Route path="/dashboard/nanny/" element={
+          <RoleProtectedRoute allowedRoles="nanny">
+            <NannyDashboard />
+          </RoleProtectedRoute>
+        } />
 
         {/* Dashboard administrador */}
-        <Route path="/admin/dashboard/" element={<AdminDashboard />} />
+        <Route path="/admin/dashboard/" element={
+          <RoleProtectedRoute allowedRoles="admin">
+            <AdminDashboard />
+          </RoleProtectedRoute>
+        } />
 
         {/* ==================== PERFILES POR ROL ==================== */}
         {/* Perfil de padre */}
-        <Route path="/profile/parent/" element={<ParentProfile />} />
+        <Route path="/profile/parent/" element={
+          <RoleProtectedRoute allowedRoles="parent">
+            <ParentProfile />
+          </RoleProtectedRoute>
+        } />
 
         {/* Perfil de niñera */}
-        <Route path="/profile/nanny/" element={<NannyProfile />} />
+        <Route path="/profile/nanny/" element={
+          <RoleProtectedRoute allowedRoles="nanny">
+            <NannyProfile />
+          </RoleProtectedRoute>
+        } />
 
         {/* Perfil de admin */}
-        <Route path="/profile/admin/" element={<AdminProfile />} />
+        <Route path="/profile/admin/" element={
+          <RoleProtectedRoute allowedRoles="admin">
+            <AdminProfile />
+          </RoleProtectedRoute>
+        } />
 
         {/* ==================== CONFIGURACIONES ==================== */}
         <Route path="/settings/" element={<Settings />} />
@@ -96,13 +125,31 @@ export default function AppRouter() {
 
         {/* ==================== RESERVAS - NIÑERA (FASE 0) ==================== */}
         {/* Gestionar disponibilidades */}
-        <Route path="/availability/" element={<AvailabilityManagement />} />
+        <Route path="/availability/" element={
+          <RoleProtectedRoute allowedRoles="nanny">
+            <AvailabilityManagement />
+          </RoleProtectedRoute>
+        } />
 
         {/* Ver solicitudes pendientes */}
-        <Route path="/requests/" element={<NannyRequests />} />
+        <Route path="/requests/" element={
+          <RoleProtectedRoute allowedRoles="nanny">
+            <NannyRequests />
+          </RoleProtectedRoute>
+        } />
 
         {/* Historial de reservas completadas */}
-        <Route path="/history/" element={<NannyBookingHistory />} />
+        <Route path="/history/" element={
+          <RoleProtectedRoute allowedRoles="nanny">
+            <NannyBookingHistory />
+          </RoleProtectedRoute>
+        } />
+
+        {/* ==================== NOTIFICACIONES ==================== */}
+        <Route path="/notifications/" element={<Notifications />} />
+
+        {/* ==================== ACCESO NO AUTORIZADO ==================== */}
+        <Route path="/unauthorized/" element={<Unauthorized />} />
 
         {/* ==================== 404 ==================== */}
         <Route path="*" element={<h1>404 Not Found</h1>} />

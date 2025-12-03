@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://127.0.0.1:8000/api",
+  baseURL: "http://localhost:8000/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -13,27 +13,60 @@ API.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // Debug: log the request data
+  if (config.url.includes('/profile/') && (config.method === 'patch' || config.method === 'put')) {
+    console.log("AXIOS INTERCEPTOR - Request config:", config);
+    console.log("AXIOS INTERCEPTOR - Request data:", config.data);
+    console.log("AXIOS INTERCEPTOR - Data stringified:", JSON.stringify(config.data));
+  }
+  
   return config;
 });
 
-// Global response handler: if backend returns 401, clear auth and redirect to login
+/**
+ * Global response interceptor for error handling
+ * 
+ * Handles common error scenarios:
+ * - 401 Unauthorized: Clear auth and redirect to login
+ * - Network errors: Format error message
+ * - Other API errors: Standardize error format
+ */
 API.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error?.response?.status;
+    
+    // Handle 401 Unauthorized
     if (status === 401) {
       try {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
       } catch (e) {
-        // ignore
+        console.error("Error clearing auth tokens:", e);
       }
-      // redirect to login so user can re-authenticate
+      // Redirect to login so user can re-authenticate
       if (typeof window !== "undefined") {
         window.location.href = "/login";
       }
     }
-    return Promise.reject(error);
+    
+    // Standardize error format for easier handling
+    const errorResponse = {
+      status: status || 0,
+      message: error?.response?.data?.detail || 
+               error?.response?.data?.message || 
+               error?.message || 
+               "An unexpected error occurred",
+      data: error?.response?.data || null,
+    };
+    
+    // Log errors in development
+    if (import.meta.env.DEV) {
+      console.error("API Error:", errorResponse);
+    }
+    
+    return Promise.reject(errorResponse);
   }
 );
 

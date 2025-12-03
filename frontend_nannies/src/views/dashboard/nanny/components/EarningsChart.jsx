@@ -33,7 +33,7 @@ export const EarningsChart = ({ earnings = {} }) => {
           <Paper sx={{ p: 2, textAlign: 'center', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
             <Typography variant="body2" sx={{ opacity: 0.9 }}>Total Ingresos</Typography>
             <Typography variant="h5" sx={{ fontWeight: 600, mt: 1 }}>
-              {formatters.currency(totalEarnings, 'EUR')}
+              {formatters.currency(totalEarnings, 'CLP')}
             </Typography>
           </Paper>
         </Grid>
@@ -41,7 +41,7 @@ export const EarningsChart = ({ earnings = {} }) => {
           <Paper sx={{ p: 2, textAlign: 'center', background: 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)', color: 'white' }}>
             <Typography variant="body2" sx={{ opacity: 0.9 }}>Este Mes</Typography>
             <Typography variant="h5" sx={{ fontWeight: 600, mt: 1 }}>
-              {formatters.currency(thisMonth, 'EUR')}
+              {formatters.currency(thisMonth, 'CLP')}
             </Typography>
           </Paper>
         </Grid>
@@ -49,7 +49,7 @@ export const EarningsChart = ({ earnings = {} }) => {
           <Paper sx={{ p: 2, textAlign: 'center', background: 'linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%)', color: 'white' }}>
             <Typography variant="body2" sx={{ opacity: 0.9 }}>Promedio</Typography>
             <Typography variant="h5" sx={{ fontWeight: 600, mt: 1 }}>
-              {formatters.currency(average, 'EUR')}
+              {formatters.currency(average, 'CLP')}
             </Typography>
           </Paper>
         </Grid>
@@ -113,7 +113,7 @@ export const EarningsChart = ({ earnings = {} }) => {
                   <Stack direction="row" spacing={1} alignItems="center">
                     <TrendingUp size={18} color="#10B981" />
                     <Typography variant="body2" sx={{ fontWeight: 600, minWidth: '100px', textAlign: 'right' }}>
-                      {formatters.currency(earning.amount, 'EUR')}
+                      {formatters.currency(earning.amount, 'CLP')}
                     </Typography>
                   </Stack>
                 </Box>

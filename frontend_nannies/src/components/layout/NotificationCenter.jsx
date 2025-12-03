@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { Bell, X, CheckCircle, AlertCircle, Info } from "lucide-react";
+import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { Bell, X, CheckCircle, AlertCircle, Info, Clock, Ban, Star } from "lucide-react";
+import { getNotifications, markNotificationsAsRead } from "@api/notificationApi";
 
 /**
  * Centro de Notificaciones - Muestra notificaciones en tiempo real del usuario
@@ -7,57 +9,106 @@ import { Bell, X, CheckCircle, AlertCircle, Info } from "lucide-react";
  * @param {function} onNotificationRead - Callback cuando se lee una notificación
  */
 export default function NotificationCenter({ onNotificationRead }) {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  // Simular carga de notificaciones (en producción, usar API real)
-  useEffect(() => {
-    // En una aplicación real, esto sería:
-    // fetchNotifications() via API
-    // Y un WebSocket para notificaciones en tiempo real
+  // Cargar notificaciones desde la API
+  const fetchNotifications = useCallback(async () => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+
+    try {
+      setLoading(true);
+      const data = await getNotifications();
+      
+      // Transformar datos del backend al formato esperado
+      const formattedNotifications = (data || []).map((notif) => ({
+        id: notif.id,
+        title: getNotificationTitle(notif.message),
+        message: notif.message,
+        timestamp: new Date(notif.created_at),
+        read: notif.status === 'read',
+        type: getNotificationType(notif.message),
+        relatedBookingId: notif.related_booking_id,
+      }));
+      
+      setNotifications(formattedNotifications);
+      setUnreadCount(formattedNotifications.filter(n => !n.read).length);
+    } catch (error) {
+      console.error("Error al cargar notificaciones:", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Agregar notificación (llamado desde otros componentes)
-  const addNotification = (notification) => {
-    const id = Date.now();
-    const newNotif = {
-      id,
-      timestamp: new Date(),
-      read: false,
-      ...notification,
-    };
-    setNotifications((prev) => [newNotif, ...prev]);
-    setUnreadCount((prev) => prev + 1);
+  // Cargar notificaciones al montar y cada 30 segundos
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  // Determinar el título según el mensaje
+  const getNotificationTitle = (message) => {
+    if (message.includes('confirmada')) return 'Reserva Confirmada';
+    if (message.includes('rechazada')) return 'Reserva Rechazada';
+    if (message.includes('cancelada')) return 'Reserva Cancelada';
+    if (message.includes('completada')) return 'Reserva Completada';
+    if (message.includes('nueva solicitud')) return 'Nueva Reserva';
+    if (message.includes('mensaje')) return 'Nuevo Mensaje';
+    if (message.includes('Reseña publicada') || message.includes('dejado una reseña')) return 'Reseña Publicada';
+    if (message.includes('Nueva reseña recibida') || message.includes('te ha dejado una reseña')) return 'Nueva Reseña';
+    return 'Notificación';
+  };
+
+  // Determinar el tipo según el mensaje
+  const getNotificationType = (message) => {
+    if (message.includes('confirmada') || message.includes('completada')) return 'success';
+    if (message.includes('rechazada') || message.includes('cancelada')) return 'error';
+    if (message.includes('nueva solicitud')) return 'info';
+    if (message.includes('reseña')) return 'success';
+    return 'info';
   };
 
   // Marcar como leída
-  const markAsRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((n) =>
-        n.id === id ? { ...n, read: true } : n
-      )
-    );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
-    if (onNotificationRead) onNotificationRead(id);
+  const markAsRead = async (id) => {
+    try {
+      await markNotificationsAsRead([id]);
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === id ? { ...n, read: true } : n
+        )
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+      if (onNotificationRead) onNotificationRead(id);
+    } catch (error) {
+      console.error("Error al marcar notificación como leída:", error);
+    }
   };
 
-  // Eliminar notificación
+  // Eliminar notificación (solo visualmente, no del backend)
   const removeNotification = (id) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
+    const notif = notifications.find(n => n.id === id);
+    if (notif && !notif.read) {
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    }
   };
 
-  // Exponer métodos globales
-  useEffect(() => {
-    window.notificationCenter = {
-      addNotification,
-      removeNotification,
-      markAsRead,
-    };
-  }, []);
-
   // Iconos según tipo
-  const getIcon = (type) => {
+  const getIcon = (type, title) => {
+    // Iconos más específicos según el título
+    if (title.includes('Reseña')) return <Star size={20} className="text-yellow-500" />;
+    if (title.includes('Confirmada')) return <CheckCircle size={20} className="text-green-600" />;
+    if (title.includes('Completada')) return <CheckCircle size={20} className="text-blue-600" />;
+    if (title.includes('Rechazada')) return <Ban size={20} className="text-red-600" />;
+    if (title.includes('Cancelada')) return <X size={20} className="text-orange-600" />;
+    if (title.includes('Nueva')) return <Clock size={20} className="text-blue-600" />;
+    if (title.includes('Mensaje')) return <Info size={20} className="text-purple-600" />;
+    
     switch (type) {
       case "success":
         return <CheckCircle size={20} className="text-green-600" />;
@@ -69,8 +120,10 @@ export default function NotificationCenter({ onNotificationRead }) {
     }
   };
 
-  // Colores según tipo
-  const getColors = (type) => {
+  // Colores según tipo y título
+  const getColors = (type, title) => {
+    if (title?.includes('Reseña')) return "bg-yellow-50 border-yellow-200";
+    
     switch (type) {
       case "success":
         return "bg-green-50 border-green-200";
@@ -116,7 +169,12 @@ export default function NotificationCenter({ onNotificationRead }) {
 
           {/* Lista de notificaciones */}
           <div className="max-h-96 overflow-y-auto">
-            {notifications.length === 0 ? (
+            {loading ? (
+              <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600 mx-auto"></div>
+                <p className="text-gray-500 mt-2 text-sm">Cargando...</p>
+              </div>
+            ) : notifications.length === 0 ? (
               <div className="p-8 text-center">
                 <Bell size={48} className="mx-auto text-gray-300 mb-2" />
                 <p className="text-gray-500">No hay notificaciones</p>
@@ -128,19 +186,28 @@ export default function NotificationCenter({ onNotificationRead }) {
                   className={`p-4 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 ${
                     notif.read ? "bg-white" : "bg-blue-50"
                   }`}
-                  onClick={() => markAsRead(notif.id)}
+                  onClick={() => {
+                    if (!notif.read) markAsRead(notif.id);
+                    setIsOpen(false);
+                    navigate('/notifications');
+                  }}
                 >
                   <div className="flex gap-3">
                     {/* Icono */}
                     <div className="flex-shrink-0 mt-1">
-                      {getIcon(notif.type || "info")}
+                      {getIcon(notif.type || "info", notif.title)}
                     </div>
 
                     {/* Contenido */}
                     <div className="flex-1">
-                      <p className="font-medium text-gray-800 text-sm">
-                        {notif.title}
-                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-gray-800 text-sm">
+                          {notif.title}
+                        </p>
+                        {!notif.read && (
+                          <span className="h-2 w-2 bg-blue-500 rounded-full"></span>
+                        )}
+                      </div>
                       <p className="text-gray-600 text-xs mt-1">
                         {notif.message}
                       </p>
@@ -168,7 +235,13 @@ export default function NotificationCenter({ onNotificationRead }) {
           {/* Footer */}
           {notifications.length > 5 && (
             <div className="p-4 border-t border-gray-200 text-center bg-gray-50">
-              <button className="text-sm text-pink-600 hover:text-pink-700 font-medium">
+              <button 
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/notifications');
+                }}
+                className="text-sm text-pink-600 hover:text-pink-700 font-medium"
+              >
                 Ver todas las notificaciones ({notifications.length})
               </button>
             </div>

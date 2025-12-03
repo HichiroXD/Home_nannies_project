@@ -66,14 +66,34 @@ export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = fal
 
           {/* Información */}
           <div className="space-y-0.5 text-xs">
+            <div className="flex items-center gap-1">
+              <p className="text-gray-700">
+                <span className="font-medium">Tarifa por hora:</span>{" "}
+                <span className="text-pink-600 font-bold">
+                  ${typeof nanny.hourly_rate === 'number' 
+                    ? nanny.hourly_rate.toLocaleString('es-CL') 
+                    : (nanny.hourly_rate || "N/A")} CLP
+                </span>
+              </p>
+              <span 
+                className="text-gray-400 hover:text-gray-600 cursor-help" 
+                title="El costo total se calcula multiplicando la tarifa por hora por el número de horas contratadas"
+              >
+                ℹ️
+              </span>
+            </div>
             <p className="text-gray-700">
-              <span className="font-medium">Precio:</span>{" "}
-              <span className="text-pink-600 font-bold">${nanny.hourly_rate || "N/A"}/hora</span>
+              <span className="font-medium">Experiencia:</span>{" "}
+              <span className="text-gray-900">
+                {nanny.experience_years || 0} {nanny.experience_years === 1 ? 'año' : 'años'}
+              </span>
             </p>
-            <p className="text-gray-700">
-              <span className="font-medium">Tiempo libre:</span>{" "}
-              <span className="text-gray-900">{nanny.experience_years || 0} horas/sem</span>
-            </p>
+            {nanny.rating_avg && parseFloat(nanny.rating_avg) > 0 && (
+              <p className="text-gray-700">
+                <span className="font-medium">Calificación:</span>{" "}
+                <span className="text-yellow-600 font-bold">⭐ {parseFloat(nanny.rating_avg).toFixed(1)}</span>
+              </p>
+            )}
           </div>
         </div>
       </div>

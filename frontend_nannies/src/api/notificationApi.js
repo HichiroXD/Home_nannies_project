@@ -33,7 +33,7 @@ export const getNotification = async (notificationId) => {
  * Phase 3 - Puede marcar una lista o todas si no se especifica
  */
 export const markNotificationsAsRead = async (notificationIds = []) => {
-  const response = await API.post("/notifications/mark-as-read/", {
+  const response = await API.post("/notifications/mark_as_read/", {
     notification_ids: notificationIds,
   });
   return response.data;

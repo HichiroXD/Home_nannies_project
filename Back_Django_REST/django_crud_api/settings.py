@@ -1,6 +1,7 @@
 from pathlib import Path
 from datetime import timedelta
 import os
+# import dj_database_url  # Solo necesario para PostgreSQL en producción
 try:
     from dotenv import load_dotenv
 except Exception:
@@ -18,11 +19,12 @@ load_dotenv()
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# TODO > Cambiar la clave secreta a un .env por seguridad
 SECRET_KEY = os.getenv("SECRET_KEY", "b)+h)pgkb7s^cg%j%6(r!mhnlog%#z94uti)!hqfz1mcnz#z^z")
-DEBUG = os.getenv("DEBUG", "False") == "True"  # False por defecto para optimizar startup
+DEBUG = os.getenv("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
+# ALLOWED_HOSTS: leer desde variable de entorno (separado por comas)
+# En Railway, configurar: ALLOWED_HOSTS=.railway.app,tudominio.com
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 
 # Application definition
@@ -69,6 +71,7 @@ REST_FRAMEWORK = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # 'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise para archivos estáticos (solo producción)
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -100,9 +103,7 @@ WSGI_APPLICATION = 'django_crud_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# settings.py en Django 
-# TODO > Cambiar las credenciales a un .env por seguridad
-# Usar SQLite para desarrollo, PostgreSQL para producción
+# SQLite para desarrollo local (activo)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -110,17 +111,19 @@ DATABASES = {
     }
 }
 
-# Configuración PostgreSQL (comentada para desarrollo)
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv("DB_NAME"),
-#         'USER': os.getenv("DB_USER"),
-#         'PASSWORD': os.getenv("DB_PASSWORD"),
-#         'HOST': os.getenv("DB_HOST", "localhost"),
-#         'PORT': os.getenv("DB_PORT", "5432"),
+# Configuración PostgreSQL para producción (comentada - descomentar para Railway)
+# if os.getenv("DATABASE_URL"):
+#     DATABASES = {
+#         'default': dj_database_url.parse(os.getenv("DATABASE_URL"), conn_max_age=600)
 #     }
-# }
+# else:
+#     # SQLite para desarrollo local
+#     DATABASES = {
+#         'default': {
+#             'ENGINE': 'django.db.backends.sqlite3',
+#             'NAME': BASE_DIR / 'db.sqlite3',
+#         }
+#     }
 
 
 # Password validation
@@ -156,7 +159,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# WhiteNoise configuration para comprimir y cachear archivos estáticos (solo producción)
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Media files (uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -166,21 +177,48 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS settings
 # https://pypi.org/project/django-cors-headers/
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5174",
-    "http://172.16.157.119:3000",  # tu frontend actual
-]
+# CORS origins dinámicos desde variable de entorno
+CORS_ALLOWED_ORIGINS_STR = os.getenv(
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:5174"
+)
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS_STR.split(",")]
 
-# During development it's convenient to allow all origins when DEBUG is True.
-# In production, ensure DEBUG=False and restrict origins appropriately.
+# Durante desarrollo permitir todos los orígenes si DEBUG=True
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 
-# Allow cookies / credentials in cross-site requests if your frontend uses them.
+# Permitir cookies/credenciales en requests cross-site
 CORS_ALLOW_CREDENTIALS = True
+
+# Headers permitidos en requests CORS
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Métodos HTTP permitidos
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# CSRF Trusted Origins (requerido para POST/PUT/DELETE en producción)
+CSRF_TRUSTED_ORIGINS_STR = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+if CSRF_TRUSTED_ORIGINS_STR:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_STR.split(",")]
+else:
+    CSRF_TRUSTED_ORIGINS = []
 
 # Configuración de usuario personalizado
 AUTH_USER_MODEL = 'users.User'
@@ -205,6 +243,18 @@ DEFAULT_FROM_EMAIL = 'no-reply@homenannies.com'
 
 # Configuración del Frontend URL
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+
+# Configuración de seguridad para producción
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    # SECURE_HSTS_SECONDS = 31536000  # Descomentar después de confirmar que HTTPS funciona
+    # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    # SECURE_HSTS_PRELOAD = True
 
 # Configuración de drf-spectacular
 SPECTACULAR_SETTINGS = {

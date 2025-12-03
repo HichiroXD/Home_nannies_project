@@ -27,7 +27,7 @@ class NannyListView(generics.ListAPIView):
     ordering_fields = ['hourly_rate', 'rating_avg', 'experience_years']
 
     def get_queryset(self):
-        queryset = NannyProfile.objects.all()
+        queryset = NannyProfile.objects.all().select_related('user')
         
         # Filtro por verificación (por defecto solo verificadas)
         verified = self.request.query_params.get('verified', 'true')

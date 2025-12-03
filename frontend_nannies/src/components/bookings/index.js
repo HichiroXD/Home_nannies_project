@@ -6,3 +6,4 @@ export { default as AvailabilitySelector } from "./AvailabilitySelector";
 export { default as AvailabilityCalendar } from "./AvailabilityCalendar";
 export { default as RequestCard } from "./RequestCard";
 export { default as NannyBookingCard } from "./NannyBookingCard";
+export { default as ReviewModal } from "./ReviewModal";

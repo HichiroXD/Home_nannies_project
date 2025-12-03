@@ -83,6 +83,50 @@ class RUTValidator:
         return dv_given == dv_calculated
 
 
+def validate_chilean_phone(value):
+    """
+    Valida números telefónicos chilenos.
+    
+    Formatos aceptados:
+    - +56912345678
+    - +56 9 1234 5678
+    - 912345678
+    - 9 1234 5678
+    - +562XXXXXXXX (teléfono fijo)
+    - 2XXXXXXXX (teléfono fijo)
+    """
+    if not value:
+        return  # Campo puede ser opcional en algunos casos
+    
+    # Limpiar espacios y guiones
+    cleaned = re.sub(r'[\s\-]', '', value)
+    
+    # Patrones válidos para números chilenos
+    patterns = [
+        r'^\+569\d{8}$',      # +56912345678 (móvil)
+        r'^9\d{8}$',          # 912345678 (móvil)
+        r'^\+56[2-9]\d{8}$',  # +562XXXXXXXX (fijo)
+        r'^[2-9]\d{8}$',      # 2XXXXXXXX (fijo)
+    ]
+    
+    if not any(re.match(pattern, cleaned) for pattern in patterns):
+        raise ValidationError(
+            'Ingrese un número telefónico chileno válido. '
+            'Ejemplos: +56912345678, 912345678, +56223456789'
+        )
+
+
+def validate_positive_nonzero(value):
+    """
+    Valida que el valor sea positivo y mayor a 0.
+    Útil para campos como número de hijos, cantidad de items, etc.
+    """
+    if value is not None and value < 1:
+        raise ValidationError(
+            'Este valor debe ser al menos 1.'
+        )
+
+
 class InstitutionalEmailValidator:
     """
     Valida email institucional.

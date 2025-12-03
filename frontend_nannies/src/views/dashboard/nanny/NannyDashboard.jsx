@@ -23,12 +23,27 @@ export const NannyDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [showAddAvailability, setShowAddAvailability] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
+  const [availabilities, setAvailabilities] = useState([]);
   const [loading, setLoading] = useState(false);
   const { showAlert, alert, setAlert } = useAlert();
 
   const handleAddAvailability = () => {
     navigate('/availability/');
   };
+
+  // Obtener disponibilidades
+  const fetchAvailabilities = async () => {
+    try {
+      const response = await API.get('/bookings/availabilities/');
+      setAvailabilities(response.data || []);
+    } catch (err) {
+      console.error('Error fetching availabilities:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAvailabilities();
+  }, []);
 
   // Obtener datos del dashboard
   useEffect(() => {
@@ -46,6 +61,13 @@ export const NannyDashboard = () => {
     };
 
     fetchDashboardData();
+    
+    // Actualizar disponibilidades periódicamente
+    const interval = setInterval(() => {
+      fetchAvailabilities();
+    }, 30000); // cada 30 segundos
+
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -178,17 +200,98 @@ export const NannyDashboard = () => {
 
             <div className="p-6">
               {activeTab === 0 && (
-                <div className="text-center py-8">
-                  <Calendar className="mx-auto text-gray-400 mb-4" size={48} />
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Calendario de Disponibilidad</h3>
-                  <p className="text-gray-600 mb-4">No tienes horarios de disponibilidad configurados</p>
-                  <button
-                    onClick={handleAddAvailability}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-                  >
-                    <Plus size={18} />
-                    AGREGAR HORARIO
-                  </button>
+                <div>
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800">Calendario de Disponibilidad</h3>
+                    <button
+                      onClick={handleAddAvailability}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                    >
+                      <Plus size={18} />
+                      Agregar Disponibilidad
+                    </button>
+                  </div>
+                  
+                  {availabilities.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Calendar className="mx-auto text-gray-400 mb-4" size={48} />
+                      <p className="text-gray-600 mb-4">No tienes horarios de disponibilidad configurados</p>
+                      <button
+                        onClick={handleAddAvailability}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                      >
+                        <Plus size={18} />
+                        AGREGAR HORARIO
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-600 mb-4">
+                        Tienes {availabilities.length} horario{availabilities.length !== 1 ? 's' : ''} disponible{availabilities.length !== 1 ? 's' : ''} configurado{availabilities.length !== 1 ? 's' : ''}
+                      </p>
+                      <div className="grid gap-3">
+                        {availabilities
+                          .filter(slot => {
+                            // Mostrar solo disponibilidades futuras
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const slotDate = new Date(slot.day);
+                            slotDate.setHours(0, 0, 0, 0);
+                            return slotDate >= today;
+                          })
+                          .slice(0, 5)
+                          .map((slot) => (
+                            <div
+                              key={slot.id}
+                              className={`flex items-center justify-between p-4 rounded-lg transition-colors border ${
+                                slot.is_booked
+                                  ? "bg-orange-50 border-orange-200 hover:bg-orange-100"
+                                  : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                              }`}
+                            >
+                              <div>
+                                <p className="font-medium text-gray-800">
+                                  {new Date(slot.day + 'T00:00:00').toLocaleDateString("es-ES", {
+                                    weekday: "long",
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  })}
+                                </p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {slot.start_time.slice(0, 5)} - {slot.end_time.slice(0, 5)}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {slot.is_booked ? (
+                                  <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                                    📅 Reservado
+                                  </span>
+                                ) : (
+                                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                    ✅ Disponible
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                      {availabilities.filter(slot => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const slotDate = new Date(slot.day);
+                        slotDate.setHours(0, 0, 0, 0);
+                        return slotDate >= today;
+                      }).length > 5 && (
+                        <button
+                          onClick={handleAddAvailability}
+                          className="w-full mt-3 py-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
+                        >
+                          Ver todos los horarios →
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
               {activeTab === 1 && (
@@ -198,9 +301,72 @@ export const NannyDashboard = () => {
                 </div>
               )}
               {activeTab === 2 && (
-                <div className="text-center py-8 text-gray-600">
-                  <Calendar className="mx-auto text-gray-400 mb-4" size={48} />
-                  <p>No tienes bookings activos</p>
+                <div>
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800">Mis Reservas</h3>
+                    <button
+                      onClick={() => navigate('/bookings/')}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    >
+                      Ver todas →
+                    </button>
+                  </div>
+                  
+                  {data.upcomingBookings && data.upcomingBookings.length > 0 ? (
+                    <div className="space-y-3">
+                      {data.upcomingBookings.slice(0, 3).map((booking) => (
+                        <div
+                          key={booking.id}
+                          className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                        >
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-800">
+                              {booking.parent__first_name || 'Cliente'} {booking.parent__last_name || ''}
+                            </p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              📅 {new Date(booking.start_time).toLocaleDateString('es-CL', {
+                                day: '2-digit',
+                                month: 'long',
+                                year: 'numeric'
+                              })}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              🕐 {new Date(booking.start_time).toLocaleTimeString('es-CL', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })} - {new Date(booking.end_time).toLocaleTimeString('es-CL', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                            booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {booking.status === 'pending' ? '⏳ Pendiente' :
+                             booking.status === 'confirmed' ? '✅ Confirmada' :
+                             booking.status}
+                          </span>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => navigate('/bookings/')}
+                        className="w-full py-3 text-center text-blue-600 hover:text-blue-700 font-medium text-sm border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                      >
+                        Ver todas las reservas →
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-600">
+                      <Calendar className="mx-auto text-gray-400 mb-4" size={48} />
+                      <p className="mb-2">No tienes reservas próximas</p>
+                      <p className="text-sm text-gray-500">
+                        Las solicitudes de reserva aparecerán aquí
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
               {activeTab === 3 && (

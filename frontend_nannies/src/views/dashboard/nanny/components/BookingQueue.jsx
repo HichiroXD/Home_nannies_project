@@ -104,7 +104,7 @@ export const BookingQueue = ({
           {/* Tarifa */}
           <Box>
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              Tarifa: {formatters.currency(booking.rate * 4, 'EUR')} (${booking.rate}/h)
+              Tarifa: {formatters.currency(booking.rate * 4, 'CLP')} (${booking.rate}/h)
             </Typography>
           </Box>
 
