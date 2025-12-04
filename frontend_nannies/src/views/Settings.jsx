@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { DashboardLayout } from "@components/dashboard";
-import { PageHeader, Loader, AlertToast } from "@components/layout";
+import MainLayout from "@/components/layout/MainLayout";
+import PageHeader from "@/components/layout/PageHeader";
+import Loader from "@/components/layout/Loader";
+import AlertToast from "@/components/layout/AlertToast";
 import { Bell, Lock, Eye, Volume2 } from "lucide-react";
 
-export default function Settings() {
+function Settings() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
@@ -44,10 +46,16 @@ export default function Settings() {
     setAlert({ type: "success", message: "Preferencia guardada" });
   };
 
-  if (loading) return <Loader />;
+  if (loading) {
+    return (
+      <MainLayout>
+        <Loader />
+      </MainLayout>
+    );
+  }
 
   return (
-    <DashboardLayout>
+    <MainLayout>
       <div className="space-y-6 max-w-4xl mx-auto">
         <PageHeader
           title="Configuraciones"
@@ -212,6 +220,8 @@ export default function Settings() {
           </button>
         </div>
       </div>
-    </DashboardLayout>
+    </MainLayout>
   );
 }
+
+export default Settings;

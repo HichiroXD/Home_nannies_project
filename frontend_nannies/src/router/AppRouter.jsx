@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import RoleProtectedRoute from "@components/auth/RoleProtectedRoute";
+import { useAutoLogout } from "@hooks/useAutoLogout";
 
 // Fallback component para lazy loading
 const LoadingFallback = () => (
@@ -48,11 +49,19 @@ const NannyBookingHistory = lazy(() => import("@views/NannyBookingHistory"));
 // === LAZY LOADING: Notificaciones ===
 const Notifications = lazy(() => import("@views/Notifications"));
 
-export default function AppRouter() {
+// === LAZY LOADING: Reseñas ===
+const ParentReviews = lazy(() => import("@views/reviews/ParentReviews"));
+const NannyReviews = lazy(() => import("@views/reviews/NannyReviews"));
+const AdminAllReviews = lazy(() => import("@views/reviews/AdminAllReviews"));
+
+// Componente interno que usa el hook dentro del contexto del Router
+const RouterContent = () => {
+  // SPRINT 3: Auto-logout tras 15 minutos de inactividad
+  useAutoLogout();
+  
   return (
-    <BrowserRouter>
-      <Suspense fallback={<LoadingFallback />}>
-        <Routes>
+    <Suspense fallback={<LoadingFallback />}>
+      <Routes>
         {/* ==================== AUTENTICACIÓN ==================== */}
         <Route path="/" element={<Landing />} />
         <Route path="/login/" element={<Login />} />
@@ -148,13 +157,42 @@ export default function AppRouter() {
         {/* ==================== NOTIFICACIONES ==================== */}
         <Route path="/notifications/" element={<Notifications />} />
 
+        {/* ==================== RESEÑAS ==================== */}
+        {/* Vista ADMIN: Todas las reseñas del sistema */}
+        <Route path="/reviews/admin/all/" element={
+          <RoleProtectedRoute allowedRoles="admin">
+            <AdminAllReviews />
+          </RoleProtectedRoute>
+        } />
+
+        {/* Reseñas del padre (las que ha dado) */}
+        <Route path="/reviews/parent/" element={
+          <RoleProtectedRoute allowedRoles="parent">
+            <ParentReviews />
+          </RoleProtectedRoute>
+        } />
+
+        {/* Reseñas de la niñera (las que ha recibido) */}
+        <Route path="/reviews/nanny/" element={
+          <RoleProtectedRoute allowedRoles="nanny">
+            <NannyReviews />
+          </RoleProtectedRoute>
+        } />
+
         {/* ==================== ACCESO NO AUTORIZADO ==================== */}
         <Route path="/unauthorized/" element={<Unauthorized />} />
 
         {/* ==================== 404 ==================== */}
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>
-      </Suspense>
+    </Suspense>
+  );
+};
+
+export default function AppRouter() {
+  return (
+    <BrowserRouter>
+      <RouterContent />
     </BrowserRouter>
   );
 }

@@ -18,7 +18,8 @@ class Review(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('parent', 'nanny')  # evita reseñas duplicadas
+        # SPRINT 3: Permitir múltiples reseñas del mismo padre a la misma niñera
+        # unique_together = ('parent', 'nanny')  # REMOVIDO
         ordering = ['-created_at']
 
     def __str__(self):

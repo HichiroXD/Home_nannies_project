@@ -20,6 +20,7 @@ import {
   TabsComponent,
   useToggle,
 } from '@/components/common';
+import { MainLayout } from '@/components/layout';
 
 // Componentes del dashboard
 import DashboardHeader from './components/DashboardHeader';
@@ -28,6 +29,7 @@ import KidsManagement from './components/KidsManagement';
 import BookingsPanel from './components/BookingsPanel';
 import PaymentsPanel from './components/PaymentsPanel';
 import ActivityFeed from './components/ActivityFeed';
+import API from '@api/api';
 
 /**
  * Dashboard principal para padres
@@ -41,39 +43,27 @@ export const ParentDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const token = localStorage.getItem('token');
-
   useEffect(() => {
-    if (!token) {
-      setError('No autenticado');
-      return;
-    }
-
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/dashboard/parent', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setDashboardData(data);
-        } else {
-          setError('Error cargando datos');
-        }
+        setError(null);
+        const response = await API.get('/dashboard/parent/');
+        setDashboardData(response.data);
       } catch (err) {
         console.error('Error fetching dashboard:', err);
-        setError('Error de conexión');
+        if (err.response?.status === 401) {
+          setError('Sesión expirada. Por favor inicia sesión nuevamente.');
+        } else {
+          setError('Error de conexión con el servidor.');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, [token]);
+  }, []);
 
   // Estado de demostración si no hay datos reales
   const demoData = {
@@ -180,16 +170,19 @@ export const ParentDashboard = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography>Cargando dashboard...</Typography>
-        </Box>
-      </Container>
+      <MainLayout>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography>Cargando dashboard...</Typography>
+          </Box>
+        </Container>
+      </MainLayout>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <MainLayout>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
       <Stack spacing={4}>
         {/* Header */}
         <DashboardHeader user={data.user} />
@@ -276,6 +269,7 @@ export const ParentDashboard = () => {
         </Box>
       </Stack>
     </Container>
+    </MainLayout>
   );
 };
 

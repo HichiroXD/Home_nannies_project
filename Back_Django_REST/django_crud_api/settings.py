@@ -136,11 +136,18 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {
-            'min_length': 8,
+            'min_length': 10,  # Sprint 3: mínimo 10 caracteres
         }
     },
-    # Remover CommonPasswordValidator en desarrollo por rendimiento
-    # Mantener solo en producción si es necesario
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+    {
+        'NAME': 'core.validators.SymbolPasswordValidator',  # Sprint 3: requiere símbolos
+    },
 ]
 
 

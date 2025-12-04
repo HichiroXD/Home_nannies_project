@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     RegisterView, UserMeView, UserListView, UserDetailView, 
     LoginView, VerifyEmailView, PublicNannyListView,
-    PasswordResetRequestView, PasswordResetConfirmView
+    PasswordResetRequestView, PasswordResetConfirmView,
+    suspend_user, reactivate_user, approve_user, reject_user
 )
 from .role_views import (
     get_user_roles, add_role, remove_role,
@@ -30,4 +31,10 @@ urlpatterns = [
     # Administración de usuarios (solo para administradores)
     path("admin/users/", UserListView.as_view(), name="admin-user-list"),
     path("admin/users/<int:pk>/", UserDetailView.as_view(), name="admin-user-detail"),
+    
+    # Gestión de usuarios - SPRINT 3
+    path("<int:user_id>/suspend/", suspend_user, name="suspend-user"),
+    path("<int:user_id>/reactivate/", reactivate_user, name="reactivate-user"),
+    path("<int:user_id>/approve/", approve_user, name="approve-user"),
+    path("<int:user_id>/reject/", reject_user, name="reject-user"),
 ]
