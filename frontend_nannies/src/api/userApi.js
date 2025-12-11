@@ -5,6 +5,7 @@
  * No es necesario envolver en try/catch - el interceptor ya maneja errores HTTP.
  */
 import API from "./api";
+import axios from "axios";
 
 /**
  * Registrar nuevo usuario
@@ -77,5 +78,34 @@ export const resetPassword = async (uid, token, password, password2) => {
     password,
     password2,
   });
+  return response.data;
+};
+
+/**
+ * Refrescar token de acceso usando el refresh token
+ * @param {string} token - Token de refresh (opcional, si no se provee usa el del localStorage)
+ * @returns {Promise<Object>} Nuevos tokens (access, refresh)
+ * @throws {Error} Si el refresh token es inválido o expirado
+ */
+export const refreshToken = async (token = null) => {
+  const refreshTokenValue = token || localStorage.getItem("refreshToken");
+  
+  if (!refreshTokenValue) {
+    throw new Error("Refresh token no encontrado");
+  }
+
+  // Crear una instancia temporal sin interceptores para el refresh
+  // Esto evita que el interceptor de API intente agregar el token o procese errores
+  const refreshAPI = axios.create({
+    baseURL: API.defaults.baseURL,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  const response = await refreshAPI.post("/token/refresh/", {
+    refresh: refreshTokenValue,
+  });
+  
   return response.data;
 };
