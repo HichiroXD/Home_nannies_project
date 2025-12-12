@@ -6,6 +6,7 @@ import { Plus, Trash2, Clock, ArrowLeft, Edit2, X, Check, Copy, RefreshCw } from
 import { getAvailabilities, createAvailability, deleteAvailability, updateAvailability } from "@api/availabilityApi";
 import { AlertToast } from "@components/common";
 import { Loader, PageHeader } from "@components/layout";
+import { MainLayout } from "@components/layout";
 import { AvailabilityForm, AvailabilityCalendar } from "@components/availability";
 
 export default function AvailabilityManagement() {
@@ -251,25 +252,27 @@ export default function AvailabilityManagement() {
   if (loading) return <Loader />;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* Header con botón de regreso */}
-      <div className="mb-6">
-        <button
-          onClick={() => navigate('/catalog')}
-          className="flex items-center gap-2 text-pink-600 hover:text-pink-700 font-medium transition mb-4"
-        >
-          <ArrowLeft size={20} />
-          Volver al Catálogo
-        </button>
-      </div>
+    <MainLayout>
+      <div className="container mx-auto px-2 py-6 max-w-3xl">
+        {/* Header con botón de regreso */}
+        <div className="mb-4">
+          <button
+            onClick={() => navigate('/catalog')}
+            className="flex items-center gap-2 text-pink-600 hover:text-pink-700 font-medium transition mb-3"
+          >
+            <ArrowLeft size={20} />
+            Volver al Catálogo
+          </button>
+        </div>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">
           Gestionar Disponibilidad
         </h1>
-        <p className="text-lg text-gray-600">
+        <p className="text-base text-gray-600">
           Define las franjas horarias en las que estás disponible para cuidar
         </p>
+      </div>
       </div>
 
       {alert && (
@@ -281,32 +284,34 @@ export default function AvailabilityManagement() {
         />
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-3xl mx-auto">
         {/* Formulario */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-pink-100 p-6 md:p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Plus className="text-pink-600" size={24} />
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-pink-100 p-3 md:p-4">
+          <h2 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+            <Plus className="text-pink-600" size={20} />
             Añadir Nueva Franja
           </h2>
 
-          <form onSubmit={handleAddAvailability} className="space-y-6">
+          <form onSubmit={handleAddAvailability} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Selecciona una fecha
               </label>
               <div className="border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm hover:border-pink-300 transition-colors">
-                <Calendar
-                  value={selectedDate}
-                  onChange={setSelectedDate}
-                  minDate={new Date()}
-                  className="w-full"
-                />
+                <div className="flex justify-center p-1">
+                  <Calendar
+                    value={selectedDate}
+                    onChange={setSelectedDate}
+                    minDate={new Date()}
+                    className="max-w-xs"
+                  />
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
                   Hora de inicio
                 </label>
                 <input
@@ -315,11 +320,11 @@ export default function AvailabilityManagement() {
                   onChange={(e) =>
                     setTimeSlot({ ...timeSlot, start: e.target.value })
                   }
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all outline-none"
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
                   Hora de fin
                 </label>
                 <input
@@ -328,7 +333,7 @@ export default function AvailabilityManagement() {
                   onChange={(e) =>
                     setTimeSlot({ ...timeSlot, end: e.target.value })
                   }
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all outline-none"
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all outline-none"
                 />
               </div>
             </div>
@@ -336,7 +341,7 @@ export default function AvailabilityManagement() {
             <button
               type="submit"
               disabled={isAdding}
-              className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
             >
               <Plus size={20} />
               {isAdding ? "Añadiendo..." : "Añadir Franja"}
@@ -345,23 +350,23 @@ export default function AvailabilityManagement() {
         </div>
 
         {/* Lista de disponibilidades */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-pink-100 p-6 md:p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-pink-100 p-4 md:p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
             Mis Franjas Disponibles
           </h2>
 
           {availabilities.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">📅</div>
-              <p className="text-gray-500 text-lg font-medium">
+            <div className="text-center py-8">
+              <div className="text-5xl mb-3">📅</div>
+              <p className="text-gray-500 text-base font-medium">
                 No tienes franjas de disponibilidad.
               </p>
-              <p className="text-gray-400 text-sm mt-2">
+              <p className="text-gray-400 text-sm mt-1">
                 ¡Añade una para comenzar!
               </p>
             </div>
           ) : (
-            <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+            <div className="space-y-3 max-h-112 min-h-[300px] overflow-y-auto pr-2">
               {availabilities.map((avail) => (
                 <div
                   key={avail.id}
@@ -463,6 +468,6 @@ export default function AvailabilityManagement() {
           )}
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }
