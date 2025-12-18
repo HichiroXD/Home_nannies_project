@@ -20,7 +20,6 @@ export {
   DashboardSkeleton,
   LoadingOverlay,
 } from './LoadingSkeleton';
-export { default as LoadingFallback } from './LoadingFallback';
 
 // Componentes de navegación
 export { BreadcrumbsComponent } from './Breadcrumbs';
