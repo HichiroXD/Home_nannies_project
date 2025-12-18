@@ -14,7 +14,7 @@ import {
   Typography,
   Alert as MuiAlert,
 } from '@mui/material';
-import { Plus, Users, TrendingUp, AlertCircle, BarChart3, Settings } from 'lucide-react';
+import { Plus, Users, TrendingUp, AlertCircle, BarChart3, Settings, MessageSquare } from 'lucide-react';
 import {
   TabsComponent,
   useToggle,
@@ -29,6 +29,7 @@ import UserManagement from './components/UserManagement';
 import ReportsView from './components/ReportsView';
 import OCRStatus from './components/OCRStatus';
 import AcademicStatus from './components/AcademicStatus';
+import ReviewsManagement from './components/ReviewsManagement';
 
 export const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -223,6 +224,11 @@ export const AdminDashboard = () => {
                   onCancel={() => setShowAddUser(false)}
                 />
               ),
+            },
+            {
+              label: 'Reseñas',
+              icon: <MessageSquare size={20} />,
+              content: <ReviewsManagement />,
             },
             {
               label: 'Reportes',

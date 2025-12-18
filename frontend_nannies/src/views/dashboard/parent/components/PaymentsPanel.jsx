@@ -94,7 +94,7 @@ export const PaymentsPanel = ({ payments = [], totalSpent = 0 }) => {
                 <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
                 <TableCell align="center" sx={{ fontWeight: 600 }}>
-                  Acciones
+                  Reserva
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -117,9 +117,9 @@ export const PaymentsPanel = ({ payments = [], totalSpent = 0 }) => {
                     />
                   </TableCell>
                   <TableCell align="center">
-                    <Button size="small" startIcon={<Download size={16} />}>
-                      Recibo
-                    </Button>
+                    <Typography variant="caption" color="textSecondary">
+                      {payment.bookingId || '-'}
+                    </Typography>
                   </TableCell>
                 </TableRow>
               ))}
@@ -139,45 +139,14 @@ export const PaymentsPanel = ({ payments = [], totalSpent = 0 }) => {
         )}
       </Box>
 
-      {/* Métodos de pago */}
-      <Box>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-          Métodos de Pago
-        </Typography>
-        <Card>
-          <CardContent>
-            <Stack spacing={2}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  p: 2,
-                  backgroundColor: '#f5f5f5',
-                  borderRadius: '8px',
-                }}
-              >
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <CreditCard size={32} />
-                  <Box>
-                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                      Visa •••• 1234
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Vence 12/26
-                    </Typography>
-                  </Box>
-                </Stack>
-                <Chip label="Principal" color="primary" size="small" />
-              </Box>
-
-              <Button variant="outlined" fullWidth>
-                Agregar Nuevo Método
-              </Button>
-            </Stack>
-          </CardContent>
-        </Card>
-      </Box>
+      {/* Nota sobre pagos */}
+      <Card sx={{ backgroundColor: '#f0f9ff', border: '1px solid #bfdbfe' }}>
+        <CardContent>
+          <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center' }}>
+            💡 Los pagos se realizan directamente con la niñera. Este es solo un registro de tus transacciones.
+          </Typography>
+        </CardContent>
+      </Card>
 
       {/* Botón para descargar reporte */}
       <Box sx={{ textAlign: 'center' }}>

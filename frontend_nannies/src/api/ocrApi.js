@@ -3,8 +3,7 @@
  * Handles communication with Django OCR endpoints
  */
 
-import api from './api';
-
+import api from './api';import logger from '../utils/logger';
 /**
  * Upload document for OCR processing
  * @param {FormData} formData - Form data containing:
@@ -22,7 +21,7 @@ export const uploadOCRDocument = async (formData) => {
     });
     return response;
   } catch (error) {
-    console.error('Error uploading OCR document:', error);
+    logger.error('Error uploading OCR document', { error: error.message });
     throw error;
   }
 };
@@ -38,7 +37,7 @@ export const getOCRStatus = async (documentId) => {
     const response = await api.get(`/ocr/document-status/${documentId}/`);
     return response;
   } catch (error) {
-    console.error(`Error getting OCR status for document ${documentId}:`, error);
+    logger.error('Error getting OCR status', { documentId, error: error.message });
     throw error;
   }
 };
@@ -63,7 +62,7 @@ export const extractRUTFromDocument = async (documentId, rawText = null) => {
     const response = await api.post('/ocr/extract-rut/', payload);
     return response;
   } catch (error) {
-    console.error('Error extracting RUT from document:', error);
+    logger.error('Error extracting RUT', { error: error.message });
     throw error;
   }
 };
@@ -80,7 +79,7 @@ export const retryOCRDocument = async (documentId) => {
     const response = await api.post(`/ocr/retry-processing/${documentId}/`);
     return response;
   } catch (error) {
-    console.error(`Error retrying OCR for document ${documentId}:`, error);
+    logger.error('Error retrying OCR', { documentId, error: error.message });
     throw error;
   }
 };
@@ -96,7 +95,7 @@ export const cancelOCRProcessing = async (documentId) => {
     const response = await api.post(`/ocr/cancel-processing/${documentId}/`);
     return response;
   } catch (error) {
-    console.error(`Error cancelling OCR for document ${documentId}:`, error);
+    logger.error('Error cancelling OCR', { documentId, error: error.message });
     throw error;
   }
 };
@@ -112,7 +111,7 @@ export const getOCRDocumentDetails = async (documentId) => {
     const response = await api.get(`/ocr/document-details/${documentId}/`);
     return response;
   } catch (error) {
-    console.error(`Error getting OCR document details for ${documentId}:`, error);
+    logger.error('Error getting OCR document details', { documentId, error: error.message });
     throw error;
   }
 };
@@ -134,7 +133,7 @@ export const listOCRDocuments = async (page = 1, pageSize = 10) => {
     });
     return response;
   } catch (error) {
-    console.error('Error listing OCR documents:', error);
+    logger.error('Error listing OCR documents', { error: error.message });
     throw error;
   }
 };
@@ -150,7 +149,7 @@ export const validateRUT = async (rut) => {
     const response = await api.post('/ocr/validate-rut/', { rut });
     return response;
   } catch (error) {
-    console.error('Error validating RUT:', error);
+    logger.error('Error validating RUT', { rut, error: error.message });
     throw error;
   }
 };
@@ -166,7 +165,7 @@ export const deleteOCRDocument = async (documentId) => {
     const response = await api.delete(`/ocr/documents/${documentId}/`);
     return response;
   } catch (error) {
-    console.error(`Error deleting OCR document ${documentId}:`, error);
+    logger.error('Error deleting OCR document', { documentId, error: error.message });
     throw error;
   }
 };
@@ -181,7 +180,7 @@ export const getOCRStats = async () => {
     const response = await api.get('/ocr/statistics/');
     return response;
   } catch (error) {
-    console.error('Error getting OCR statistics:', error);
+    logger.error('Error getting OCR statistics', { error: error.message });
     throw error;
   }
 };

@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import { Edit2, Trash2, Check, X, CheckCircle, Star } from "lucide-react";
 
 /**
@@ -195,3 +196,30 @@ export default function BookingCard({
     </div>
   );
 }
+
+BookingCard.propTypes = {
+  booking: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    start_time: PropTypes.string.isRequired,
+    end_time: PropTypes.string.isRequired,
+    status: PropTypes.oneOf(['pending', 'confirmed', 'rejected', 'cancelled', 'completed']).isRequired,
+    nanny: PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      first_name: PropTypes.string,
+      last_name: PropTypes.string,
+    }),
+    parent: PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      first_name: PropTypes.string,
+      last_name: PropTypes.string,
+    }),
+  }).isRequired,
+  onEdit: PropTypes.func,
+  onDelete: PropTypes.func.isRequired,
+  onAccept: PropTypes.func,
+  onReject: PropTypes.func,
+  onComplete: PropTypes.func,
+  onReview: PropTypes.func,
+  userRole: PropTypes.oneOf(['parent', 'nanny']).isRequired,
+  isLoading: PropTypes.bool,
+};

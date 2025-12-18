@@ -3,9 +3,12 @@ import { useNavigate, Link } from "react-router-dom";
 import { registerUser } from "@api/userApi";
 import { AuthLayout, AuthMessage, AuthForm } from "@components/auth";
 import { MainLayout, Loader } from "@components/layout";
+import useAlertStore from "@/stores/useAlertStore";
+import logger from "@/utils/logger";
 
 export default function Register() {
   const navigate = useNavigate();
+  const showAlert = useAlertStore(state => state.success);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -113,10 +116,11 @@ export default function Register() {
           password2: "",
         });
 
-        setTimeout(() => navigate("/login", { state: { message: "Cuenta creada. Por favor, verifica tu correo antes de iniciar sesión." } }), 3500);
+        showAlert('Cuenta creada exitosamente. Verifica tu correo.');
+        setTimeout(() => navigate("/login", { state: { message: "Cuenta creada. Por favor, verifica tu correo antes de iniciar sesi\u00f3n." } }), 3500);
       }
     } catch (err) {
-      console.error("Error en registro:", err);
+      logger.error("Error en registro", { error: err.message, status: err.response?.status });
       
       const status = err.response?.status;
       const errorData = err.response?.data || {};

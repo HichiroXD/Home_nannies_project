@@ -6,16 +6,15 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Avatar, Stack, Button } from '@mui/material';
 import { Settings, LogOut, Shield } from 'lucide-react';
+import useAuthStore from '@/stores/useAuthStore';
 
 export const AdminHeader = ({ admin = {} }) => {
   const navigate = useNavigate();
+  const logout = useAuthStore(state => state.logout);
 
   const handleLogout = () => {
-    // Limpiar tokens y datos del usuario
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('role');
-    localStorage.removeItem('username');
+    // Usar store de Zustand para logout
+    logout();
     
     // Redirigir al login
     navigate('/login');

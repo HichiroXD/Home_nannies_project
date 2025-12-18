@@ -1,4 +1,6 @@
 import { Heart, User } from "lucide-react";
+import PropTypes from 'prop-types';
+import { getMediaUrl } from '@/config/constants';
 
 /**
  * Componente NannyCard - Muestra información de una niñera
@@ -30,8 +32,23 @@ export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = fal
     <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col">
       <div className="flex p-3 gap-3">
         {/* Avatar / Foto */}
-        <div className="relative bg-gradient-to-br from-pink-100 to-pink-200 rounded-full w-20 h-20 flex-shrink-0 flex items-center justify-center">
-          <User className="w-12 h-12 text-gray-400" strokeWidth={1.5} />
+        <div className="relative bg-gradient-to-br from-pink-100 to-pink-200 rounded-full w-20 h-20 flex-shrink-0 flex items-center justify-center overflow-hidden">
+          {nanny.profile_photo ? (
+            <img 
+              src={getMediaUrl(nanny.profile_photo)} 
+              alt={`${nanny.first_name || 'Niñera'}`}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextElementSibling.style.display = 'flex';
+              }}
+            />
+          ) : null}
+          <User 
+            className="w-12 h-12 text-gray-400" 
+            strokeWidth={1.5}
+            style={{ display: nanny.profile_photo ? 'none' : 'block' }}
+          />
         </div>
 
         {/* Contenido Principal */}
@@ -121,3 +138,21 @@ export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = fal
     </div>
   );
 }
+
+NannyCard.propTypes = {
+  nanny: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    first_name: PropTypes.string,
+    last_name: PropTypes.string,
+    username: PropTypes.string,
+    hourly_rate: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    experience_years: PropTypes.number,
+    verified: PropTypes.bool,
+    rating_avg: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    profile_photo: PropTypes.string,
+  }).isRequired,
+  onFavorite: PropTypes.func.isRequired,
+  onBook: PropTypes.func.isRequired,
+  isFavorited: PropTypes.bool,
+  isLoading: PropTypes.bool,
+};

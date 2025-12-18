@@ -1,6 +1,12 @@
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 from . import views
+from .audit_views import (
+    audit_logs_view,
+    audit_stats_view,
+    user_permissions_view,
+    grant_permission_view
+)
 
 app_name = 'core'
 
@@ -30,5 +36,11 @@ urlpatterns = [
     # Phase 2: Integración Académica
     path('academic/verify/', views.AcademicVerifyView.as_view(), name='academic_verify'),
     path('academic/status/<int:pk>/', views.AcademicStatusView.as_view(), name='academic_status'),
+    
+    # Auditoría y Permisos
+    path('audit/logs/', audit_logs_view, name='audit_logs'),
+    path('audit/stats/', audit_stats_view, name='audit_stats'),
+    path('permissions/me/', user_permissions_view, name='user_permissions'),
+    path('permissions/grant/', grant_permission_view, name='grant_permission'),
 ]
 

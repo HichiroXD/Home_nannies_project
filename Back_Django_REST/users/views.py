@@ -14,10 +14,27 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 from .serializer import RegisterSerializer, UserSerializer, UserListSerializer, LoginSerializer
 from .tokens import account_activation_token
+
+
+# Rate limiting classes para proteger endpoints sensibles
+class LoginRateThrottle(AnonRateThrottle):
+    """
+    Rate limit para login: 5 intentos por minuto para usuarios anónimos.
+    Protege contra ataques de fuerza bruta.
+    """
+    rate = '5/minute'
+
+
+class RegisterRateThrottle(AnonRateThrottle):
+    """
+    Rate limit para registro: 3 registros por hora para prevenir spam.
+    """
+    rate = '3/hour'
 
 # Vista para registrar nuevos usuarios
 @method_decorator(csrf_exempt, name='dispatch')
@@ -30,10 +47,15 @@ class RegisterView(generics.CreateAPIView):
     - El usuario se crea sin verificar
     - Envía un correo con enlace de verificación
     - El enlace es válido por 24 horas
+    
+    Rate Limiting:
+    - 3 registros por hora para prevenir spam y cuentas falsas masivas
+    - Retorna 429 Too Many Requests si se excede el límite
     """
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [RegisterRateThrottle]
 
     def perform_create(self, serializer):
         # Se crea el usuario, pero no verificado
@@ -77,8 +99,13 @@ class LoginView(APIView):
     - Solo funciona si la cuenta está verificada
     - Retorna 401 si credenciales son inválidas
     - Retorna 403 si la cuenta no está verificada
+    
+    Rate Limiting:
+    - 5 intentos por minuto para prevenir ataques de fuerza bruta
+    - Retorna 429 Too Many Requests si se excede el límite
     """
     permission_classes = [AllowAny]
+    throttle_classes = [LoginRateThrottle]
     serializer_class = LoginSerializer
 
     def post(self, request):

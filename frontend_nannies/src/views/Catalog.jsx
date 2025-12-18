@@ -6,6 +6,8 @@ import { NannyFilters, NannyCard } from "@components/nanny";
 import { MainLayout } from "@components/layout";
 import { AlertToast, useAlert } from "@components/common";
 import { Loader } from "@components/layout";
+import useAuthStore from "@/stores/useAuthStore";
+import logger from "@/utils/logger";
 
 export default function Catalog() {
   const [nannies, setNannies] = useState([]);
@@ -22,7 +24,7 @@ export default function Catalog() {
     verified: false,
   });
   const navigate = useNavigate();
-  const userRole = localStorage.getItem("role");
+  const { role: userRole, accessToken, isAuthenticated } = useAuthStore();
 
   // Cargar niñeras
   const fetchNannies = useCallback(async (appliedFilters = filters) => {
@@ -46,21 +48,20 @@ export default function Catalog() {
   // Cargar favoritos del usuario (guardamos objetos completos)
   const fetchFavorites = useCallback(async () => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) return setFavorites([]);
+      if (!accessToken) return setFavorites([]);
 
       const favs = await getFavorites();
       if (Array.isArray(favs)) setFavorites(favs);
       else {
-        console.warn("getFavorites returned unexpected payload:", favs);
+        logger.warn('getFavorites returned unexpected payload', { favs });
         setFavorites([]);
       }
     } catch (err) {
-      console.error("Error cargando favoritos:", err, err.response?.data);
+      logger.error('Error cargando favoritos', { error: err.message, data: err.response?.data });
       // if 401 the api interceptor will redirect to login; keep favorites empty
       setFavorites([]);
     }
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
     fetchNannies();
@@ -81,8 +82,7 @@ export default function Catalog() {
   }, [filters, fetchNannies]);
 
   const handleFavorite = useCallback(async (nannyId) => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
+    if (!isAuthenticated) {
       showAlert("Debes iniciar sesión para usar favoritos.", "warning");
       navigate("/login");
       return;
@@ -104,18 +104,17 @@ export default function Catalog() {
         showAlert("¡Niñera añadida a favoritos! ❤️", "success");
       }
     } catch (err) {
-      console.error("Error con favoritos:", err, err.response?.data);
+      logger.error('Error con favoritos', { nannyId, error: err.message, data: err.response?.data });
       const msg = err.response?.data?.detail || err.response?.data || err.message || "No se pudo procesar la acción.";
       showAlert(msg, "error");
     } finally {
       setFavoriteLoading(false);
     }
-  }, [favorites, navigate, showAlert]);
+  }, [favorites, navigate, showAlert, isAuthenticated]);
 
   const handleBookingClick = useCallback((nannyId) => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      localStorage.setItem("redirect_after_login", `/catalog?nanny=${nannyId}`);
+    if (!isAuthenticated) {
+      // Redirect usando state de react-router en lugar de localStorage
       navigate("/login", { state: { redirectTo: `/catalog?nanny=${nannyId}` } });
       return;
     }
@@ -127,7 +126,7 @@ export default function Catalog() {
     }
 
     navigate(`/bookings/create/${nannyId}`);
-  }, [navigate, userRole, showAlert]);
+  }, [navigate, userRole, showAlert, isAuthenticated]);
 
   // Memoizar nannies favoriteadas para evitar recalculos
   const nannyFavoriteStatusMap = useMemo(() => {

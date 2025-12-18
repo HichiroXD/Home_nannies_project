@@ -37,8 +37,8 @@ class AcademicProgramSerializer(serializers.ModelSerializer):
         model = AcademicProgram
         fields = [
             'id', 'provider', 'provider_name', 'program_code', 
-            'program_name', 'career_name', 'faculty', 'program_type',
-            'is_active', 'created_at'
+            'program_name', 'career_name', 'faculty', 'degree_type',
+            'duration_years', 'is_active', 'created_at'
         ]
         read_only_fields = ['id', 'created_at']
 

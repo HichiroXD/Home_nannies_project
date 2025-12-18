@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Componente reutilizable para mensaje vacío
@@ -11,6 +12,11 @@ const EmptyState = ({ message, icon: Icon }) => {
       <p className="text-lg text-gray-600">{message}</p>
     </div>
   );
+};
+
+EmptyState.propTypes = {
+  message: PropTypes.string.isRequired,
+  icon: PropTypes.elementType,
 };
 
 export default EmptyState;

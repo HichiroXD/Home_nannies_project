@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from 'prop-types';
 
 export default function StatCard({ title, value, icon: Icon, color, trend }) {
   return (
@@ -22,3 +23,11 @@ export default function StatCard({ title, value, icon: Icon, color, trend }) {
     </div>
   );
 }
+
+StatCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  icon: PropTypes.elementType,
+  color: PropTypes.string.isRequired,
+  trend: PropTypes.number,
+};

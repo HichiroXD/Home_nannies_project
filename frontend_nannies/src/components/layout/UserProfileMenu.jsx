@@ -1,14 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Settings, LogOut, ChevronDown, LayoutDashboard } from "lucide-react";
+import useAuthStore from '@/stores/useAuthStore';
 
 export default function UserProfileMenu() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
   
-  const username = localStorage.getItem("username") || "Usuario";
-  const role = localStorage.getItem("role") || "user";
+  const { username, role, logout } = useAuthStore(state => ({
+    username: state.user?.username || localStorage.getItem('username') || "Usuario",
+    role: state.role || localStorage.getItem('role') || "user",
+    logout: state.logout
+  }));
 
   // Cerrar menú cuando se hace clic fuera
   useEffect(() => {
@@ -23,10 +27,7 @@ export default function UserProfileMenu() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("username");
-    localStorage.removeItem("role");
+    logout();
     setIsOpen(false);
     navigate("/login");
   };

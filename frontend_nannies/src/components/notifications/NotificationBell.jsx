@@ -1,41 +1,60 @@
 /**
- * NotificationBell Component - Phase 3
+ * NotificationBell Component - Phase 3 + Zustand Integration
  * Icono de campana con badge de notificaciones sin leer
+ * Usa useNotificationStore para estado global y usePollingStore para polling coordinado
  */
 
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import './NotificationBell.css';
 import { getUnreadNotifications } from '../../api/notificationApi';
 import NotificationCenter from './NotificationCenter';
+import useNotificationStore from '@/stores/useNotificationStore';
+import usePollingStore from '@/stores/usePollingStore';
+import logger from '@/utils/logger';
 
 const NotificationBell = () => {
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const unreadCount = useNotificationStore(state => state.unreadCount);
+  const setNotifications = useNotificationStore(state => state.setNotifications);
+  const shouldFetch = useNotificationStore(state => state.shouldFetch);
+  const registerTask = usePollingStore(state => state.registerTask);
+  const unregisterTask = usePollingStore(state => state.unregisterTask);
+  const startPolling = usePollingStore(state => state.start);
 
   useEffect(() => {
+    // Cargar notificaciones inicialmente
     loadUnreadCount();
     
-    // Actualizar conteo cada 30 segundos
-    const interval = setInterval(loadUnreadCount, 30000);
-    return () => clearInterval(interval);
+    // Registrar tarea de polling coordinado
+    registerTask('notifications', loadUnreadCount);
+    
+    // Iniciar polling coordinado (30 segundos)
+    startPolling(30000);
+    
+    return () => {
+      // Desregistrar tarea al desmontar
+      unregisterTask('notifications');
+    };
   }, []);
 
   const loadUnreadCount = async () => {
+    // Solo hacer fetch si el cache ha expirado
+    if (!shouldFetch()) {
+      return;
+    }
+
     try {
-      setLoading(true);
       const response = await getUnreadNotifications();
-      setUnreadCount(response.count || 0);
+      setNotifications(response.data || [], response.count || 0);
     } catch (err) {
-      console.error('Error loading unread count:', err);
-    } finally {
-      setLoading(false);
+      logger.error('Error loading notifications', { error: err.message });
     }
   };
 
   const handleOpen = () => {
     setIsOpen(true);
-    // Recargar cuando se abre
+    // Forzar recarga cuando se abre
     loadUnreadCount();
   };
 
@@ -58,5 +77,7 @@ const NotificationBell = () => {
     </>
   );
 };
+
+NotificationBell.propTypes = {};
 
 export default NotificationBell;
