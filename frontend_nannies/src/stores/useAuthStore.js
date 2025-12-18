@@ -13,7 +13,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { logger } from '@/utils/logger';
+import logger from '@/utils/logger';
 
 const useAuthStore = create(
   persist(
@@ -34,13 +34,19 @@ const useAuthStore = create(
       login: (data) => {
         logger.info('User logged in', { username: data.username, role: data.role });
         
+        // Guardar en localStorage individual para compatibilidad con componentes existentes
+        localStorage.setItem('accessToken', data.accessToken || data.access);
+        localStorage.setItem('refreshToken', data.refreshToken || data.refresh);
+        localStorage.setItem('role', data.role);
+        localStorage.setItem('username', data.user?.username || data.username);
+        
         set({
           user: {
             username: data.username,
             role: data.role
           },
-          accessToken: data.access,
-          refreshToken: data.refresh,
+          accessToken: data.accessToken || data.access,
+          refreshToken: data.refreshToken || data.refresh,
           role: data.role,
           isAuthenticated: true,
           error: null
@@ -53,6 +59,12 @@ const useAuthStore = create(
       logout: () => {
         const { user } = get();
         logger.info('User logged out', { username: user?.username });
+        
+        // Limpiar localStorage individual
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('role');
+        localStorage.removeItem('username');
         
         set({
           user: null,

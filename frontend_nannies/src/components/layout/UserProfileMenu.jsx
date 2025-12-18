@@ -9,8 +9,8 @@ export default function UserProfileMenu() {
   const menuRef = useRef(null);
   
   const { username, role, logout } = useAuthStore(state => ({
-    username: state.username || "Usuario",
-    role: state.role || "user",
+    username: state.user?.username || localStorage.getItem('username') || "Usuario",
+    role: state.role || localStorage.getItem('role') || "user",
     logout: state.logout
   }));
 

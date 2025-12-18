@@ -78,8 +78,6 @@ try {
     }
 }
 finally {
-}
-finally {
     # Limpiar jobs al salir
     Write-Host ""
     Write-Host "[STOP] Deteniendo servicios..." -ForegroundColor Yellow

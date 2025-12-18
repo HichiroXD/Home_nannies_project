@@ -13,7 +13,7 @@
 import { create } from 'zustand';
 import useNotificationStore from './useNotificationStore';
 import useAuthStore from './useAuthStore';
-import { logger } from '@/utils/logger';
+import logger from '@/utils/logger';
 
 const usePollingStore = create((set, get) => ({
   // Estado

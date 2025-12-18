@@ -75,12 +75,13 @@ class Logger {
   }
 }
 
-// Exportar instancia singleton
-export const logger = new Logger();
+// Exportar instancia singleton como default
+const logger = new Logger();
+export default logger;
 
 // Ejemplos de uso:
 /*
-import { logger } from '@/utils/logger';
+import logger from '@/utils/logger';
 
 // Error handling
 try {

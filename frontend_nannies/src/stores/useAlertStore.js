@@ -11,7 +11,7 @@
  */
 
 import { create } from 'zustand';
-import { logger } from '@/utils/logger';
+import logger from '@/utils/logger';
 
 const useAlertStore = create((set, get) => ({
   // Estado

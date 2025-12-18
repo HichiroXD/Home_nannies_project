@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { MainLayout, PageHeader, Loader, AlertToast, PageContainer } from "@components/layout";
 import { ProfileSection, FormInput, FormTextarea } from "@components/profile";
 import ImageUploader from "@components/common/ImageUploader";
+import { getMediaUrl } from "@/config/constants";
 import { Star, MapPin, Briefcase, Heart } from "lucide-react";
 import { getNannyProfile, updateNannyProfile } from "@api/profileApi";
 
@@ -46,6 +47,12 @@ export default function NannyProfile() {
       const data = await getNannyProfile();
       console.log("Datos recibidos del backend:", data);
       console.log("Tipo de hourly_rate:", typeof data.hourly_rate, data.hourly_rate);
+      
+      // Construir URL completa para la foto de perfil
+      if (data.profile_photo) {
+        data.profile_photo = getMediaUrl(data.profile_photo);
+      }
+      
       setProfile(data);
     } catch (error) {
       setAlert({ type: "error", message: "Error al cargar el perfil" });
@@ -78,12 +85,12 @@ export default function NannyProfile() {
       
       // Crear FormData para enviar archivos
       const formData = new FormData();
-      formData.append('first_name', profile.first_name);
-      formData.append('last_name', profile.last_name);
+      formData.append('first_name', profile.first_name || '');
+      formData.append('last_name', profile.last_name || '');
       formData.append('experience_years', parseInt(profile.experience_years) || 0);
       formData.append('hourly_rate', parseInt(hourlyRateValue) || 0);
-      formData.append('description', profile.description);
-      formData.append('certifications', profile.certifications);
+      formData.append('description', profile.description || '');
+      formData.append('certifications', profile.certifications || '');
       
       if (profile.age) {
         formData.append('age', parseInt(profile.age));
@@ -92,9 +99,14 @@ export default function NannyProfile() {
       // Agregar foto si se seleccionó una nueva
       if (profilePhoto) {
         formData.append('profile_photo', profilePhoto);
+        console.log("Foto agregada al FormData:", profilePhoto.name, profilePhoto.type, profilePhoto.size);
       }
       
-      console.log("FormData a enviar (con foto)");
+      // Debug: Mostrar todos los campos del FormData
+      console.log("FormData entries:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ':', pair[1]);
+      }
       
       await updateNannyProfile(formData);
       setAlert({ type: "success", message: "Perfil actualizado correctamente" });
@@ -103,7 +115,23 @@ export default function NannyProfile() {
       await loadProfile(); // Recargar datos actualizados
     } catch (error) {
       console.error("Error completo:", error);
-      setAlert({ type: "error", message: error.detail || "Error al guardar el perfil" });
+      
+      // Mostrar errores de validación específicos si existen
+      if (error && typeof error === 'object') {
+        const errorMessages = [];
+        for (let key in error) {
+          if (error.hasOwnProperty(key) && key !== 'detail') {
+            errorMessages.push(`${key}: ${error[key]}`);
+          }
+        }
+        if (errorMessages.length > 0) {
+          setAlert({ type: "error", message: errorMessages.join(', ') });
+        } else {
+          setAlert({ type: "error", message: error.detail || "Error al guardar el perfil" });
+        }
+      } else {
+        setAlert({ type: "error", message: "Error al guardar el perfil" });
+      }
     } finally {
       setSaving(false);
     }
@@ -152,9 +180,10 @@ export default function NannyProfile() {
                 {profile.profile_photo ? (
                   <div className="flex items-center gap-4">
                     <img 
-                      src={profile.profile_photo} 
+                      src={profile.profile_photo}
                       alt="Foto de perfil" 
                       className="w-32 h-32 rounded-full object-cover border-4 border-blue-100 shadow-md"
+                      key={profile.profile_photo}
                     />
                     <div className="text-sm text-gray-600">
                       <p className="font-medium mb-1">Foto actual</p>

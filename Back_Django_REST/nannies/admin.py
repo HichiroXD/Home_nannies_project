@@ -25,7 +25,7 @@ class NannyProfileAdmin(admin.ModelAdmin):
     list_filter = [
         'verified',
         'experience_years',
-        ('rating_avg', admin.NumericRangeFilter),
+        'rating_avg',  # Filtro simple por calificación
         ('user__date_joined', admin.DateFieldListFilter),
     ]
     

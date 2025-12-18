@@ -11,7 +11,7 @@
  * - Compatible con modo incógnito
  */
 
-import { logger } from './logger';
+import logger from './logger';
 
 /**
  * Verifica si localStorage está disponible

@@ -48,14 +48,16 @@ export const ParentDashboard = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await API.get('/dashboard/parent/');
+        const response = await API.get('/parents/dashboard/');
         setDashboardData(response.data);
       } catch (err) {
         console.error('Error fetching dashboard:', err);
         if (err.response?.status === 401) {
           setError('Sesión expirada. Por favor inicia sesión nuevamente.');
+        } else if (err.response?.status === 404) {
+          setError('No se encontró tu perfil de padre. Por favor completa tu perfil.');
         } else {
-          setError('Error de conexión con el servidor.');
+          setError('Error de conexión con el servidor. Por favor intenta de nuevo.');
         }
       } finally {
         setLoading(false);

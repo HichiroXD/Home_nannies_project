@@ -1,8 +1,9 @@
 from rest_framework import generics, filters, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import NannyProfile
 from .serializer import NannyProfileSerializer
 from bookings.models import Booking
@@ -77,6 +78,9 @@ def nanny_dashboard(request):
             status=status.HTTP_404_NOT_FOUND
         )
     
+    from datetime import datetime, timedelta
+    from django.utils import timezone
+    
     # Bookings activos
     active_bookings = Booking.objects.filter(
         nanny=nanny.user,
@@ -108,9 +112,80 @@ def nanny_dashboard(request):
         'created_at'
     )
     
+    # Calcular ingresos reales basados en horas trabajadas
+    completed_bookings_query = Booking.objects.filter(
+        nanny=nanny.user,
+        status='completed'
+    ).select_related('parent')
+    
+    # Ingresos totales
+    total_earnings = 0
+    for booking in completed_bookings_query:
+        if booking.start_time and booking.end_time:
+            hours = (booking.end_time - booking.start_time).total_seconds() / 3600
+            total_earnings += hours * nanny.hourly_rate
+    
+    # Ingresos del mes actual
+    now = timezone.now()
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    this_month_bookings = completed_bookings_query.filter(
+        start_time__gte=start_of_month
+    )
+    
+    this_month_earnings = 0
+    for booking in this_month_bookings:
+        if booking.start_time and booking.end_time:
+            hours = (booking.end_time - booking.start_time).total_seconds() / 3600
+            this_month_earnings += hours * nanny.hourly_rate
+    
+    # Desglose mensual completo (todo el historial)
+    # Obtener fecha del primer booking
+    first_booking = completed_bookings_query.order_by('start_time').first()
+    
+    monthly_earnings = []
+    if first_booking and first_booking.start_time:
+        # Calcular desde el primer mes con bookings hasta hoy
+        start_date = first_booking.start_time.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        current_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        # Iterar mes por mes
+        month_cursor = current_month
+        months_data = []
+        
+        while month_cursor >= start_date:
+            month_end = (month_cursor.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(seconds=1)
+            
+            month_bookings = completed_bookings_query.filter(
+                start_time__gte=month_cursor,
+                start_time__lte=month_end
+            )
+            
+            month_total = 0
+            month_booking_count = 0
+            for booking in month_bookings:
+                if booking.start_time and booking.end_time:
+                    hours = (booking.end_time - booking.start_time).total_seconds() / 3600
+                    month_total += hours * nanny.hourly_rate
+                    month_booking_count += 1
+            
+            months_data.append({
+                'month': month_cursor.strftime('%B %Y'),  # Incluir año para mayor claridad
+                'amount': int(month_total),
+                'bookings': month_booking_count
+            })
+            
+            # Retroceder un mes
+            if month_cursor.month == 1:
+                month_cursor = month_cursor.replace(year=month_cursor.year - 1, month=12)
+            else:
+                month_cursor = month_cursor.replace(month=month_cursor.month - 1)
+        
+        # Invertir para tener orden cronológico (más antiguo primero)
+        monthly_earnings = list(reversed(months_data))
+    
     dashboard_data = {
         'nanny': {
-            'name': f"{request.user.first_name} {request.user.last_name}".strip(),
+            'name': f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
             'avatar': (request.user.first_name[0] if request.user.first_name else 'N') + (request.user.last_name[0] if request.user.last_name else 'A'),
             'memberSince': nanny.user.date_joined.isoformat(),
             'rating': float(avg_rating),
@@ -125,8 +200,9 @@ def nanny_dashboard(request):
         'upcomingBookings': list(upcoming_bookings),
         'recentReviews': list(recent_reviews),
         'earnings': {
-            'thisMonth': completed_bookings * nanny.hourly_rate,
-            'total': completed_bookings * nanny.hourly_rate,
+            'thisMonth': int(this_month_earnings),
+            'total': int(total_earnings),
+            'monthly': monthly_earnings,
         }
     }
     
@@ -135,11 +211,12 @@ def nanny_dashboard(request):
 
 @api_view(['GET', 'PUT', 'PATCH'])
 @permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
 def nanny_profile(request):
     """
     Endpoint para obtener y actualizar el perfil de niñera.
     GET: Obtiene el perfil completo
-    PUT/PATCH: Actualiza el perfil
+    PUT/PATCH: Actualiza el perfil (soporta multipart/form-data para archivos)
     """
     try:
         nanny = NannyProfile.objects.get(user=request.user)

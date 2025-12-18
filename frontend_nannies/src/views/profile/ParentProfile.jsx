@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { MainLayout, PageHeader, Loader, AlertToast, PageContainer } from "@components/layout";
 import { ProfileSection, FormInput, FormTextarea } from "@components/profile";
 import ImageUploader from "@components/common/ImageUploader";
+import { getMediaUrl } from "@/config/constants";
 import { User, Mail, Phone, MapPin, Users } from "lucide-react";
 import { getParentProfile, updateParentProfile } from "@api/profileApi";
 
@@ -45,6 +46,12 @@ export default function ParentProfile() {
     try {
       setLoading(true);
       const data = await getParentProfile();
+      
+      // Construir URL completa para la foto de perfil
+      if (data.profile_photo) {
+        data.profile_photo = getMediaUrl(data.profile_photo);
+      }
+      
       setProfile(data);
     } catch (error) {
       setAlert({ type: "error", message: "Error al cargar el perfil" });
@@ -136,9 +143,10 @@ export default function ParentProfile() {
                 {profile.profile_photo ? (
                   <div className="flex items-center gap-4">
                     <img 
-                      src={profile.profile_photo} 
+                      src={profile.profile_photo}
                       alt="Foto de perfil" 
                       className="w-32 h-32 rounded-full object-cover border-4 border-blue-100 shadow-md"
+                      key={profile.profile_photo}
                     />
                     <div className="text-sm text-gray-600">
                       <p className="font-medium mb-1">Foto actual</p>

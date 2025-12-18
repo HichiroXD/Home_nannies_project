@@ -49,9 +49,9 @@ export default function Login() {
       
       // Usar store de Zustand para gestionar auth
       login({
-        user: { username: data.username, role: data.role },
-        accessToken: data.access,
-        refreshToken: data.refresh,
+        username: data.username,
+        access: data.access,
+        refresh: data.refresh,
         role: data.role
       });
       

@@ -12,7 +12,7 @@
  */
 
 import { create } from 'zustand';
-import { logger } from '@/utils/logger';
+import logger from '@/utils/logger';
 
 const useNotificationStore = create((set, get) => ({
   // Estado
