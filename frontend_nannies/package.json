@@ -32,6 +32,10 @@
   "devDependencies": {
     "@eslint/js": "^9.36.0",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+    "@tailwindcss/vite": "^4.1.18",
+>>>>>>> Stashed changes
 =======
     "@tailwindcss/vite": "^4.1.18",
 >>>>>>> Stashed changes
