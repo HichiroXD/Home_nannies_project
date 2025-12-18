@@ -1,4 +1,5 @@
 import API from "./api";
+import logger from "../utils/logger";
 
 // Obtener perfil de niñera
 export const getNannyProfile = async () => {
@@ -6,7 +7,7 @@ export const getNannyProfile = async () => {
     const response = await API.get("/nannies/profile/");
     return response.data;
   } catch (error) {
-    console.error("Error en getNannyProfile:", error.response?.data || error.message);
+    logger.error('Error obteniendo perfil de ni\u00f1era', { error: error.response?.data || error.message });
     throw error.response?.data || { detail: "Error al obtener perfil" };
   }
 };
@@ -14,12 +15,14 @@ export const getNannyProfile = async () => {
 // Actualizar perfil de niñera
 export const updateNannyProfile = async (profileData) => {
   try {
-    console.log("updateNannyProfile - Datos antes de enviar:", profileData);
-    console.log("updateNannyProfile - hourly_rate:", profileData.hourly_rate, typeof profileData.hourly_rate, Array.isArray(profileData.hourly_rate));
+    logger.debug('Actualizando perfil ni\u00f1era', { 
+      hourly_rate: profileData.hourly_rate, 
+      hourly_rate_type: typeof profileData.hourly_rate 
+    });
     const response = await API.patch("/nannies/profile/", profileData);
     return response.data;
   } catch (error) {
-    console.error("Error en updateNannyProfile:", error.response?.data || error.message);
+    logger.error('Error actualizando perfil ni\u00f1era', { error: error.response?.data || error.message });
     throw error.response?.data || { detail: "Error al actualizar perfil" };
   }
 };
@@ -30,7 +33,7 @@ export const getParentProfile = async () => {
     const response = await API.get("/parents/profile/");
     return response.data;
   } catch (error) {
-    console.error("Error en getParentProfile:", error.response?.data || error.message);
+    logger.error('Error obteniendo perfil de padre', { error: error.response?.data || error.message });
     throw error.response?.data || { detail: "Error al obtener perfil" };
   }
 };
@@ -41,7 +44,7 @@ export const updateParentProfile = async (profileData) => {
     const response = await API.patch("/parents/profile/", profileData);
     return response.data;
   } catch (error) {
-    console.error("Error en updateParentProfile:", error.response?.data || error.message);
+    logger.error('Error actualizando perfil de padre', { error: error.response?.data || error.message });
     throw error.response?.data || { detail: "Error al actualizar perfil" };
   }
 };

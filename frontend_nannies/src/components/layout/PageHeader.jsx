@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Componente reutilizable para encabezado de página
@@ -11,6 +12,11 @@ const PageHeader = ({ title, description }) => {
       {description && <p className="text-gray-600">{description}</p>}
     </div>
   );
+};
+
+PageHeader.propTypes = {
+  title: PropTypes.string.isRequired,
+  description: PropTypes.string
 };
 
 export default PageHeader;

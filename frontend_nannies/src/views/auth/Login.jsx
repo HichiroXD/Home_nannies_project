@@ -3,10 +3,13 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { loginUser } from "@api/userApi";
 import { AuthLayout, AuthMessage, AuthForm } from "@components/auth";
 import { MainLayout, Loader } from "@components/layout";
+import useAuthStore from "@/stores/useAuthStore";
+import logger from "@/utils/logger";
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const login = useAuthStore(state => state.login);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -43,13 +46,19 @@ export default function Login() {
     setIsLoading(true);
     try {
       const data = await loginUser(username, password);
-      localStorage.setItem("accessToken", data.access);
-      localStorage.setItem("refreshToken", data.refresh);
-      localStorage.setItem("username", data.username);
-      localStorage.setItem("role", data.role);
+      
+      // Usar store de Zustand para gestionar auth
+      login({
+        user: { username: data.username, role: data.role },
+        accessToken: data.access,
+        refreshToken: data.refresh,
+        role: data.role
+      });
+      
+      logger.info('Login exitoso', { username: data.username, role: data.role });
       navigate("/catalog");
     } catch (err) {
-      console.error("Error en login:", err);
+      logger.error("Error en login", { error: err.message, status: err.response?.status });
       
       const status = err.response?.status || err.status;
       const errorData = err.response?.data || {};

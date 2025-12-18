@@ -1,4 +1,5 @@
 import { Heart, User } from "lucide-react";
+import PropTypes from 'prop-types';
 
 /**
  * Componente NannyCard - Muestra información de una niñera
@@ -121,3 +122,20 @@ export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = fal
     </div>
   );
 }
+
+NannyCard.propTypes = {
+  nanny: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    first_name: PropTypes.string,
+    last_name: PropTypes.string,
+    username: PropTypes.string,
+    hourly_rate: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    experience_years: PropTypes.number,
+    verified: PropTypes.bool,
+    rating_avg: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  }).isRequired,
+  onFavorite: PropTypes.func.isRequired,
+  onBook: PropTypes.func.isRequired,
+  isFavorited: PropTypes.bool,
+  isLoading: PropTypes.bool,
+};

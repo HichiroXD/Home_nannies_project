@@ -1,14 +1,18 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { HeaderLanding, Footer } from '@components/layout';
+import useAuthStore from '@/stores/useAuthStore';
 
 export default function MainLayout({ children }) {
-  // Verificar si hay un usuario logueado
-  const isLoggedIn = localStorage.getItem('accessToken');
-  const username = localStorage.getItem('username');
+  // Verificar si hay un usuario logueado desde el store
+  const { isAuthenticated, username } = useAuthStore(state => ({
+    isAuthenticated: state.isAuthenticated,
+    username: state.username
+  }));
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-pink-100 to-white">
-      <HeaderLanding isLoggedIn={isLoggedIn} username={username} />
+      <HeaderLanding isLoggedIn={isAuthenticated} username={username} />
       <main className="flex-grow">
         {children}
       </main>
@@ -16,3 +20,7 @@ export default function MainLayout({ children }) {
     </div>
   );
 }
+
+MainLayout.propTypes = {
+  children: PropTypes.node.isRequired
+};

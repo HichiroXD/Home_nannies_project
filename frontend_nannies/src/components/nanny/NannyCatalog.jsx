@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from 'prop-types';
 import NannyFilters from "./NannyFilters";
 import NannyCard from "./NannyCard";
 import { Loader } from "@components/layout";
@@ -45,3 +46,28 @@ export default function NannyCatalog({
     </div>
   );
 }
+
+NannyCatalog.propTypes = {
+  nannies: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    name: PropTypes.string,
+    photo: PropTypes.string,
+    rating: PropTypes.number,
+    experience: PropTypes.string,
+    hourly_rate: PropTypes.number,
+    is_favorite: PropTypes.bool
+  })).isRequired,
+  loading: PropTypes.bool.isRequired,
+  error: PropTypes.string,
+  filters: PropTypes.shape({
+    search: PropTypes.string,
+    experience: PropTypes.string,
+    minRate: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    maxRate: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    rating: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+  }).isRequired,
+  onFilterChange: PropTypes.func.isRequired,
+  onSearch: PropTypes.func.isRequired,
+  onFavorite: PropTypes.func.isRequired,
+  onBook: PropTypes.func.isRequired
+};

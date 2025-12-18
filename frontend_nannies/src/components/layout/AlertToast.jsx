@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import PropTypes from 'prop-types';
 
 /**
  * Componente AlertToast reutilizable para mostrar mensajes de éxito, error, info y warning
@@ -83,3 +84,11 @@ export default function AlertToast({ message, type = "info", isVisible, onClose,
     </div>
   );
 }
+
+AlertToast.propTypes = {
+  message: PropTypes.string.isRequired,
+  type: PropTypes.oneOf(['success', 'error', 'info', 'warning']),
+  isVisible: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  duration: PropTypes.number,
+};

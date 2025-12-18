@@ -10,9 +10,20 @@ const mockFileReader = {
   onloadend: null,
 };
 
-global.FileReader = vi.fn(function() {
-  return mockFileReader;
-});
+// Mock de FileReader como una clase constructora real
+global.FileReader = class {
+  constructor() {
+    this.readAsDataURL = mockFileReader.readAsDataURL;
+    this.result = mockFileReader.result;
+    this.onloadend = null;
+    // Simular carga asíncrona
+    mockFileReader.readAsDataURL.mockImplementation(() => {
+      setTimeout(() => {
+        if (this.onloadend) this.onloadend();
+      }, 0);
+    });
+  }
+};
 
 describe('ImageUploader Component', () => {
   let mockOnImageSelect;
@@ -209,26 +220,14 @@ describe('ImageUploader Component', () => {
       const file = new File(['content'], 'test.jpg', { type: 'image/jpeg' });
       Object.defineProperty(file, 'size', { value: 1024 * 1024 });
       
-      // Mock FileReader
-      const mockFileReader = {
-        readAsDataURL: vi.fn(),
-        onloadend: null,
-        result: 'data:image/jpeg;base64,mockbase64data'
-      };
-      
-      global.FileReader = vi.fn(() => mockFileReader);
-      
       const input = screen.getByLabelText(/foto de perfil/i);
-      fireEvent.change(input, { target: { files: [file] } });
       
-      // Simular que FileReader terminó
       await waitFor(() => {
-        if (mockFileReader.onloadend) {
-          mockFileReader.onloadend();
-        }
+        fireEvent.change(input, { target: { files: [file] } });
       });
 
-      expect(mockFileReader.readAsDataURL).toHaveBeenCalledWith(file);
+      expect(mockOnImageSelect).toHaveBeenCalledWith(file);
+      expect(mockFileReader.readAsDataURL).toHaveBeenCalled();
     });
 
     it('debe permitir remover la imagen seleccionada', async () => {
@@ -253,7 +252,7 @@ describe('ImageUploader Component', () => {
       const input = screen.getByLabelText(/foto de perfil/i);
       const clickSpy = vi.spyOn(input, 'click');
       
-      const uploadArea = screen.getByText(/arrastra y suelta/i).closest('div');
+      const uploadArea = screen.getByText(/haz clic o arrastra una imagen/i).closest('div');
       fireEvent.click(uploadArea);
       
       // El input file debería ser clickeado

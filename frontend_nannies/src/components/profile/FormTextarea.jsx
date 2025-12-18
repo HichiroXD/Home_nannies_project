@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from 'prop-types';
 
 export default function FormTextarea({
   label,
@@ -35,3 +36,15 @@ export default function FormTextarea({
     </div>
   );
 }
+
+FormTextarea.propTypes = {
+  label: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  value: PropTypes.string,
+  onChange: PropTypes.func.isRequired,
+  placeholder: PropTypes.string,
+  disabled: PropTypes.bool,
+  required: PropTypes.bool,
+  maxLength: PropTypes.number,
+  rows: PropTypes.number,
+};
