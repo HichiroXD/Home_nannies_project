@@ -8,6 +8,18 @@ import { AlertToast, useAlert } from "@components/common";
 import { Loader } from "@components/layout";
 import useAuthStore from "@/stores/useAuthStore";
 import logger from "@/utils/logger";
+import {
+  Box,
+  Container,
+  Paper,
+  Typography,
+  Grid,
+  Button,
+  Alert,
+  Card,
+  CardContent,
+  Stack,
+} from "@mui/material";
 
 export default function Catalog() {
   const [nannies, setNannies] = useState([]);
@@ -143,26 +155,47 @@ export default function Catalog() {
     <MainLayout>
       <AlertToast {...alert} onClose={() => setAlert({})} />
 
-      <div className="min-h-screen bg-pink-100 py-8 px-4">
-        <div className="container mx-auto max-w-7xl">
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Stack spacing={3}>
           {/* Header */}
-          <div className="bg-gradient-to-r from-pink-200 to-pink-300 rounded-2xl p-6 mb-6 shadow-sm">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Catálogo de Niñeras
-            </h1>
-            <p className="text-gray-700 mb-2">
-              Encuentra a la niñera perfecta para tu infante
-            </p>
-            <div className="bg-white/50 rounded-lg p-3 mt-3 border border-pink-300">
-              <p className="text-sm text-gray-700 flex items-start gap-2">
-                <span className="text-lg">💡</span>
-                <span>
-                  <strong>Precios mostrados:</strong> Los valores indicados son tarifas por hora en pesos chilenos (CLP). 
-                  El costo total de tu reserva se calculará automáticamente según el número de horas que contrates.
-                </span>
-              </p>
-            </div>
-          </div>
+          <Card 
+            elevation={2} 
+            sx={{ 
+              background: 'linear-gradient(135deg, #fbb6ce 0%, #fce7f3 100%)',
+              borderRadius: 3,
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: 4,
+              }
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'grey.900', mb: 2 }}>
+                Catálogo de Niñeras
+              </Typography>
+              <Typography variant="body1" sx={{ color: 'grey.700', mb: 2 }}>
+                Encuentra a la niñera perfecta para tu infante
+              </Typography>
+              <Paper
+                elevation={0}
+                sx={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                  borderRadius: 2,
+                  p: 2,
+                  border: '1px solid #f9a8d4',
+                }}
+              >
+                <Typography variant="body2" sx={{ color: 'grey.700', display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                  <span style={{ fontSize: '1.125rem' }}>💡</span>
+                  <span>
+                    <strong>Precios mostrados:</strong> Los valores indicados son tarifas por hora en pesos chilenos (CLP).
+                    El costo total de tu reserva se calculará automáticamente según el número de horas que contrates.
+                  </span>
+                </Typography>
+              </Paper>
+            </CardContent>
+          </Card>
 
           <NannyFilters
             filters={filters}
@@ -173,44 +206,73 @@ export default function Catalog() {
           {loading ? (
             <Loader />
           ) : error ? (
-            <p className="text-center mt-10 text-red-600">{error}</p>
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-            {nannies.length > 0 ? (
-              nannies.map((nanny) => (
-                <NannyCard
-                  key={nanny.id}
-                  nanny={nanny}
-                  onFavorite={handleFavorite}
-                  onBook={handleBookingClick}
-                  isFavorited={nannyFavoriteStatusMap.has(nanny.id)}
-                  isLoading={favoriteLoading}
-                />
-              ))
-            ) : (
-              <p className="col-span-full text-center text-gray-500 py-10">
-                No se encontraron niñeras con los filtros seleccionados.
-              </p>
-            )}
-            </div>
+            <Card 
+              elevation={1}
+              sx={{ 
+                background: 'linear-gradient(135deg, #fecdd3 0%, #fce7f3 100%)',
+                borderRadius: 3,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-1px)',
+                  boxShadow: 3,
+                }
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Grid container spacing={2}>
+                  {nannies.length > 0 ? (
+                    nannies.map((nanny) => (
+                      <Grid item xs={12} sm={6} lg={4} key={nanny.id}>
+                        <NannyCard
+                          nanny={nanny}
+                          onFavorite={handleFavorite}
+                          onBook={handleBookingClick}
+                          isFavorited={nannyFavoriteStatusMap.has(nanny.id)}
+                          isLoading={favoriteLoading}
+                        />
+                      </Grid>
+                    ))
+                  ) : (
+                    <Grid item xs={12}>
+                      <Typography variant="body1" sx={{ textAlign: 'center', color: 'grey.500', py: 5 }}>
+                        No se encontraron niñeras con los filtros seleccionados.
+                      </Typography>
+                    </Grid>
+                  )}
+                </Grid>
+              </CardContent>
+            </Card>
           )}
 
           {/* Botón cargar más */}
           {!loading && nannies.length > 0 && (
-            <div className="flex justify-center mt-8">
-              <button
+            <Box sx={{ display: 'flex', justifyContent: 'center', pt: 2 }}>
+              <Button
+                variant="outlined"
                 onClick={() => {
                   // Aquí se puede implementar paginación en el futuro
                   showAlert("Mostrando todas las niñeras disponibles", "info");
                 }}
-                className="px-8 py-3 bg-white text-pink-600 font-medium rounded-lg border-2 border-pink-300 hover:bg-pink-50 transition-colors"
+                sx={{
+                  px: 4,
+                  py: 1.5,
+                  borderColor: 'primary.main',
+                  '&:hover': {
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                  },
+                }}
               >
                 Cargar más personas
-              </button>
-            </div>
+              </Button>
+            </Box>
           )}
-        </div>
-      </div>
+        </Stack>
+      </Container>
     </MainLayout>
   );
 }

@@ -1,88 +1,126 @@
+import React from 'react';
+import {
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  Grid,
+  Typography,
+  Box,
+} from '@mui/material';
+
 export default function NannyFilters({ filters, onChange, onSubmit }) {
   const handleMinExperienceChange = (e) => {
     const isChecked = e.target.checked;
-    onChange({ 
-      target: { 
-        name: 'min_experience', 
+    onChange({
+      target: {
+        name: 'min_experience',
         value: isChecked ? '2' : '',
         type: 'text'
-      } 
+      }
     });
   };
 
   return (
-    <form
+    <Card
+      component="form"
       onSubmit={onSubmit}
-      className="bg-pink-200 rounded-xl p-4 mb-6 shadow-sm"
+      elevation={1}
+      sx={{
+        background: 'linear-gradient(135deg, #fbb6ce 0%, #fce7f3 100%)',
+        borderRadius: 3,
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          transform: 'translateY(-1px)',
+          boxShadow: 3,
+        }
+      }}
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Búsqueda */}
-        <div>
-          <label className="block text-sm font-medium text-gray-800 mb-1">
-            Buscar por nombre
-          </label>
-          <input
-            type="text"
-            name="search"
-            value={filters.search || ""}
-            onChange={onChange}
-            placeholder="Escribe el nombre..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-          />
-        </div>
+      <CardContent sx={{ p: 3 }}>
+        <Grid container spacing={3}>
+          {/* Búsqueda */}
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              label="Buscar por nombre"
+              name="search"
+              value={filters.search || ""}
+              onChange={onChange}
+              placeholder="Escribe el nombre..."
+              variant="outlined"
+              size="small"
+            />
+          </Grid>
 
-        {/* Experiencia mínima */}
-        <div>
-          <label className="block text-sm font-medium text-gray-800 mb-1">
-            Experiencia mínima (años)
-          </label>
-          <input
-            type="number"
-            name="min_experience"
-            value={filters.min_experience || ""}
-            onChange={onChange}
-            placeholder="0"
-            min="0"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-          />
-        </div>
+          {/* Experiencia mínima */}
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              label="Experiencia mínima (años)"
+              name="min_experience"
+              type="number"
+              value={filters.min_experience || ""}
+              onChange={onChange}
+              placeholder="0"
+              inputProps={{ min: 0 }}
+              variant="outlined"
+              size="small"
+            />
+          </Grid>
 
-        {/* Precio máximo */}
-        <div>
-          <label className="block text-sm font-medium text-gray-800 mb-1">
-            Precio máximo ($/hora)
-          </label>
-          <input
-            type="number"
-            name="max_rate"
-            value={filters.max_rate || ""}
-            onChange={onChange}
-            placeholder="$0"
-            min="0"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+          {/* Precio máximo */}
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              label="Precio máximo ($/hora)"
+              name="max_rate"
+              type="number"
+              value={filters.max_rate || ""}
+              onChange={onChange}
+              placeholder="$0"
+              inputProps={{ min: 0 }}
+              variant="outlined"
+              size="small"
+            />
+          </Grid>
+        </Grid>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 3 }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                name="verified"
+                checked={filters.verified || false}
+                onChange={onChange}
+                color="primary"
+              />
+            }
+            label={
+              <Typography variant="body2" sx={{ color: 'grey.700' }}>
+                Solo verificadas
+              </Typography>
+            }
           />
-        </div>
-      </div>
-      
-      <div className="flex items-center gap-4 mt-4">
-        <label className="flex items-center gap-2 text-sm text-gray-800">
-          <input
-            type="checkbox"
-            name="verified"
-            checked={filters.verified || false}
-            onChange={onChange}
-            className="w-4 h-4 text-pink-500 border-gray-300 rounded focus:ring-pink-500"
-          />
-          Solo verificadas
-        </label>
-        
-        <button
-          type="submit"
-          className="ml-auto px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors font-medium"
-        >
-          Aplicar filtros
-        </button>
-      </div>
-    </form>
+
+          <Button
+            type="submit"
+            variant="contained"
+            sx={{
+              px: 3,
+              py: 1,
+              backgroundColor: 'primary.main',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              },
+              borderRadius: 2,
+            }}
+          >
+            Aplicar filtros
+          </Button>
+        </Box>
+      </CardContent>
+    </Card>
   );
 }
