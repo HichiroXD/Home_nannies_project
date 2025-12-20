@@ -153,14 +153,7 @@ export const UserManagement = ({
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
           Gestión de Usuarios ({users.length})
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Plus size={18} />}
-          onClick={onAddUser}
-          size="small"
-        >
-          Agregar Usuario
-        </Button>
+        
       </Box>
 
       {/* DataTable */}
@@ -175,50 +168,7 @@ export const UserManagement = ({
       />
 
       {/* Dialog para agregar/editar usuario */}
-      <Dialog open={showAddForm} onClose={onCancel} maxWidth="sm" fullWidth>
-        <DialogTitle>Agregar Usuario</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <Stack spacing={2}>
-            <TextField
-              label="Nombre"
-              fullWidth
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
-            <TextField
-              label="Email"
-              fullWidth
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            />
-            <FormControl fullWidth>
-              <InputLabel>Rol</InputLabel>
-              <Select
-                value={formData.role}
-                label="Rol"
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              >
-                <MenuItem value="parent">Padre</MenuItem>
-                <MenuItem value="nanny">Niñera</MenuItem>
-                <MenuItem value="admin">Admin</MenuItem>
-              </Select>
-            </FormControl>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onCancel}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={() => {
-              console.log('Save user:', formData);
-              onCancel?.();
-            }}
-          >
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      
 
       {/* Modal para ver detalles */}
       <Dialog open={!!selectedUser} onClose={() => setSelectedUser(null)} maxWidth="sm" fullWidth>

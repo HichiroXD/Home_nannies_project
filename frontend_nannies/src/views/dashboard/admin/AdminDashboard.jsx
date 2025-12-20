@@ -236,12 +236,12 @@ export const AdminDashboard = () => {
               content: <ReportsView reports={data.reports || []} />,
             },
             {
-              label: 'OCR Status',
+              label: 'Estado OCR',
               icon: <Settings size={20} />,
               content: <OCRStatus status={data.ocrStatus} />,
             },
             {
-              label: 'Academic Status',
+              label: 'Estado Académico',
               icon: <Settings size={20} />,
               content: <AcademicStatus status={data.academicStatus} />,
             },
@@ -251,22 +251,7 @@ export const AdminDashboard = () => {
         />
 
         {/* Botón flotante para agregar usuario */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', pt: 2 }}>
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<Users size={20} />}
-            onClick={setShowAddUser}
-            sx={{
-              backgroundColor: '#8B5CF6',
-              '&:hover': {
-                backgroundColor: '#7C3AED',
-              },
-            }}
-          >
-            Agregar Usuario
-          </Button>
-        </Box>
+        
       </Stack>
     </Container>
     </MainLayout>
