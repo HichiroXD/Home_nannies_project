@@ -28,13 +28,37 @@ export default function AvailabilityManagement() {
     try {
       setLoading(true);
       const data = await getAvailabilities();
-      setAvailabilities(data || []);
+      console.log("Datos de disponibilidades recibidos:", data);
+      console.log("Primer elemento (si existe):", data?.[0]);
+      
+      // Filtrar solo fechas futuras o actuales y ordenar
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Comenzar desde el inicio del día
+      
+      const filtered = (data || [])
+        .filter(avail => {
+          const availDate = new Date(avail.day);
+          return availDate >= today;
+        })
+        .sort((a, b) => {
+          // Ordenar por fecha (más reciente primero)
+          const dateA = new Date(a.day);
+          const dateB = new Date(b.day);
+          if (dateA.getTime() !== dateB.getTime()) {
+            return dateA - dateB;
+          }
+          // Si es el mismo día, ordenar por hora de inicio
+          return a.start_time.localeCompare(b.start_time);
+        });
+      
+      console.log(`Mostrando ${filtered.length} de ${data?.length || 0} disponibilidades (solo futuras)`);
+      setAvailabilities(filtered);
     } catch (error) {
       setAlert({
         type: "error",
         message: "Error al cargar disponibilidades",
       });
-      console.error(error);
+      console.error("Error en loadAvailabilities:", error);
     } finally {
       setLoading(false);
     }
@@ -79,6 +103,15 @@ export default function AvailabilityManagement() {
   };
 
   const handleDeleteAvailability = async (id) => {
+    if (!id) {
+      setAlert({
+        type: "error",
+        message: "Error: ID de disponibilidad no válido",
+      });
+      console.error("ID inválido:", id);
+      return;
+    }
+
     if (!window.confirm("¿Deseas eliminar esta franja de disponibilidad?")) {
       return;
     }
@@ -91,15 +124,27 @@ export default function AvailabilityManagement() {
       });
       await loadAvailabilities();
     } catch (error) {
+      console.error("Error al eliminar:", error);
+      const errorMessage = error?.response?.data?.detail || 
+                          error?.response?.data?.message || 
+                          "Error al eliminar franja";
       setAlert({
         type: "error",
-        message: "Error al eliminar franja",
+        message: errorMessage,
       });
-      console.error(error);
     }
   };
 
   const handleStartEdit = (avail) => {
+    if (!avail || !avail.id) {
+      setAlert({
+        type: "error",
+        message: "Error: Disponibilidad no válida",
+      });
+      console.error("Disponibilidad inválida:", avail);
+      return;
+    }
+    
     setEditingId(avail.id);
     // Normalizar el formato de tiempo (eliminar segundos si existen)
     const normalizeTime = (time) => {
@@ -119,6 +164,14 @@ export default function AvailabilityManagement() {
   };
 
   const handleSaveEdit = async (avail) => {
+    if (!avail || !avail.id) {
+      setAlert({
+        type: "error",
+        message: "Error: Disponibilidad no válida",
+      });
+      return;
+    }
+
     if (!editTimeSlot.start || !editTimeSlot.end) {
       setAlert({
         type: "warning",
@@ -180,6 +233,14 @@ export default function AvailabilityManagement() {
   };
 
   const handleRepeatWeekly = async (avail) => {
+    if (!avail || !avail.id || !avail.day) {
+      setAlert({
+        type: "error",
+        message: "Error: Disponibilidad no válida",
+      });
+      return;
+    }
+
     if (!window.confirm("¿Deseas repetir esta franja para la próxima semana?")) {
       return;
     }
@@ -350,7 +411,7 @@ export default function AvailabilityManagement() {
 
           {availabilities.length === 0 ? (
             <p className="text-gray-500 text-center py-8">
-              No tienes franjas de disponibilidad. ¡Añade una para comenzar!
+              No tienes franjas de disponibilidad futuras. ¡Añade nuevas franjas para estar disponible!
             </p>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -425,22 +486,24 @@ export default function AvailabilityManagement() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleRepeatWeekly(avail)}
-                            disabled={repeating}
-                            className="text-purple-500 hover:text-purple-700 transition disabled:opacity-50"
+                            disabled={repeating || !avail.id}
+                            className="text-purple-500 hover:text-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Repetir para la próxima semana"
                           >
                             <RefreshCw size={18} />
                           </button>
                           <button
                             onClick={() => handleStartEdit(avail)}
-                            className="text-blue-500 hover:text-blue-700 transition"
+                            disabled={!avail.id}
+                            className="text-blue-500 hover:text-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Editar horario"
                           >
                             <Edit2 size={18} />
                           </button>
                           <button
                             onClick={() => handleDeleteAvailability(avail.id)}
-                            className="text-red-500 hover:text-red-700 transition"
+                            disabled={!avail.id}
+                            className="text-red-500 hover:text-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Eliminar franja"
                           >
                             <Trash2 size={18} />

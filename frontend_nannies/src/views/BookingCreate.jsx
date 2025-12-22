@@ -48,24 +48,47 @@ export default function BookingCreate() {
           console.warn("No availabilities found for user:", userIdToQuery);
         }
         
+        // Filtrar solo fechas futuras o actuales
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const futureData = data.filter(a => {
+          const availDate = new Date(a.day);
+          return availDate >= today;
+        });
+        
+        console.log(`Mostrando ${futureData.length} de ${data?.length || 0} disponibilidades (solo futuras)`);
+        
         // El backend devuelve objetos con day (YYYY-MM-DD), start_time (HH:MM:SS), end_time (HH:MM:SS)
         // Normalizar para asegurar el formato correcto, incluyendo estado de reserva
-        const normalized = data.map((a) => ({
+        const normalized = futureData.map((a) => ({
           id: a.id,
           day: a.day, // Ya viene en formato YYYY-MM-DD
           start_time: a.start_time, // Ya viene en formato HH:MM:SS
           end_time: a.end_time, // Ya viene en formato HH:MM:SS
           is_booked: a.is_booked || false, // Si está reservado
           booked_by_current_user: a.booked_by_current_user || false, // Si el usuario actual lo reservó
-        }));
+        })).sort((a, b) => {
+          // Ordenar por fecha (más reciente primero)
+          const dateA = new Date(a.day);
+          const dateB = new Date(b.day);
+          if (dateA.getTime() !== dateB.getTime()) {
+            return dateA - dateB;
+          }
+          // Si es el mismo día, ordenar por hora de inicio
+          return a.start_time.localeCompare(b.start_time);
+        });
         console.log("Normalized availabilities:", normalized);
         console.log("Setting availabilities state with:", normalized.length, "items");
         setAvailabilities(normalized);
         
         if (normalized.length === 0) {
+          const hasOldAvailabilities = data && data.length > 0 && futureData.length === 0;
           setAlert({ 
             visible: true, 
-            message: "Esta niñera no tiene horarios disponibles publicados", 
+            message: hasOldAvailabilities 
+              ? "Esta niñera no tiene horarios futuros disponibles" 
+              : "Esta niñera no tiene horarios disponibles publicados", 
             type: "info" 
           });
         }
@@ -118,14 +141,31 @@ export default function BookingCreate() {
       // Recargar disponibilidades en segundo plano para sincronizar con el servidor
       try {
         const data = await getAvailabilities({ nanny: nannyUserId });
-        const normalized = data.map((a) => ({
+        
+        // Filtrar solo fechas futuras
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const futureData = data.filter(a => {
+          const availDate = new Date(a.day);
+          return availDate >= today;
+        });
+        
+        const normalized = futureData.map((a) => ({
           id: a.id,
           day: a.day,
           start_time: a.start_time,
           end_time: a.end_time,
           is_booked: a.is_booked || false,
           booked_by_current_user: a.booked_by_current_user || false,
-        }));
+        })).sort((a, b) => {
+          const dateA = new Date(a.day);
+          const dateB = new Date(b.day);
+          if (dateA.getTime() !== dateB.getTime()) {
+            return dateA - dateB;
+          }
+          return a.start_time.localeCompare(b.start_time);
+        });
         setAvailabilities(normalized);
       } catch (reloadErr) {
         console.error("Error recargando disponibilidades:", reloadErr);
