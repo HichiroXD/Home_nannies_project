@@ -235,10 +235,23 @@ export const AdminDashboard = () => {
               icon: <BarChart3 size={20} />,
               content: <ReportsView reports={data.reports || []} />,
             },
+            {
+              label: 'Estado OCR',
+              icon: <Settings size={20} />,
+              content: <OCRStatus status={data.ocrStatus} />,
+            },
+            {
+              label: 'Estado Académico',
+              icon: <Settings size={20} />,
+              content: <AcademicStatus status={data.academicStatus} />,
+            },
           ]}
           onChange={(idx) => setActiveTab(idx)}
           defaultTab={activeTab}
         />
+
+        {/* Botón flotante para agregar usuario */}
+        
       </Stack>
     </Container>
     </MainLayout>

@@ -28,11 +28,33 @@ import { TrendingUp, Users } from 'lucide-react';
 import { formatters } from '@/components/common';
 
 export const ReportsView = ({ reports = [] }) => {
+  // Mapeo de meses de inglés a español
+  const monthMap = {
+    'January': 'Enero',
+    'February': 'Febrero',
+    'March': 'Marzo',
+    'April': 'Abril',
+    'May': 'Mayo',
+    'June': 'Junio',
+    'July': 'Julio',
+    'August': 'Agosto',
+    'September': 'Septiembre',
+    'October': 'Octubre',
+    'November': 'Noviembre',
+    'December': 'Diciembre',
+  };
+
+  // Traducir los meses en los reportes
+  const translatedReports = reports.map(report => ({
+    ...report,
+    month: monthMap[report.month] || report.month,
+  }));
+
   // Calcular totales
-  const totalBookings = reports.reduce((sum, r) => sum + r.bookings, 0);
-  const totalRevenue = reports.reduce((sum, r) => sum + r.revenue, 0);
-  const totalUsers = reports.length > 0 ? reports[reports.length - 1].users : 0;
-  const avgBookingsPerMonth = Math.round(totalBookings / reports.length);
+  const totalBookings = translatedReports.reduce((sum, r) => sum + r.bookings, 0);
+  const totalRevenue = translatedReports.reduce((sum, r) => sum + r.revenue, 0);
+  const totalUsers = translatedReports.length > 0 ? translatedReports[translatedReports.length - 1].users : 0;
+  const avgBookingsPerMonth = Math.round(totalBookings / translatedReports.length);
 
   return (
     <Stack spacing={3}>
@@ -79,7 +101,7 @@ export const ReportsView = ({ reports = [] }) => {
             Crecimiento de Usuarios
           </Typography>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={reports}>
+            <LineChart data={translatedReports}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
@@ -111,7 +133,7 @@ export const ReportsView = ({ reports = [] }) => {
             Bookings e Ingresos
           </Typography>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={reports}>
+            <BarChart data={translatedReports}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis yAxisId="left" />
@@ -154,7 +176,7 @@ export const ReportsView = ({ reports = [] }) => {
             Detalles Mensuales
           </Typography>
           <Stack spacing={1}>
-            {reports.map((report, idx) => (
+            {translatedReports.map((report, idx) => (
               <Box
                 key={idx}
                 sx={{
