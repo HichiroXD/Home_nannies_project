@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { MainLayout, PageHeader, Loader, AlertToast, PageContainer } from "@components/layout";
 import { ProfileSection, FormInput, FormTextarea } from "@components/profile";
 import ImageUploader from "@components/common/ImageUploader";
+import { PasswordChangeModal, LoginHistoryModal } from "@/components/security";
+import { usePasswordChange, useLoginHistory } from "@/hooks";
 import { getMediaUrl } from "@/config/constants";
 import { User, Mail, Phone, MapPin, Users } from "lucide-react";
 import { getParentProfile, updateParentProfile } from "@api/profileApi";
@@ -26,6 +28,31 @@ export default function ParentProfile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+
+  // Hooks personalizados para funcionalidad de seguridad
+  const {
+    passwordData,
+    setPasswordData,
+    saving: savingPassword,
+    handlePasswordChange: performPasswordChange,
+    resetPasswordData,
+  } = usePasswordChange(
+    (message) => {
+      setAlert({ type: "success", message });
+      setShowPasswordModal(false);
+    },
+    (message) => setAlert({ type: "error", message })
+  );
+
+  const {
+    loginHistory,
+    loadingHistory,
+    loadLoginHistory,
+  } = useLoginHistory(
+    (message) => setAlert({ type: "error", message })
+  );
 
   useEffect(() => {
     const role = localStorage.getItem("role");
@@ -305,23 +332,73 @@ export default function ParentProfile() {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Acciones de Cuenta</h2>
           <div className="space-y-3">
             <button 
+              type="button"
               onClick={() => navigate('/notifications')}
-              className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+              className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg hover:bg-gray-100 transition cursor-pointer"
             >
               Ver Notificaciones
             </button>
-            <button className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg hover:bg-gray-100 transition">
+            <button 
+              type="button"
+              onClick={() => setShowPasswordModal(true)}
+              className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg hover:bg-gray-100 transition cursor-pointer"
+            >
               Cambiar Contraseña
             </button>
-            <button className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg hover:bg-gray-100 transition">
+            <button 
+              type="button"
+              onClick={async () => {
+                const success = await loadLoginHistory();
+                if (success) {
+                  setShowHistoryModal(true);
+                }
+              }}
+              disabled={loadingHistory}
+              className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg hover:bg-gray-100 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {loadingHistory ? 'Cargando...' : 'Ver Historial de Acceso'}
+            </button>
+            <button 
+              type="button"
+              onClick={() => navigate('/settings')}
+              className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg hover:bg-gray-100 transition cursor-pointer"
+            >
               Preferencias de Notificación
             </button>
-            <button className="w-full px-4 py-2 text-left border border-red-300 rounded-lg hover:bg-red-50 transition text-red-600">
+            <button 
+              type="button"
+              className="w-full px-4 py-2 text-left border border-red-300 rounded-lg hover:bg-red-50 transition text-red-600 cursor-pointer"
+              onClick={() => alert('Funcionalidad próximamente')}
+            >
               Eliminar Cuenta
             </button>
           </div>
         </div>
         </div>
+
+        {/* Modales Reutilizables */}
+        <PasswordChangeModal
+          isOpen={showPasswordModal}
+          onClose={() => {
+            setShowPasswordModal(false);
+            resetPasswordData();
+          }}
+          passwordData={passwordData}
+          onPasswordDataChange={setPasswordData}
+          onSave={async () => {
+            const success = await performPasswordChange();
+            if (success) {
+              resetPasswordData();
+            }
+          }}
+          saving={savingPassword}
+        />
+
+        <LoginHistoryModal
+          isOpen={showHistoryModal}
+          onClose={() => setShowHistoryModal(false)}
+          loginHistory={loginHistory}
+        />
       </PageContainer>
     </MainLayout>
   );

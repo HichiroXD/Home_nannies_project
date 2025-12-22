@@ -9,6 +9,7 @@ from .role_views import (
     get_user_roles, add_role, remove_role,
     switch_active_role, get_active_role
 )
+from .login_history_views import login_history
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -37,4 +38,7 @@ urlpatterns = [
     path("<int:user_id>/reactivate/", reactivate_user, name="reactivate-user"),
     path("<int:user_id>/approve/", approve_user, name="approve-user"),
     path("<int:user_id>/reject/", reject_user, name="reject-user"),
+    
+    # Historial de acceso
+    path("login-history/", login_history, name="login-history"),
 ]

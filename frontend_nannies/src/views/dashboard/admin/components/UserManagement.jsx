@@ -153,14 +153,6 @@ export const UserManagement = ({
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
           Gestión de Usuarios ({users.length})
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Plus size={18} />}
-          onClick={onAddUser}
-          size="small"
-        >
-          Agregar Usuario
-        </Button>
       </Box>
 
       {/* DataTable */}

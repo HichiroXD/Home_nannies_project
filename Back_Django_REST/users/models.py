@@ -211,3 +211,69 @@ class User(AbstractUser):
             models.Index(fields=['verification_status']),
             models.Index(fields=['role']),
         ]
+
+class LoginHistory(models.Model):
+    """
+    Modelo para registrar el historial de accesos de usuarios.
+    Útil para auditoría y seguridad.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='login_history',
+        help_text="Usuario que inició sesión"
+    )
+    ip_address = models.GenericIPAddressField(
+        help_text="Dirección IP desde donde se inició sesión"
+    )
+    user_agent = models.TextField(
+        blank=True,
+        help_text="User agent del navegador"
+    )
+    login_time = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Fecha y hora del login"
+    )
+    logout_time = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Fecha y hora del logout"
+    )
+    session_duration = models.DurationField(
+        null=True,
+        blank=True,
+        help_text="Duración de la sesión"
+    )
+    login_successful = models.BooleanField(
+        default=True,
+        help_text="¿Login exitoso?"
+    )
+    failure_reason = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Razón del fallo si login no fue exitoso"
+    )
+    device_type = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Tipo de dispositivo (desktop, mobile, tablet)"
+    )
+    location = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Ubicación aproximada (ciudad, país)"
+    )
+
+    class Meta:
+        verbose_name = "Historial de Acceso"
+        verbose_name_plural = "Historial de Accesos"
+        ordering = ["-login_time"]
+        indexes = [
+            models.Index(fields=['user', '-login_time']),
+            models.Index(fields=['ip_address']),
+            models.Index(fields=['login_time']),
+        ]
+
+    def __str__(self):
+        status = "Exitoso" if self.login_successful else "Fallido"
+        return f"{self.user.username} - {status} - {self.login_time.strftime('%Y-%m-%d %H:%M')}"

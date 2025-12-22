@@ -109,19 +109,63 @@ class LoginView(APIView):
     serializer_class = LoginSerializer
 
     def post(self, request):
+        from .models import LoginHistory
+        
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = authenticate(
-            username=serializer.validated_data["username"],
-            password=serializer.validated_data["password"]
-        )
+        username = serializer.validated_data["username"]
+        password = serializer.validated_data["password"]
+        
+        # Obtener información del request
+        ip_address = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))
+        if ip_address:
+            ip_address = ip_address.split(',')[0].strip()
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        
+        user = authenticate(username=username, password=password)
 
         if user is None or not user.is_active:
+            # Registrar intento fallido
+            try:
+                failed_user = User.objects.filter(username=username).first()
+                if failed_user:
+                    LoginHistory.objects.create(
+                        user=failed_user,
+                        ip_address=ip_address or '0.0.0.0',
+                        user_agent=user_agent,
+                        login_successful=False,
+                        failure_reason="Credenciales inválidas o usuario inactivo"
+                    )
+            except Exception as e:
+                print(f"Error al registrar login fallido: {e}")
+            
             return Response({"detail": "Credenciales inválidas"}, status=status.HTTP_401_UNAUTHORIZED)
 
         if not user.is_verified:
+            # Registrar intento fallido por cuenta no verificada
+            LoginHistory.objects.create(
+                user=user,
+                ip_address=ip_address or '0.0.0.0',
+                user_agent=user_agent,
+                login_successful=False,
+                failure_reason="Cuenta no verificada"
+            )
             return Response({"detail": "Cuenta no verificada"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Registrar login exitoso
+        try:
+            LoginHistory.objects.create(
+                user=user,
+                ip_address=ip_address or '0.0.0.0',
+                user_agent=user_agent,
+                login_successful=True
+            )
+            # Actualizar último IP del usuario
+            user.last_login_ip = ip_address
+            user.save(update_fields=['last_login_ip'])
+        except Exception as e:
+            print(f"Error al registrar login exitoso: {e}")
 
         refresh = RefreshToken.for_user(user)
         return Response({
@@ -420,9 +464,28 @@ def admin_dashboard(request):
         # Calcular tasa de éxito
         success_rate = (completed_bookings / total_bookings * 100) if total_bookings > 0 else 0
         
-        # Lista de usuarios (primeros 20)
+        # Paginación de usuarios - obtener solo la página solicitada
+        page = request.GET.get('page', 1)
+        page_size = request.GET.get('page_size', 20)
+        
+        try:
+            page = int(page)
+            page_size = min(int(page_size), 100)  # Máximo 100 registros por página
+        except (ValueError, TypeError):
+            page = 1
+            page_size = 20
+        
+        # Calcular offset y limit para la paginación
+        offset = (page - 1) * page_size
+        
+        # Obtener usuarios paginados
+        users_queryset = User.objects.all().order_by('-date_joined')
+        total_users_count = users_queryset.count()
+        users_page = users_queryset[offset:offset + page_size]
+        
+        # Lista de usuarios con información adicional
         users_list = []
-        for u in User.objects.all().order_by('-date_joined')[:20]:
+        for u in users_page:
             bookings_count = 0
             if u.role == 'nanny':
                 bookings_count = Booking.objects.filter(nanny=u).count()
@@ -527,6 +590,14 @@ def admin_dashboard(request):
                 'successRate': round(success_rate, 1),
             },
             'users': users_list,
+            'usersPagination': {
+                'total': total_users_count,
+                'page': page,
+                'pageSize': page_size,
+                'totalPages': (total_users_count + page_size - 1) // page_size,
+                'hasNext': offset + page_size < total_users_count,
+                'hasPrev': page > 1,
+            },
             'reports': reports,
             'ocrStatus': ocr_status_data,
             'academicStatus': academic_status_data,
