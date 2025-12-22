@@ -50,10 +50,9 @@ export const StatCard = ({
       sx={{
         cursor: onClick ? 'pointer' : 'default',
         transition: 'all 0.3s ease',
-        height: '100%',
-        minHeight: '140px',
         display: 'flex',
         flexDirection: 'column',
+        height: '100%',
         '&:hover': onClick && {
           transform: 'translateY(-4px)',
           boxShadow: 4,
@@ -61,7 +60,7 @@ export const StatCard = ({
       }}
       onClick={onClick}
     >
-      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <Stack spacing={2}>
           <Box
             sx={{
