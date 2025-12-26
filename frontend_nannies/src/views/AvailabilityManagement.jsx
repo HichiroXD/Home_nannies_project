@@ -5,7 +5,7 @@ import "react-calendar/dist/Calendar.css";
 import { Plus, Trash2, Clock, ArrowLeft, Edit2, X, Check, Copy, RefreshCw } from "lucide-react";
 import { getAvailabilities, createAvailability, deleteAvailability, updateAvailability } from "@api/availabilityApi";
 import { AlertToast } from "@components/common";
-import { Loader, PageHeader } from "@components/layout";
+import { Loader, PageHeader, MainLayout } from "@components/layout";
 import { AvailabilityForm, AvailabilityCalendar } from "@components/availability";
 
 export default function AvailabilityManagement() {
@@ -309,29 +309,32 @@ export default function AvailabilityManagement() {
     });
   };
 
-  if (loading) return <Loader />;
+  if (loading) {
+    return (
+      <MainLayout>
+        <Loader />
+      </MainLayout>
+    );
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* Header con botón de regreso */}
-      <div className="mb-6">
-        <button
-          onClick={() => navigate('/catalog')}
-          className="flex items-center gap-2 text-pink-600 hover:text-pink-700 font-medium transition mb-4"
-        >
-          <ArrowLeft size={20} />
-          Volver al Catálogo
-        </button>
-      </div>
+    <MainLayout>
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Botón de retroceso */}
+        <div className="mb-6">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-pink-600 hover:text-pink-700 font-medium transition"
+          >
+            <ArrowLeft size={20} />
+            Volver
+          </button>
+        </div>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Gestionar Disponibilidad
-        </h1>
-        <p className="text-gray-600">
-          Define las franjas horarias en las que estás disponible para cuidar
-        </p>
-      </div>
+        <PageHeader
+          title="Gestionar Disponibilidad"
+          description="Define las franjas horarias en las que estás disponible para cuidar"
+        />
 
       {alert && (
         <AlertToast
@@ -518,6 +521,7 @@ export default function AvailabilityManagement() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </MainLayout>
   );
 }

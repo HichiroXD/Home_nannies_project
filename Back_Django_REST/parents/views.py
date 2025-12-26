@@ -42,12 +42,40 @@ def parent_profile(request):
     
     elif request.method in ['PUT', 'PATCH']:
         partial = request.method == 'PATCH'
-        serializer = ParentProfileSerializer(parent, data=request.data, partial=partial)
+        
+        # Debug: Ver qué datos llegan
+        print("=== DEBUG PARENT PROFILE UPDATE ===")
+        print("request.data:", dict(request.data))
+        print("request.FILES:", dict(request.FILES))
+        
+        # Preparar datos para el serializer, convirtiendo valores numéricos
+        data_to_update = {}
+        for key, value in request.data.items():
+            print(f"Processing {key}: {value} (type: {type(value)})")
+            
+            # Convertir children_count apropiadamente
+            if key == 'children_count':
+                try:
+                    data_to_update[key] = int(value) if value != '' else 1
+                except (ValueError, TypeError) as e:
+                    print(f"Error converting {key}: {e}")
+                    data_to_update[key] = 1
+            else:
+                data_to_update[key] = value
+        
+        # Agregar archivos si existen
+        if request.FILES:
+            data_to_update.update(request.FILES)
+        
+        print("data_to_update después de procesar:", data_to_update)
+        
+        serializer = ParentProfileSerializer(parent, data=data_to_update, partial=partial)
         
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         
+        print("Serializer errors:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

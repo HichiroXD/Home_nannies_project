@@ -277,14 +277,52 @@ def nanny_profile(request):
             print("request.FILES:", dict(request.FILES))
             print("Content-Type:", request.content_type)
             
-            serializer = NannyProfileSerializer(nanny, data=request.data, partial=partial)
+            # Preparar datos para el serializer, convirtiendo valores numéricos
+            data_to_update = {}
+            for key, value in request.data.items():
+                print(f"Processing {key}: {value} (type: {type(value)})")
+                
+                # Convertir valores numéricos apropiadamente
+                if key in ['hourly_rate', 'experience_years']:
+                    try:
+                        # Asegurar que sea un entero positivo
+                        converted = int(value) if value != '' else 0
+                        data_to_update[key] = max(0, converted)  # No permitir negativos
+                    except (ValueError, TypeError) as e:
+                        print(f"Error converting {key}: {e}")
+                        data_to_update[key] = 0
+                elif key == 'age':
+                    try:
+                        data_to_update[key] = int(value) if value not in ['', None] else None
+                    except (ValueError, TypeError):
+                        data_to_update[key] = None
+                elif key in ['first_name', 'last_name', 'description', 'certifications']:
+                    # Asegurar que sean strings
+                    data_to_update[key] = str(value) if value is not None else ''
+                else:
+                    data_to_update[key] = value
             
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
+            # Agregar archivos si existen
+            if request.FILES:
+                data_to_update.update(request.FILES)
             
-            print("Serializer errors:", serializer.errors)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            print("data_to_update después de procesar:", data_to_update)
+            
+            try:
+                serializer = NannyProfileSerializer(nanny, data=data_to_update, partial=partial)
+                
+                if serializer.is_valid():
+                    updated_profile = serializer.save()
+                    print("Perfil actualizado exitosamente:", updated_profile.id)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                
+                print("Serializer errors:", serializer.errors)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as serializer_error:
+                print(f"Error en serializer: {str(serializer_error)}")
+                import traceback
+                print(traceback.format_exc())
+                raise
     
     except Exception as e:
         import traceback
@@ -293,5 +331,79 @@ def nanny_profile(request):
                 'error': f'Error al actualizar perfil: {str(e)}',
                 'traceback': traceback.format_exc()
             },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_nanny(request, nanny_id):
+    """
+    Endpoint para verificar una niñera.
+    Solo accesible para administradores.
+    """
+    # Verificar que el usuario es admin
+    if not request.user.is_staff:
+        return Response(
+            {'error': 'Solo los administradores pueden verificar niñeras'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        nanny = NannyProfile.objects.get(id=nanny_id)
+        nanny.verified = True
+        nanny.save()
+        
+        serializer = NannyProfileSerializer(nanny)
+        return Response({
+            'message': f'Niñera {nanny.user.username} verificada exitosamente',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+    except NannyProfile.DoesNotExist:
+        return Response(
+            {'error': 'Niñera no encontrada'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': f'Error al verificar niñera: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def unverify_nanny(request, nanny_id):
+    """
+    Endpoint para quitar verificación a una niñera.
+    Solo accesible para administradores.
+    """
+    # Verificar que el usuario es admin
+    if not request.user.is_staff:
+        return Response(
+            {'error': 'Solo los administradores pueden quitar verificaciones'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        nanny = NannyProfile.objects.get(id=nanny_id)
+        nanny.verified = False
+        nanny.save()
+        
+        serializer = NannyProfileSerializer(nanny)
+        return Response({
+            'message': f'Verificación de {nanny.user.username} removida',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+    except NannyProfile.DoesNotExist:
+        return Response(
+            {'error': 'Niñera no encontrada'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': f'Error al quitar verificación: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

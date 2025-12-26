@@ -73,7 +73,28 @@ export default function NannyProfile() {
       setLoading(true);
       const data = await getNannyProfile();
       console.log("Datos recibidos del backend:", data);
-      console.log("Tipo de hourly_rate:", typeof data.hourly_rate, data.hourly_rate);
+      
+      // Normalizar valores numéricos para evitar arrays
+      if (data.hourly_rate !== undefined && data.hourly_rate !== null) {
+        data.hourly_rate = Array.isArray(data.hourly_rate) ? data.hourly_rate[0] : data.hourly_rate;
+        data.hourly_rate = Number(data.hourly_rate) || 0;
+      }
+      
+      if (data.experience_years !== undefined && data.experience_years !== null) {
+        data.experience_years = Array.isArray(data.experience_years) ? data.experience_years[0] : data.experience_years;
+        data.experience_years = Number(data.experience_years) || 0;
+      }
+      
+      if (data.age !== undefined && data.age !== null && data.age !== '') {
+        data.age = Array.isArray(data.age) ? data.age[0] : data.age;
+        data.age = Number(data.age) || '';
+      }
+      
+      console.log("Datos normalizados:", {
+        hourly_rate: data.hourly_rate,
+        experience_years: data.experience_years,
+        age: data.age
+      });
       
       // Construir URL completa para la foto de perfil
       if (data.profile_photo) {
@@ -104,23 +125,49 @@ export default function NannyProfile() {
       
       console.log("Profile antes de enviar:", profile);
       
-      // Manejar hourly_rate si es un array (tomar el primer elemento)
+      // Normalizar valores numéricos para evitar enviar arrays
       let hourlyRateValue = profile.hourly_rate;
       if (Array.isArray(hourlyRateValue)) {
         hourlyRateValue = hourlyRateValue[0];
       }
+      hourlyRateValue = Number(hourlyRateValue) || 0;
+      
+      let experienceYearsValue = profile.experience_years;
+      if (Array.isArray(experienceYearsValue)) {
+        experienceYearsValue = experienceYearsValue[0];
+      }
+      experienceYearsValue = Number(experienceYearsValue) || 0;
+      
+      let ageValue = profile.age;
+      if (ageValue !== '' && ageValue !== null && ageValue !== undefined) {
+        if (Array.isArray(ageValue)) {
+          ageValue = ageValue[0];
+        }
+        ageValue = Number(ageValue);
+        if (isNaN(ageValue)) {
+          ageValue = null;
+        }
+      } else {
+        ageValue = null;
+      }
+      
+      console.log("Valores normalizados para enviar:", {
+        hourly_rate: hourlyRateValue,
+        experience_years: experienceYearsValue,
+        age: ageValue
+      });
       
       // Crear FormData para enviar archivos
       const formData = new FormData();
-      formData.append('first_name', profile.first_name || '');
-      formData.append('last_name', profile.last_name || '');
-      formData.append('experience_years', parseInt(profile.experience_years) || 0);
-      formData.append('hourly_rate', parseInt(hourlyRateValue) || 0);
-      formData.append('description', profile.description || '');
-      formData.append('certifications', profile.certifications || '');
+      formData.append('first_name', String(profile.first_name || ''));
+      formData.append('last_name', String(profile.last_name || ''));
+      formData.append('experience_years', String(experienceYearsValue));
+      formData.append('hourly_rate', String(hourlyRateValue));
+      formData.append('description', String(profile.description || ''));
+      formData.append('certifications', String(profile.certifications || ''));
       
-      if (profile.age) {
-        formData.append('age', parseInt(profile.age));
+      if (ageValue !== null) {
+        formData.append('age', String(ageValue));
       }
       
       // Agregar foto si se seleccionó una nueva

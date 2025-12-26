@@ -25,6 +25,33 @@ def get_current_request():
     return getattr(_thread_locals, 'request', None)
 
 
+def get_audit_user(fallback_user=None):
+    """
+    Obtiene el usuario para auditoría de manera segura.
+    
+    Args:
+        fallback_user: Usuario a usar si no hay usuario autenticado
+    
+    Returns:
+        User instance o None
+    """
+    user = get_current_user()
+    
+    # Si el usuario existe y está autenticado, usarlo
+    if user and hasattr(user, 'is_authenticated') and user.is_authenticated:
+        return user
+    
+    # Si hay un fallback y es un usuario válido, usarlo
+    if fallback_user and hasattr(fallback_user, 'is_authenticated'):
+        return fallback_user
+    
+    # Si el fallback no tiene is_authenticated pero parece ser un User, usarlo
+    if fallback_user and hasattr(fallback_user, 'username'):
+        return fallback_user
+    
+    return None
+
+
 class AuditMiddleware:
     """
     Middleware para capturar el usuario y request actual en cada petición.
@@ -57,12 +84,12 @@ def get_client_ip(request):
 @receiver(post_save, sender=User)
 def log_user_changes(sender, instance, created, **kwargs):
     """Registra creación y actualización de usuarios"""
-    user = get_current_user()
     request = get_current_request()
+    user = get_audit_user(fallback_user=instance)
     
     if created:
         AuditLog.log_action(
-            user=user or instance,  # Si no hay usuario actual, usar el creado
+            user=user,
             action='create',
             description=f'Usuario creado: {instance.username} con rol {instance.role}',
             content_object=instance,
@@ -83,8 +110,13 @@ def log_user_changes(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=User)
 def log_user_deletion(sender, instance, **kwargs):
     """Registra eliminación de usuarios"""
-    user = get_current_user()
     request = get_current_request()
+    user = get_audit_user()
+    
+    # Si no hay usuario, usar el sistema como fallback
+    if not user:
+        # Crear log sin usuario específico (eliminación del sistema)
+        return
     
     AuditLog.log_action(
         user=user,
@@ -105,8 +137,8 @@ def log_user_deletion(sender, instance, **kwargs):
 @receiver(post_save, sender='bookings.Booking')
 def log_booking_changes(sender, instance, created, **kwargs):
     """Registra cambios en reservas"""
-    user = get_current_user()
     request = get_current_request()
+    user = get_audit_user(fallback_user=instance.parent)
     
     if created:
         action = 'booking_create'
@@ -136,8 +168,8 @@ def log_booking_changes(sender, instance, created, **kwargs):
 @receiver(post_delete, sender='bookings.Booking')
 def log_booking_deletion(sender, instance, **kwargs):
     """Registra eliminación de reservas"""
-    user = get_current_user()
     request = get_current_request()
+    user = get_audit_user(fallback_user=instance.parent)
     
     AuditLog.log_action(
         user=user,
@@ -162,11 +194,11 @@ def log_review_creation(sender, instance, created, **kwargs):
     if not created:
         return
     
-    user = get_current_user()
     request = get_current_request()
+    user = get_audit_user(fallback_user=instance.parent)
     
     AuditLog.log_action(
-        user=user or instance.parent,
+        user=user,
         action='review_create',
         description=f'Reseña creada: {instance.parent.username} para {instance.nanny.user.username} - {instance.rating}⭐',
         content_object=instance,
@@ -183,8 +215,8 @@ def log_review_creation(sender, instance, created, **kwargs):
 @receiver(post_delete, sender='reviews.Review')
 def log_review_deletion(sender, instance, **kwargs):
     """Registra eliminación de reseñas"""
-    user = get_current_user()
     request = get_current_request()
+    user = get_audit_user(fallback_user=instance.parent)
     
     AuditLog.log_action(
         user=user,
@@ -204,8 +236,8 @@ def log_review_deletion(sender, instance, **kwargs):
 @receiver(post_save, sender='nannies.NannyProfile')
 def log_nanny_profile_changes(sender, instance, created, **kwargs):
     """Registra cambios en perfiles de niñeras"""
-    user = get_current_user()
     request = get_current_request()
+    user = get_audit_user(fallback_user=instance.user)
     
     if created:
         action = 'create'
@@ -215,7 +247,7 @@ def log_nanny_profile_changes(sender, instance, created, **kwargs):
         description = f'Perfil de niñera actualizado: {instance.user.username}'
     
     AuditLog.log_action(
-        user=user or instance.user,
+        user=user,
         action=action,
         description=description,
         content_object=instance,
@@ -234,8 +266,8 @@ def log_nanny_profile_changes(sender, instance, created, **kwargs):
 @receiver(post_save, sender='parents.ParentProfile')
 def log_parent_profile_changes(sender, instance, created, **kwargs):
     """Registra cambios en perfiles de padres"""
-    user = get_current_user()
     request = get_current_request()
+    user = get_audit_user(fallback_user=instance.user)
     
     if created:
         action = 'create'
@@ -245,7 +277,7 @@ def log_parent_profile_changes(sender, instance, created, **kwargs):
         description = f'Perfil de padre actualizado: {instance.user.username}'
     
     AuditLog.log_action(
-        user=user or instance.user,
+        user=user,
         action=action,
         description=description,
         content_object=instance,
@@ -262,8 +294,10 @@ def log_parent_profile_changes(sender, instance, created, **kwargs):
 @receiver(post_save, sender='academic.AcademicVerification')
 def log_academic_verification_changes(sender, instance, created, **kwargs):
     """Registra cambios en verificaciones académicas"""
-    user = get_current_user()
     request = get_current_request()
+    # Intentar obtener el usuario del estudiante si existe
+    fallback = instance.student.user if hasattr(instance, 'student') and instance.student else None
+    user = get_audit_user(fallback_user=fallback)
     
     if created:
         action = 'document_upload'

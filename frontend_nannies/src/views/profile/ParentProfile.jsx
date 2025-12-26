@@ -74,6 +74,18 @@ export default function ParentProfile() {
       setLoading(true);
       const data = await getParentProfile();
       
+      console.log("Datos recibidos del backend:", data);
+      
+      // Normalizar valores numéricos para evitar arrays
+      if (data.children_count !== undefined && data.children_count !== null) {
+        data.children_count = Array.isArray(data.children_count) ? data.children_count[0] : data.children_count;
+        data.children_count = Number(data.children_count) || 1;
+      }
+      
+      console.log("Datos normalizados:", {
+        children_count: data.children_count
+      });
+      
       // Construir URL completa para la foto de perfil
       if (data.profile_photo) {
         data.profile_photo = getMediaUrl(data.profile_photo);
@@ -100,15 +112,28 @@ export default function ParentProfile() {
     try {
       setSaving(true);
       
+      console.log("Profile antes de enviar:", profile);
+      
+      // Normalizar children_count
+      let childrenCountValue = profile.children_count;
+      if (Array.isArray(childrenCountValue)) {
+        childrenCountValue = childrenCountValue[0];
+      }
+      childrenCountValue = Number(childrenCountValue) || 1;
+      
+      console.log("Valores normalizados para enviar:", {
+        children_count: childrenCountValue
+      });
+      
       // Crear FormData para enviar archivos
       const formData = new FormData();
-      formData.append('first_name', profile.first_name);
-      formData.append('last_name', profile.last_name);
-      formData.append('phone', profile.phone);
-      formData.append('address', profile.address);
-      formData.append('emergency_contact', profile.emergency_contact);
-      formData.append('children_count', parseInt(profile.children_count) || 1);
-      formData.append('preferences', profile.preferences);
+      formData.append('first_name', String(profile.first_name || ''));
+      formData.append('last_name', String(profile.last_name || ''));
+      formData.append('phone', String(profile.phone || ''));
+      formData.append('address', String(profile.address || ''));
+      formData.append('emergency_contact', String(profile.emergency_contact || ''));
+      formData.append('children_count', String(childrenCountValue));
+      formData.append('preferences', String(profile.preferences || ''));
       
       // Agregar foto si se seleccionó una nueva
       if (profilePhoto) {

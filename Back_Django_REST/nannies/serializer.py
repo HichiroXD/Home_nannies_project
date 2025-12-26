@@ -54,6 +54,26 @@ class NannyProfileSerializer(serializers.ModelSerializer):
         print("validated_data:", validated_data)
         print("user_data:", user_data)
         
+        # Normalizar valores numéricos (hourly_rate, experience_years, age)
+        # En caso de que vengan como arrays o strings, convertirlos correctamente
+        if 'hourly_rate' in validated_data:
+            value = validated_data['hourly_rate']
+            if isinstance(value, list):
+                value = value[0] if value else 0
+            try:
+                validated_data['hourly_rate'] = int(value) if value else 0
+            except (ValueError, TypeError):
+                validated_data['hourly_rate'] = 0
+                
+        if 'experience_years' in validated_data:
+            value = validated_data['experience_years']
+            if isinstance(value, list):
+                value = value[0] if value else 0
+            try:
+                validated_data['experience_years'] = int(value) if value else 0
+            except (ValueError, TypeError):
+                validated_data['experience_years'] = 0
+        
         # Limpiar campos vacíos que vienen como strings vacíos desde FormData
         if 'description' in validated_data and validated_data['description'] == '':
             validated_data['description'] = ''
@@ -62,6 +82,8 @@ class NannyProfileSerializer(serializers.ModelSerializer):
         if 'age' in validated_data:
             # Convertir a int o None si está vacío
             age_value = validated_data['age']
+            if isinstance(age_value, list):
+                age_value = age_value[0] if age_value else None
             if age_value == '' or age_value is None:
                 validated_data['age'] = None
             else:
@@ -70,16 +92,36 @@ class NannyProfileSerializer(serializers.ModelSerializer):
                 except (ValueError, TypeError):
                     validated_data['age'] = None
         
-        # Actualizar perfil de niñera
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
+        print("validated_data después de normalización:", validated_data)
+        
+        try:
+            # Actualizar perfil de niñera
+            for attr, value in validated_data.items():
+                print(f"Setting {attr} = {value}")
+                setattr(instance, attr, value)
+            
+            print("Guardando instancia...")
+            instance.save()
+            print("Instancia guardada exitosamente")
+        except Exception as e:
+            print(f"Error al guardar perfil de niñera: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
+            raise
         
         # Actualizar datos de usuario (first_name, last_name)
         if user_data:
-            user = instance.user
-            for attr, value in user_data.items():
-                setattr(user, attr, value)
-            user.save()
+            try:
+                user = instance.user
+                for attr, value in user_data.items():
+                    print(f"Setting user.{attr} = {value}")
+                    setattr(user, attr, value)
+                user.save()
+                print("Usuario actualizado exitosamente")
+            except Exception as e:
+                print(f"Error al actualizar usuario: {str(e)}")
+                import traceback
+                print(traceback.format_exc())
+                raise
         
         return instance

@@ -260,6 +260,24 @@ class VerifyEmailView(APIView):
             user.is_verified = True
             user.pending_verification = False
             user.save()
+            
+            # Si es una niñera, también verificar su perfil automáticamente
+            if user.role == 'nanny':
+                try:
+                    from nannies.models import NannyProfile
+                    nanny_profile = NannyProfile.objects.get(user=user)
+                    nanny_profile.verified = True
+                    nanny_profile.save()
+                except NannyProfile.DoesNotExist:
+                    # Si no existe el perfil, crearlo verificado
+                    NannyProfile.objects.create(
+                        user=user,
+                        experience_years=0,
+                        hourly_rate=10000,
+                        description='',
+                        verified=True  # Crear ya verificado
+                    )
+            
             return Response({"message": "✅ Tu cuenta ha sido verificada correctamente."})
         else:
             return Response({"error": "❌ Enlace de verificación inválido o expirado."}, 
@@ -282,6 +300,24 @@ class DevVerifyUserView(APIView):
             user.is_verified = True
             user.pending_verification = False
             user.save()
+            
+            # Si es una niñera, también verificar su perfil automáticamente
+            if user.role == 'nanny':
+                try:
+                    from nannies.models import NannyProfile
+                    nanny_profile = NannyProfile.objects.get(user=user)
+                    nanny_profile.verified = True
+                    nanny_profile.save()
+                except NannyProfile.DoesNotExist:
+                    # Si no existe el perfil, crearlo verificado
+                    NannyProfile.objects.create(
+                        user=user,
+                        experience_years=0,
+                        hourly_rate=10000,
+                        description='',
+                        verified=True
+                    )
+            
             return Response({
                 "message": f"✅ Usuario {user.username} verificado correctamente (dev mode)",
                 "username": user.username,
