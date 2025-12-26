@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ParentProfile
+from .models import ParentProfile, Child
 
 
 class ParentProfileSerializer(serializers.ModelSerializer):
@@ -59,3 +59,54 @@ class ParentProfileSerializer(serializers.ModelSerializer):
             user.save()
         
         return instance
+
+
+class ChildSerializer(serializers.ModelSerializer):
+    """Serializer para el modelo Child (hijos del padre)"""
+    
+    class Meta:
+        model = Child
+        fields = [
+            'id', 'parent', 'name', 'age', 'date_of_birth', 'gender',
+            'allergies', 'medical_conditions', 'special_needs',
+            'medications', 'emergency_contact', 'notes',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at', 'parent']
+    
+    def validate_age(self, value):
+        """Validar que la edad sea razonable"""
+        if value < 0 or value > 18:
+            raise serializers.ValidationError("La edad debe estar entre 0 y 18 años")
+        return value
+    
+    def validate_name(self, value):
+        """Validar que el nombre no esté vacío"""
+        if not value or not value.strip():
+            raise serializers.ValidationError("El nombre es requerido")
+        return value.strip()
+
+
+class ChildCreateUpdateSerializer(serializers.ModelSerializer):
+    """Serializer para crear/actualizar hijos (sin campo parent en la entrada)"""
+    
+    class Meta:
+        model = Child
+        fields = [
+            'id', 'name', 'age', 'date_of_birth', 'gender',
+            'allergies', 'medical_conditions', 'special_needs',
+            'medications', 'emergency_contact', 'notes'
+        ]
+        read_only_fields = ['id']
+    
+    def validate_age(self, value):
+        """Validar que la edad sea razonable"""
+        if value < 0 or value > 18:
+            raise serializers.ValidationError("La edad debe estar entre 0 y 18 años")
+        return value
+    
+    def validate_name(self, value):
+        """Validar que el nombre no esté vacío"""
+        if not value or not value.strip():
+            raise serializers.ValidationError("El nombre es requerido")
+        return value.strip()

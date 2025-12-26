@@ -147,6 +147,43 @@ const useAuthStore = create(
        */
       getRole: () => {
         return get().role;
+      },
+
+      /**
+       * Refresh User Data - Obtiene datos actualizados del usuario desde el backend
+       * Útil para sincronizar cambios hechos desde el admin
+       * @returns {Promise<void>}
+       */
+      refreshUserData: async () => {
+        try {
+          const { accessToken } = get();
+          if (!accessToken) {
+            logger.warn('No access token available for refreshing user data');
+            return;
+          }
+
+          // Importar dinámicamente para evitar circular dependency
+          const { getProfile } = await import('@/api/userApi');
+          const userData = await getProfile();
+          
+          logger.info('User data refreshed', { username: userData.username, role: userData.role });
+          
+          // Actualizar rol en localStorage para compatibilidad
+          if (userData.role) {
+            localStorage.setItem('role', userData.role);
+          }
+          
+          set({
+            user: {
+              username: userData.username,
+              role: userData.role
+            },
+            role: userData.role
+          });
+        } catch (error) {
+          logger.error('Failed to refresh user data', error);
+          set({ error: error.message });
+        }
       }
     }),
     {

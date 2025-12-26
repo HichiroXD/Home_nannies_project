@@ -31,7 +31,7 @@ DEBUG = os.getenv("DEBUG", "False") == "True"  # Default seguro: False
 
 # ALLOWED_HOSTS: leer desde variable de entorno (separado por comas)
 # En Railway, configurar: ALLOWED_HOSTS=.railway.app,tudominio.com
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,104.248.213.225").split(",")
 
 
 # Application definition

@@ -27,29 +27,30 @@ export {
   updateParentProfile,
   getNannyProfile,
   updateNannyProfile,
-  uploadProfileImage,
 } from './profileApi';
 
 // Nanny API
 export {
   getNannies,
   getNannyById,
-  getNannyReviews,
-  searchNannies,
 } from './nannyApi';
 
 // Booking API
 export {
   getBookings,
-  getBookingById,
+  getBooking,
   createBooking,
-  updateBookingStatus,
+  updateBooking,
   deleteBooking,
+  acceptBooking,
+  rejectBooking,
+  cancelBooking,
+  completeBooking,
 } from './bookingApi';
 
 // Availability API
 export {
-  getAvailability,
+  getAvailabilities,
   createAvailability,
   updateAvailability,
   deleteAvailability,
@@ -66,8 +67,7 @@ export {
 export {
   getFavorites,
   addFavorite,
-  removeFavorite,
-  isFavorite,
+  deleteFavorite,
 } from './favoriteApi';
 
 // Notification API
@@ -85,9 +85,20 @@ export {
 // OCR API
 export {
   uploadOCRDocument,
-  getOCRResults,
-  verifyOCRData,
+  getOCRStatus,
+  extractRUTFromDocument,
+  retryOCRDocument,
+  cancelOCRProcessing,
 } from './ocrApi';
+
+// Children API
+export {
+  getChildren,
+  getChild,
+  createChild,
+  updateChild,
+  deleteChild,
+} from './childrenApi';
 
 // Base API instance (para casos especiales)
 export { default as API } from './api';

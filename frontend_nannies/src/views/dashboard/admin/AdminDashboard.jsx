@@ -27,8 +27,6 @@ import AdminHeader from './components/AdminHeader';
 import SystemMetrics from './components/SystemMetrics';
 import UserManagement from './components/UserManagement';
 import ReportsView from './components/ReportsView';
-import OCRStatus from './components/OCRStatus';
-import AcademicStatus from './components/AcademicStatus';
 import ReviewsManagement from './components/ReviewsManagement';
 
 export const AdminDashboard = () => {
@@ -139,20 +137,6 @@ export const AdminDashboard = () => {
       { month: 'Mayo', bookings: 156, revenue: 7800000, users: 250 },
       { month: 'Junio', bookings: 182, revenue: 9100000, users: 298 },
     ],
-    ocrStatus: {
-      total: 342,
-      processed: 298,
-      pending: 32,
-      failed: 12,
-      lastUpdate: '2024-11-20 10:30',
-    },
-    academicStatus: {
-      total: 85,
-      verified: 78,
-      pending: 5,
-      rejected: 2,
-      lastUpdate: '2024-11-20 11:15',
-    },
   };
 
   // Usar datos reales si están disponibles, si no usar datos demo
@@ -197,18 +181,6 @@ export const AdminDashboard = () => {
           </MuiAlert>
         )}
 
-        {data.ocrStatus?.failed > 0 && (
-          <MuiAlert severity="warning" onClose={() => {}}>
-            Hay {data.ocrStatus.failed} documentos OCR que fallaron en el procesamiento
-          </MuiAlert>
-        )}
-
-        {data.academicStatus?.rejected > 0 && (
-          <MuiAlert severity="info" onClose={() => {}}>
-            {data.academicStatus.rejected} certificado(s) académico(s) rechazado(s)
-          </MuiAlert>
-        )}
-
         {/* System Metrics */}
         <SystemMetrics metrics={data.metrics} />
 
@@ -236,16 +208,6 @@ export const AdminDashboard = () => {
               label: 'Reportes',
               icon: <BarChart3 size={20} />,
               content: <ReportsView reports={data.reports || []} />,
-            },
-            {
-              label: 'Estado OCR',
-              icon: <Settings size={20} />,
-              content: <OCRStatus status={data.ocrStatus} />,
-            },
-            {
-              label: 'Estado Académico',
-              icon: <Settings size={20} />,
-              content: <AcademicStatus status={data.academicStatus} />,
             },
           ]}
           onChange={(idx) => setActiveTab(idx)}
