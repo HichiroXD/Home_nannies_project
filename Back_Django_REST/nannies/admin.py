@@ -71,13 +71,13 @@ class NannyProfileAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         return qs.select_related('user').annotate(
             total_bookings=Count('user__bookings_received', distinct=True),
-            total_reviews=Count('user__reviews_received', distinct=True)
+            total_reviews=Count('reviews_received', distinct=True)
         )
     
     # Métodos personalizados para list_display
     @admin.display(description='Niñera', ordering='user__username')
     def user_link(self, obj):
-        url = reverse('admin:users_customuser_change', args=[obj.user.pk])
+        url = reverse('admin:users_user_change', args=[obj.user.pk])
         name = f"{obj.user.first_name} {obj.user.last_name}" if obj.user.first_name else obj.user.username
         return format_html('<a href="{}">{}</a>', url, name)
     
@@ -98,11 +98,12 @@ class NannyProfileAdmin(admin.ModelAdmin):
     def rating_avg_stars(self, obj):
         stars = '★' * int(obj.rating_avg) + '☆' * (5 - int(obj.rating_avg))
         color = '#FFD700' if obj.rating_avg >= 4.0 else '#FFA500' if obj.rating_avg >= 3.0 else '#9E9E9E'
+        rating_formatted = f'{obj.rating_avg:.2f}'
         return format_html(
-            '<span style="color: {};">{}</span> <small>({:.2f})</small>',
+            '<span style="color: {};">{}</span> <small>({})</small>',
             color,
             stars,
-            obj.rating_avg
+            rating_formatted
         )
     
     @admin.display(description='Verificada', ordering='verified')
@@ -134,7 +135,7 @@ class NannyProfileAdmin(admin.ModelAdmin):
         return format_html(
             '<strong>Email:</strong> {}<br><strong>Rol:</strong> {}<br><strong>Miembro desde:</strong> {}',
             obj.user.email,
-            obj.user.get_role_display() if hasattr(obj.user, 'get_role_display') else obj.role,
+            obj.user.get_role_display() if hasattr(obj.user, 'get_role_display') else obj.user.role,
             obj.user.date_joined.strftime('%d/%m/%Y')
         )
     
@@ -152,10 +153,11 @@ class NannyProfileAdmin(admin.ModelAdmin):
     @admin.action(description='Recalcular Rating')
     def recalcular_rating(self, request, queryset):
         from reviews.models import Review
+        from django.db.models import Avg
         updated_count = 0
         for nanny_profile in queryset:
             avg_rating = Review.objects.filter(
-                nanny=nanny_profile.user
+                nanny=nanny_profile
             ).aggregate(Avg('rating'))['rating__avg']
             if avg_rating is not None:
                 nanny_profile.rating_avg = avg_rating

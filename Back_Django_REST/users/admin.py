@@ -16,6 +16,7 @@ class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'role', 'get_additional_roles', 'is_active', 'is_verified')
     list_filter = ('role', 'is_active', 'is_verified', 'verification_status')
     search_fields = ('username', 'email', 'first_name', 'last_name')
+    actions = ['verificar_usuarios', 'desverificar_usuarios']
     inlines = [UserRoleInline]
     
     def get_additional_roles(self, obj):
@@ -23,6 +24,16 @@ class UserAdmin(admin.ModelAdmin):
         additional = obj.additional_roles.filter(is_active=True).values_list('role', flat=True)
         return ', '.join(additional) if additional else '-'
     get_additional_roles.short_description = 'Roles Adicionales'
+    
+    @admin.action(description='✅ Verificar usuarios seleccionados')
+    def verificar_usuarios(self, request, queryset):
+        updated = queryset.update(is_verified=True, pending_verification=False)
+        self.message_user(request, f'{updated} usuario(s) verificado(s) correctamente.')
+    
+    @admin.action(description='❌ Marcar como no verificados')
+    def desverificar_usuarios(self, request, queryset):
+        updated = queryset.update(is_verified=False, pending_verification=True)
+        self.message_user(request, f'{updated} usuario(s) marcado(s) como no verificados.')
 
 
 @admin.register(UserRole)

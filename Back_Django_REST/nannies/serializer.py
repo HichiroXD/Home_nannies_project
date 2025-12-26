@@ -12,6 +12,11 @@ class NannyProfileSerializer(serializers.ModelSerializer):
     reviews = serializers.SerializerMethodField()
     total_bookings = serializers.SerializerMethodField()
     acceptance_rate = serializers.SerializerMethodField()
+    
+    # Permitir campos opcionales/vacíos
+    description = serializers.CharField(required=False, allow_blank=True)
+    certifications = serializers.CharField(required=False, allow_blank=True)
+    age = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         model = NannyProfile
@@ -44,11 +49,30 @@ class NannyProfileSerializer(serializers.ModelSerializer):
         # Extraer datos del usuario si vienen anidados
         user_data = validated_data.pop('user', {})
         
-        # Actualizar perfil de niñera (solo campos del modelo NannyProfile)
-        profile_fields = ['experience_years', 'hourly_rate', 'description', 'age', 'certifications', 'rating_avg', 'profile_photo']
-        for attr in profile_fields:
-            if attr in validated_data:
-                setattr(instance, attr, validated_data[attr])
+        # Debug
+        print("=== SERIALIZER UPDATE ===")
+        print("validated_data:", validated_data)
+        print("user_data:", user_data)
+        
+        # Limpiar campos vacíos que vienen como strings vacíos desde FormData
+        if 'description' in validated_data and validated_data['description'] == '':
+            validated_data['description'] = ''
+        if 'certifications' in validated_data and validated_data['certifications'] == '':
+            validated_data['certifications'] = ''
+        if 'age' in validated_data:
+            # Convertir a int o None si está vacío
+            age_value = validated_data['age']
+            if age_value == '' or age_value is None:
+                validated_data['age'] = None
+            else:
+                try:
+                    validated_data['age'] = int(age_value)
+                except (ValueError, TypeError):
+                    validated_data['age'] = None
+        
+        # Actualizar perfil de niñera
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
         instance.save()
         
         # Actualizar datos de usuario (first_name, last_name)

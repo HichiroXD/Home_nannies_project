@@ -50,6 +50,8 @@ export const AdminDashboard = () => {
         const response = await API.get('/dashboard/admin/');
         setDashboardData(response.data);
         console.log('✅ Datos reales del dashboard cargados:', response.data);
+        console.log('📊 Cantidad de usuarios:', response.data?.users?.length);
+        console.log('👥 Usuarios:', response.data?.users);
       } catch (err) {
         console.error('Error al cargar dashboard:', err);
         if (err.response?.status === 401) {

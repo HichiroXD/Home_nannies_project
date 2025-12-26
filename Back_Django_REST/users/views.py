@@ -59,21 +59,28 @@ class RegisterView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         # Se crea el usuario, pero no verificado
-        user = serializer.save(is_verified=False)
+        user = serializer.save(is_verified=False, pending_verification=True)
 
         # Generar token de verificación
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         verify_url = f"{settings.FRONTEND_URL}/verify/{uid}/{token}/"
 
-        # Enviar correo
-        send_mail(
-            subject="Verifica tu cuenta en Home Nannies",
-            message=f"Hola {user.username}, haz clic en el siguiente enlace para verificar tu cuenta:\n\n{verify_url}\n\nGracias por unirte a Home Nannies 💜",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
+        # Enviar correo (falla silenciosamente en desarrollo si no hay SMTP configurado)
+        try:
+            send_mail(
+                subject="Verifica tu cuenta en Home Nannies",
+                message=f"Hola {user.username}, haz clic en el siguiente enlace para verificar tu cuenta:\n\n{verify_url}\n\nGracias por unirte a Home Nannies 💜",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            # Log el error pero no fallar el registro
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Error enviando correo de verificación a {user.email}: {str(e)}")
+            # En desarrollo con console backend, esto puede fallar pero no importa
 
         return user
 
@@ -251,11 +258,37 @@ class VerifyEmailView(APIView):
 
         if default_token_generator.check_token(user, token):
             user.is_verified = True
+            user.pending_verification = False
             user.save()
             return Response({"message": "✅ Tu cuenta ha sido verificada correctamente."})
         else:
             return Response({"error": "❌ Enlace de verificación inválido o expirado."}, 
                           status=status.HTTP_400_BAD_REQUEST)
+
+class DevVerifyUserView(APIView):
+    """
+    Vista SOLO para desarrollo: Auto-verifica el último usuario registrado.
+    REMOVER EN PRODUCCIÓN.
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({"error": "Email requerido"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(email=email)
+            user.is_verified = True
+            user.pending_verification = False
+            user.save()
+            return Response({
+                "message": f"✅ Usuario {user.username} verificado correctamente (dev mode)",
+                "username": user.username,
+                "email": user.email
+            })
+        except User.DoesNotExist:
+            return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
         
 class PublicNannyListView(generics.ListAPIView):
     """

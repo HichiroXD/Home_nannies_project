@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     RegisterView, UserMeView, UserListView, UserDetailView, 
-    LoginView, VerifyEmailView, PublicNannyListView,
+    LoginView, VerifyEmailView, DevVerifyUserView, PublicNannyListView,
     PasswordResetRequestView, PasswordResetConfirmView,
     suspend_user, reactivate_user, approve_user, reject_user
 )
@@ -14,6 +14,7 @@ from .login_history_views import login_history
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('verify/<uidb64>/<token>/', VerifyEmailView.as_view(), name='verify-email'),
+    path('dev-verify/', DevVerifyUserView.as_view(), name='dev-verify-user'),  # Solo para desarrollo
     path('me/', UserMeView.as_view(), name='user-detail'),
     path("login/", LoginView.as_view(), name="login"),
     path("nannies/", PublicNannyListView.as_view(), name="public-nanny-list"),

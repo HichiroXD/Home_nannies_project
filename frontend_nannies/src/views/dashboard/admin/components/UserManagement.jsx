@@ -38,6 +38,11 @@ export const UserManagement = ({
     role: 'parent',
   });
 
+  // Debug: Log usuarios recibidos
+  React.useEffect(() => {
+    console.log('UserManagement - Usuarios recibidos:', users);
+    console.log('UserManagement - Cantidad:', users?.length);
+  }, [users]);
   const getRoleColor = (role) => {
     switch (role) {
       case 'nanny':

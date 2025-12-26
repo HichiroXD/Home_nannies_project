@@ -50,7 +50,7 @@ export const NannyDashboard = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const response = await API.get('/nannies/dashboard/');
+        const response = await API.get('/dashboard/nanny/');
         setDashboardData(response.data);
       } catch (err) {
         console.error('Error fetching dashboard:', err);
