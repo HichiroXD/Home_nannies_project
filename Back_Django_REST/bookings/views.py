@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from drf_spectacular.utils import extend_schema
 import logging
+from django.utils import timezone
 from core.mixins import RoleBasedQuerysetMixin
 from .models import Booking, Availability
 from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer
@@ -223,6 +224,21 @@ def complete_booking(request, pk):
     except Booking.DoesNotExist:
         return Response({"error": BOOKING_MESSAGES['NOT_FOUND']},
                         status=status.HTTP_404_NOT_FOUND)
+    
+    # Validar que la reserva haya terminado
+    now = timezone.now()
+    if booking.end_time > now:
+        time_remaining = booking.end_time - now
+        hours = int(time_remaining.total_seconds() // 3600)
+        minutes = int((time_remaining.total_seconds() % 3600) // 60)
+        return Response(
+            {
+                "error": f"No puedes completar esta reserva aún. Faltan {hours} horas y {minutes} minutos para que termine el servicio.",
+                "end_time": booking.end_time.isoformat(),
+                "can_complete_at": booking.end_time.isoformat()
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     _update_booking_status(booking, BOOKING_STATUS_COMPLETED, request.user, 'parent')
     return Response({"message": BOOKING_MESSAGES['COMPLETED']}, status=status.HTTP_200_OK)

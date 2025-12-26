@@ -1,4 +1,5 @@
 import axios from "axios";
+import logger from "../utils/logger";
 
 const API = axios.create({
   baseURL: "http://localhost:8000/api",
@@ -16,9 +17,11 @@ API.interceptors.request.use((config) => {
   
   // Debug: log the request data
   if (config.url.includes('/profile/') && (config.method === 'patch' || config.method === 'put')) {
-    console.log("AXIOS INTERCEPTOR - Request config:", config);
-    console.log("AXIOS INTERCEPTOR - Request data:", config.data);
-    console.log("AXIOS INTERCEPTOR - Data stringified:", JSON.stringify(config.data));
+    logger.debug('AXIOS Profile Request', { 
+      url: config.url, 
+      method: config.method, 
+      data: config.data 
+    });
   }
   
   return config;
@@ -43,7 +46,7 @@ API.interceptors.response.use(
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
       } catch (e) {
-        console.error("Error clearing auth tokens:", e);
+        logger.error('Error clearing auth tokens', { error: e.message });
       }
       // Redirect to login so user can re-authenticate
       if (typeof window !== "undefined") {
@@ -63,7 +66,7 @@ API.interceptors.response.use(
     
     // Log errors in development
     if (import.meta.env.DEV) {
-      console.error("API Error:", errorResponse);
+      logger.error('API Error', errorResponse);
     }
     
     return Promise.reject(errorResponse);

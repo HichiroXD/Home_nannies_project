@@ -1,4 +1,4 @@
-export default function AuthForm({ fields, onSubmit, buttonText }) {
+export default function AuthForm({ fields, onSubmit, buttonText, disabled = false }) {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       {fields.map((field) =>
@@ -8,6 +8,7 @@ export default function AuthForm({ fields, onSubmit, buttonText }) {
             name={field.name}
             value={field.value}
             onChange={field.onChange}
+            disabled={disabled}
             className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-pink-400"
           >
             {field.options.map((opt) => (
@@ -24,6 +25,7 @@ export default function AuthForm({ fields, onSubmit, buttonText }) {
             placeholder={field.placeholder}
             value={field.value}
             onChange={field.onChange}
+            disabled={disabled}
             required
             className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-pink-400"
           />
@@ -31,7 +33,8 @@ export default function AuthForm({ fields, onSubmit, buttonText }) {
       )}
       <button
         type="submit"
-        className="bg-pink-500 text-white py-2 rounded-lg font-semibold hover:bg-pink-600 transition-colors"
+        disabled={disabled}
+        className="bg-pink-500 text-white py-2 rounded-lg font-semibold hover:bg-pink-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
         {buttonText}
       </button>

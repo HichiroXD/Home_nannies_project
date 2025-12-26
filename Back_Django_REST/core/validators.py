@@ -467,3 +467,32 @@ class AcademicConsistencyValidator:
 validate_ocr = OCRValidator()
 validate_certificate_validity = CertificateValidityValidator()
 validate_academic_consistency = AcademicConsistencyValidator()
+
+
+# === VALIDADOR DE CONTRASEÑAS SEGURAS (SPRINT 3) ===
+
+class SymbolPasswordValidator:
+    """
+    Valida que la contraseña contenga al menos un símbolo especial.
+    Requerido para Sprint 3: contraseñas con mínimo 10 caracteres y símbolos.
+    """
+    
+    def __init__(self, min_symbols=1):
+        self.min_symbols = min_symbols
+    
+    def validate(self, password, user=None):
+        """Valida que la contraseña contenga símbolos"""
+        symbols = re.findall(r'[!@#$%^&*()_+\-=\[\]{};:\'",.<>?/\\|`~]', password)
+        
+        if len(symbols) < self.min_symbols:
+            raise ValidationError(
+                f"La contraseña debe contener al menos {self.min_symbols} símbolo(s) especial(es). "
+                f"Símbolos válidos: !@#$%^&*()_+-=[]{{}}:'\",.<>?/\\|`~",
+                code='password_no_symbol',
+            )
+    
+    def get_help_text(self):
+        return (
+            f"Tu contraseña debe contener al menos {self.min_symbols} símbolo especial. "
+            f"Símbolos válidos: !@#$%^&*()_+-=[]{{}}:'\",.<>?/\\|`~"
+        )

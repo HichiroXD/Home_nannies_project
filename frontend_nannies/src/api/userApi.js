@@ -9,11 +9,11 @@ import API from "./api";
 /**
  * Registrar nuevo usuario
  * @param {Object} userData - Datos del usuario (username, email, password, role, etc.)
- * @returns {Promise<Object>} Datos del usuario creado
+ * @returns {Promise<Object>} Response completo con status y data
  */
 export const registerUser = async (userData) => {
   const response = await API.post("/users/register/", userData);
-  return response.data;
+  return response; // Retornar response completo para acceder a status
 };
 
 /**

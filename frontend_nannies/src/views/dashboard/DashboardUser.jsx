@@ -9,8 +9,8 @@ export default function DashboardUser() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Obtener el rol del usuario desde localStorage
-    const userRole = localStorage.getItem("user_role");
+    // Obtener el rol del usuario desde localStorage (usar "role" en lugar de "user_role")
+    const userRole = localStorage.getItem("role");
 
     if (!userRole) {
       // Si no hay rol, redirigir a login

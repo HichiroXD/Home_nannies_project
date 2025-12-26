@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { MainLayout, Loader, PageContainer } from "@components/layout";
 import { AlertToast, useAlert } from "@components/common";
 import { EditBookingModal, BookingCard, ConfirmationModal, ReviewModal } from "@components/bookings";
+import useAuthStore from "@/stores/useAuthStore";
+import logger from "@/utils/logger";
 import {
   getBookings,
   updateBooking,
@@ -26,15 +28,14 @@ export default function MyBookings() {
   const [reviewingBooking, setReviewingBooking] = useState(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
-  const userRole = localStorage.getItem("role");
+  const userRole = useAuthStore(state => state.role);
 
   // Cargar reservas
   const fetchBookings = async () => {
     try {
       setLoading(true);
       const data = await getBookings();
-      console.log("Reservas cargadas:", data);
-      console.log("Estados encontrados:", data.map(b => b.status));
+      logger.info('Reservas cargadas', { count: data.length, statuses: data.map(b => b.status) });
       setBookings(data);
     } catch (err) {
       showAlert(ERROR_MESSAGES.generic, "error");
@@ -205,9 +206,10 @@ export default function MyBookings() {
 
   // Manejar apertura de modal de reseña
   const handleReviewClick = (booking) => {
-    console.log("Opening review modal for booking:", booking);
-    console.log("Nanny data:", booking.nanny);
-    console.log("Nanny profile ID:", booking.nanny?.nanny_profile_id);
+    logger.info('Opening review modal', { 
+      bookingId: booking.id, 
+      nannyProfileId: booking.nanny?.nanny_profile_id 
+    });
     setReviewingBooking(booking);
     setIsReviewModalOpen(true);
   };
@@ -218,10 +220,10 @@ export default function MyBookings() {
     try {
       const nannyProfileId = reviewingBooking.nanny?.nanny_profile_id;
       
-      console.log("Enviando reseña:", {
+      logger.info('Enviando rese\u00f1a', {
         nanny_profile_id: nannyProfileId,
         rating: reviewData.rating,
-        comment: reviewData.comment
+        comment_length: reviewData.comment?.length
       });
       
       // Validar que existe el nanny_profile_id
@@ -248,8 +250,10 @@ export default function MyBookings() {
       setIsReviewModalOpen(false);
       setReviewingBooking(null);
     } catch (err) {
-      console.error("Error completo:", err);
-      console.error("Response data:", err.response?.data);
+      logger.error('Error enviando rese\u00f1a', { 
+        error: err.message, 
+        data: err.response?.data 
+      });
       
       let errorMsg = "Error al enviar la reseña.";
       if (err.response?.data) {

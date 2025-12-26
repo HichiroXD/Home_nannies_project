@@ -73,8 +73,13 @@ export {
 // Notification API
 export {
   getNotifications,
-  markAsRead,
+  getUnreadNotifications,
+  getNotification,
+  markNotificationsAsRead,
+  markNotificationAsRead,
   deleteNotification,
+  getNotificationPreferences,
+  updateNotificationPreferences,
 } from './notificationApi';
 
 // OCR API

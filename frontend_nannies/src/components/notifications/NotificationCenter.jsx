@@ -32,10 +32,13 @@ const NotificationCenter = ({ isOpen, onClose }) => {
     setError(null);
     try {
       const response = await getNotifications(page, 20);
-      setNotifications(response.results || response);
+      // Manejar diferentes estructuras de respuesta
+      const notificationsList = response.results || response.data || (Array.isArray(response) ? response : []);
+      setNotifications(notificationsList);
     } catch (err) {
-      console.error('Error loading notifications:', err);
+      console.error('Error al cargar notificaciones:', err);
       setError('Error cargando notificaciones');
+      setNotifications([]); // Asegurar que siempre sea un array
     } finally {
       setLoading(false);
     }

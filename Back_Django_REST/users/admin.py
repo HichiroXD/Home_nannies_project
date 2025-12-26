@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User
+from .models import User, LoginHistory
 from .role_models import UserRole, ActiveRole
 
 
@@ -16,6 +16,7 @@ class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'role', 'get_additional_roles', 'is_active', 'is_verified')
     list_filter = ('role', 'is_active', 'is_verified', 'verification_status')
     search_fields = ('username', 'email', 'first_name', 'last_name')
+    actions = ['verificar_usuarios', 'desverificar_usuarios']
     inlines = [UserRoleInline]
     
     def get_additional_roles(self, obj):
@@ -23,6 +24,16 @@ class UserAdmin(admin.ModelAdmin):
         additional = obj.additional_roles.filter(is_active=True).values_list('role', flat=True)
         return ', '.join(additional) if additional else '-'
     get_additional_roles.short_description = 'Roles Adicionales'
+    
+    @admin.action(description='✅ Verificar usuarios seleccionados')
+    def verificar_usuarios(self, request, queryset):
+        updated = queryset.update(is_verified=True, pending_verification=False)
+        self.message_user(request, f'{updated} usuario(s) verificado(s) correctamente.')
+    
+    @admin.action(description='❌ Marcar como no verificados')
+    def desverificar_usuarios(self, request, queryset):
+        updated = queryset.update(is_verified=False, pending_verification=True)
+        self.message_user(request, f'{updated} usuario(s) marcado(s) como no verificados.')
 
 
 @admin.register(UserRole)
@@ -39,3 +50,18 @@ class ActiveRoleAdmin(admin.ModelAdmin):
     list_filter = ('active_role',)
     search_fields = ('user__username', 'user__email')
     date_hierarchy = 'updated_at'
+
+
+@admin.register(LoginHistory)
+class LoginHistoryAdmin(admin.ModelAdmin):
+    list_display = ('user', 'login_time', 'ip_address', 'login_successful', 'device_type', 'location')
+    list_filter = ('login_successful', 'device_type', 'login_time')
+    search_fields = ('user__username', 'user__email', 'ip_address', 'location')
+    date_hierarchy = 'login_time'
+    readonly_fields = ('login_time', 'session_duration')
+    
+    def has_add_permission(self, request):
+        return False  # No permitir agregar manualmente
+    
+    def has_change_permission(self, request, obj=None):
+        return False  # No permitir editar

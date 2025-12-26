@@ -27,19 +27,23 @@ def log_user_event(sender, instance, created, **kwargs):
 def create_nanny_profile(sender, instance, created, **kwargs):
     """
     Crear automáticamente NannyProfile cuando se crea un usuario con rol 'nanny'
+    Si el usuario ya está verificado (is_verified=True), el perfil también se crea verificado.
     """
     if created and instance.role and 'nanny' in instance.role.lower():
         from nannies.models import NannyProfile
         try:
             # Verificar si ya existe el perfil
             if not hasattr(instance, 'nanny_profile'):
+                # Si el usuario ya está verificado, crear el perfil también verificado
+                profile_verified = instance.is_verified
+                
                 NannyProfile.objects.create(
                     user=instance,
                     experience_years=0,
-                    hourly_rate=0.0,
+                    hourly_rate=10000,
                     description="",
-                    verified=False
+                    verified=profile_verified  # Verificado si el usuario ya está verificado
                 )
-                logger.info(f"NannyProfile creado automáticamente para usuario {instance.username}")
+                logger.info(f"NannyProfile creado automáticamente para usuario {instance.username} (verified={profile_verified})")
         except Exception as e:
             logger.error(f"Error al crear NannyProfile para {instance.username}: {e}")

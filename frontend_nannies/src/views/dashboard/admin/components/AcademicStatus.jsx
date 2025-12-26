@@ -31,17 +31,20 @@ export const AcademicStatus = ({ status = {} }) => {
   return (
     <Stack spacing={3}>
       {/* Resumen Academic */}
-      <Grid container spacing={2}>
+      <Grid container spacing={2} alignItems="stretch">
         <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 2, textAlign: 'center', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>Total Certificados</Typography>
+          <Paper sx={{ p: 2, textAlign: 'center', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+              <Award size={20} />
+            </Box>
+            <Typography variant="body2" sx={{ opacity: 0.9, mt: 1 }}>Total Certificados</Typography>
             <Typography variant="h5" sx={{ fontWeight: 600, mt: 1 }}>
               {total}
             </Typography>
           </Paper>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 2, textAlign: 'center', background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', color: 'white' }}>
+          <Paper sx={{ p: 2, textAlign: 'center', background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', color: 'white', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
               <CheckCircle size={20} />
             </Box>
@@ -52,7 +55,7 @@ export const AcademicStatus = ({ status = {} }) => {
           </Paper>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 2, textAlign: 'center', background: 'linear-gradient(135deg, #F59E0B 0%, #F97316 100%)', color: 'white' }}>
+          <Paper sx={{ p: 2, textAlign: 'center', background: 'linear-gradient(135deg, #F59E0B 0%, #F97316 100%)', color: 'white', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
               <Clock size={20} />
             </Box>
@@ -63,7 +66,7 @@ export const AcademicStatus = ({ status = {} }) => {
           </Paper>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 2, textAlign: 'center', background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)', color: 'white' }}>
+          <Paper sx={{ p: 2, textAlign: 'center', background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)', color: 'white', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
               <XCircle size={20} />
             </Box>

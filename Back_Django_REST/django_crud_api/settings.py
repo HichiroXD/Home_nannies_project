@@ -19,8 +19,15 @@ load_dotenv()
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY", "b)+h)pgkb7s^cg%j%6(r!mhnlog%#z94uti)!hqfz1mcnz#z^z")
-DEBUG = os.getenv("DEBUG", "True") == "True"
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    if os.getenv("DEBUG", "False") == "False":
+        raise ValueError("SECRET_KEY debe estar definida en variables de entorno para producción")
+    else:
+        # Solo en desarrollo: usar clave temporal
+        SECRET_KEY = "dev-only-insecure-key-change-in-production"
+
+DEBUG = os.getenv("DEBUG", "False") == "True"  # Default seguro: False
 
 # ALLOWED_HOSTS: leer desde variable de entorno (separado por comas)
 # En Railway, configurar: ALLOWED_HOSTS=.railway.app,tudominio.com
@@ -77,6 +84,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.audit_signals.AuditMiddleware',  # Middleware de auditoría
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -136,11 +144,18 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {
-            'min_length': 8,
+            'min_length': 10,  # Sprint 3: mínimo 10 caracteres
         }
     },
-    # Remover CommonPasswordValidator en desarrollo por rendimiento
-    # Mantener solo en producción si es necesario
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+    {
+        'NAME': 'core.validators.SymbolPasswordValidator',  # Sprint 3: requiere símbolos
+    },
 ]
 
 
@@ -246,15 +261,24 @@ FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
 # Configuración de seguridad para producción
 if not DEBUG:
+    # HTTPS enforcement
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    
+    # Security headers
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
-    # SECURE_HSTS_SECONDS = 31536000  # Descomentar después de confirmar que HTTPS funciona
+    
+    # HSTS (HTTP Strict Transport Security)
+    # Descomentar después de confirmar que HTTPS funciona correctamente
+    # SECURE_HSTS_SECONDS = 31536000  # 1 año
     # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     # SECURE_HSTS_PRELOAD = True
+    
+    # Referrer policy
+    SECURE_REFERRER_POLICY = 'same-origin'
 
 # Configuración de drf-spectacular
 SPECTACULAR_SETTINGS = {

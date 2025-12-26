@@ -50,7 +50,7 @@ export const NannyDashboard = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const response = await API.get('/nannies/dashboard/');
+        const response = await API.get('/dashboard/nanny/');
         setDashboardData(response.data);
       } catch (err) {
         console.error('Error fetching dashboard:', err);
@@ -295,10 +295,7 @@ export const NannyDashboard = () => {
                 </div>
               )}
               {activeTab === 1 && (
-                <div className="text-center py-8 text-gray-600">
-                  <TrendingUp className="mx-auto text-gray-400 mb-4" size={48} />
-                  <p>Ingresos: ${data.earnings?.thisMonth || 0} este mes</p>
-                </div>
+                <EarningsChart earnings={data.earnings || {}} />
               )}
               {activeTab === 2 && (
                 <div>

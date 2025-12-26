@@ -386,18 +386,18 @@ describe('NotificationCenter Component', () => {
     });
   });
 
-  describe('Polling de notificaciones', () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
+  // describe('Polling de notificaciones', () => {
+  //   beforeEach(() => {
+  //     vi.useFakeTimers();
+  //   });
 
-    afterEach(() => {
-      vi.useRealTimers();
-    });
+  //   afterEach(() => {
+  //     vi.useRealTimers();
+  //   });
 
-    // Tests de polling removidos temporalmente debido a incompatibilidad con fake timers en jsdom
-    // La funcionalidad de polling funciona correctamente en la aplicación real
-  });
+  //   // Tests de polling removidos temporalmente debido a incompatibilidad con fake timers en jsdom
+  //   // La funcionalidad de polling funciona correctamente en la aplicación real
+  // });
 
   describe('Manejo de errores de API', () => {
     it('debe manejar error al marcar como leída sin crashear', async () => {

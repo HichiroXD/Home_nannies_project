@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import { Edit2, Trash2, Check, X, CheckCircle, Star } from "lucide-react";
 
 /**
@@ -28,6 +29,11 @@ export default function BookingCard({
   const startDate = new Date(booking.start_time);
   const endDate = new Date(booking.end_time);
   const duration = Math.round((endDate - startDate) / (1000 * 60)); // minutos
+  
+  // Verificar si la reserva ya terminó
+  const now = new Date();
+  const hasEnded = endDate <= now;
+  const canComplete = hasEnded && booking.status === "confirmed";
 
   // Determinar colores según estado
   const statusColors = {
@@ -156,15 +162,18 @@ export default function BookingCard({
           </button>
         )}
 
-        {/* Marcar como completada - Solo niñera si está confirmada */}
+        {/* Marcar como completada - Solo niñera si está confirmada Y ha terminado el tiempo */}
         {userRole === "nanny" && isConfirmed && onComplete && (
           <button
-            onClick={() => onComplete(booking.id)}
-            disabled={isLoading}
-            className="flex items-center gap-1 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            onClick={() => canComplete && onComplete(booking.id)}
+            disabled={isLoading || !canComplete}
+            title={!canComplete ? `Podrás completar esta reserva después de ${endDate.toLocaleString('es-ES')}` : "Marcar como completada"}
+            className={`flex items-center gap-1 px-3 py-1 text-white text-xs rounded transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed ${
+              canComplete ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-400'
+            }`}
           >
             <CheckCircle size={14} />
-            Completar
+            {canComplete ? 'Completar' : `Completar (${endDate.toLocaleDateString('es-ES')} ${endDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })})`}
           </button>
         )}
 
@@ -195,3 +204,30 @@ export default function BookingCard({
     </div>
   );
 }
+
+BookingCard.propTypes = {
+  booking: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    start_time: PropTypes.string.isRequired,
+    end_time: PropTypes.string.isRequired,
+    status: PropTypes.oneOf(['pending', 'confirmed', 'rejected', 'cancelled', 'completed']).isRequired,
+    nanny: PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      first_name: PropTypes.string,
+      last_name: PropTypes.string,
+    }),
+    parent: PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      first_name: PropTypes.string,
+      last_name: PropTypes.string,
+    }),
+  }).isRequired,
+  onEdit: PropTypes.func,
+  onDelete: PropTypes.func.isRequired,
+  onAccept: PropTypes.func,
+  onReject: PropTypes.func,
+  onComplete: PropTypes.func,
+  onReview: PropTypes.func,
+  userRole: PropTypes.oneOf(['parent', 'nanny']).isRequired,
+  isLoading: PropTypes.bool,
+};

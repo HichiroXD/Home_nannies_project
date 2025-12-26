@@ -14,11 +14,18 @@ from .views import (
 app_name = 'notifications'
 
 router = DefaultRouter()
-router.register(r'', NotificationViewSet, basename='notification')
+router.register(r'list', NotificationViewSet, basename='notification')
 router.register(r'templates', NotificationTemplateViewSet, basename='template')
 router.register(r'webhooks', WebhookEndpointViewSet, basename='webhook')
-router.register(r'preferences', NotificationPreferenceView, basename='preference')
 
 urlpatterns = [
+    # Preferencias de notificación (sin ID en URL)
+    path('preferences/', NotificationPreferenceView.as_view({
+        'get': 'list',
+        'patch': 'update',
+        'put': 'update',
+    }), name='preferences'),
+    
+    # Rutas del router
     path('', include(router.urls)),
 ]

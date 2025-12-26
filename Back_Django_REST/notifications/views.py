@@ -64,11 +64,11 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
             'results': serializer.data,
         })
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='mark-as-read')
     def mark_as_read(self, request):
         """
         Marca notificaciones como leídas
-        POST /api/notifications/mark-as-read/
+        POST /api/notifications/list/mark-as-read/
         
         Body:
         {

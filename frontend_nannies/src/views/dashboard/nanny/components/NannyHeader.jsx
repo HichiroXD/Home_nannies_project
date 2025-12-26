@@ -5,13 +5,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Settings, LogOut, Star, User } from 'lucide-react';
+import useAuthStore from '@/stores/useAuthStore';
 
 export const NannyHeader = ({ nanny = {} }) => {
   const navigate = useNavigate();
+  const logout = useAuthStore(state => state.logout);
 
   const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    logout();
     navigate('/login');
   };
 

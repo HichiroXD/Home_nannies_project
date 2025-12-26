@@ -5,7 +5,7 @@ import API from "./api";
  * Phase 3 - Integración con sistema de notificaciones
  */
 export const getNotifications = async (page = 1, pageSize = 20) => {
-  const response = await API.get("/notifications/", {
+  const response = await API.get("/notifications/list/", {
     params: { page, page_size: pageSize },
   });
   return response.data;
@@ -16,7 +16,7 @@ export const getNotifications = async (page = 1, pageSize = 20) => {
  * Phase 3
  */
 export const getUnreadNotifications = async () => {
-  const response = await API.get("/notifications/unread/");
+  const response = await API.get("/notifications/list/unread/");
   return response.data;
 };
 
@@ -24,7 +24,7 @@ export const getUnreadNotifications = async () => {
  * Obtener detalles de una notificación
  */
 export const getNotification = async (notificationId) => {
-  const response = await API.get(`/notifications/${notificationId}/`);
+  const response = await API.get(`/notifications/list/${notificationId}/`);
   return response.data;
 };
 
@@ -33,7 +33,7 @@ export const getNotification = async (notificationId) => {
  * Phase 3 - Puede marcar una lista o todas si no se especifica
  */
 export const markNotificationsAsRead = async (notificationIds = []) => {
-  const response = await API.post("/notifications/mark_as_read/", {
+  const response = await API.post("/notifications/list/mark-as-read/", {
     notification_ids: notificationIds,
   });
   return response.data;
@@ -52,7 +52,7 @@ export const markNotificationAsRead = async (notificationId) => {
  */
 export const deleteNotification = async (notificationId) => {
   const response = await API.delete(
-    `/notifications/${notificationId}/delete-notification/`
+    `/notifications/list/${notificationId}/delete-notification/`
   );
   return response.data;
 };
@@ -62,7 +62,7 @@ export const deleteNotification = async (notificationId) => {
  * Phase 3
  */
 export const getNotificationPreferences = async () => {
-  const response = await API.get("/preferences/");
+  const response = await API.get("/notifications/preferences/");
   return response.data;
 };
 
@@ -71,7 +71,7 @@ export const getNotificationPreferences = async () => {
  * Phase 3
  */
 export const updateNotificationPreferences = async (preferences) => {
-  const response = await API.patch("/preferences/", preferences);
+  const response = await API.patch("/notifications/preferences/", preferences);
   return response.data;
 };
 

@@ -23,20 +23,38 @@ export default function HeaderLanding({ isLoggedIn, username }) {
       <div className="space-x-4 flex items-center">
         {isLoggedIn && (
           <>
+            {/* Dashboard según rol */}
+            {role === 'parent' && (
+              <button
+                onClick={() => navigate("/dashboard/parent/")}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+              >
+                Mi Dashboard
+              </button>
+            )}
+            {(role && (role.includes("nanny") || role.includes("niñ"))) && (
+              <button
+                onClick={() => navigate("/dashboard/nanny/")}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+              >
+                Mi Dashboard
+              </button>
+            )}
+            {role === 'admin' && (
+              <button
+                onClick={() => navigate("/admin/dashboard/")}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+              >
+                Panel Admin
+              </button>
+            )}
+            
             <button
               onClick={() => navigate("/catalog")}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
             >
               Catálogo
             </button>
-            {(role && (role.includes("nanny") || role.includes("niñ"))) && (
-              <button
-                onClick={() => navigate("/dashboard/nanny/")}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
-              >
-                Panel Niñera
-              </button>
-            )}
             <button
               onClick={() => navigate("/favorites")}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"

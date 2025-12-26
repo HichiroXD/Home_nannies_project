@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import FileExtensionValidator
 from django.utils import timezone
+from .audit_models import AuditLog, UserPermission  # Importar modelos de auditoría
 
 User = get_user_model()
 

@@ -1,13 +1,19 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { DashboardLayout } from "@components/dashboard";
-import { PageHeader, Loader, AlertToast } from "@components/layout";
+import MainLayout from "@/components/layout/MainLayout";
+import PageHeader from "@/components/layout/PageHeader";
+import Loader from "@/components/layout/Loader";
+import AlertToast from "@/components/layout/AlertToast";
 import { Bell, Lock, Eye, Volume2 } from "lucide-react";
+import { PasswordChangeModal, LoginHistoryModal } from "@/components/security";
+import { usePasswordChange, useLoginHistory } from "@/hooks";
 
-export default function Settings() {
+function Settings() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showSessionsModal, setShowSessionsModal] = useState(false);
   const [settings, setSettings] = useState({
     emailNotifications: true,
     pushNotifications: true,
@@ -16,6 +22,29 @@ export default function Settings() {
     profileVisibility: "public",
     soundNotifications: true,
   });
+
+  // Hooks personalizados para seguridad
+  const {
+    passwordData,
+    setPasswordData,
+    saving: savingPassword,
+    handlePasswordChange: performPasswordChange,
+    resetPasswordData,
+  } = usePasswordChange(
+    (message) => {
+      setAlert({ type: "success", message });
+      setShowPasswordModal(false);
+    },
+    (message) => setAlert({ type: "error", message })
+  );
+
+  const {
+    loginHistory,
+    loadingHistory,
+    loadLoginHistory,
+  } = useLoginHistory(
+    (message) => setAlert({ type: "error", message })
+  );
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -44,10 +73,30 @@ export default function Settings() {
     setAlert({ type: "success", message: "Preferencia guardada" });
   };
 
-  if (loading) return <Loader />;
+  const handlePasswordChangeClick = async () => {
+    const success = await performPasswordChange();
+    if (success) {
+      resetPasswordData();
+    }
+  };
+
+  const handleLoadHistory = async () => {
+    const success = await loadLoginHistory();
+    if (success) {
+      setShowSessionsModal(true);
+    }
+  };
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <Loader />
+      </MainLayout>
+    );
+  }
 
   return (
-    <DashboardLayout>
+    <MainLayout>
       <div className="space-y-6 max-w-4xl mx-auto">
         <PageHeader
           title="Configuraciones"
@@ -137,6 +186,16 @@ export default function Settings() {
                 <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
             </div>
+
+            {/* Ver Notificaciones Button */}
+            <button 
+              type="button"
+              onClick={() => navigate('/notifications')}
+              className="w-full px-4 py-3 text-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer font-medium flex items-center justify-center gap-2"
+            >
+              <Bell className="w-5 h-5" />
+              Ver Todas las Notificaciones
+            </button>
           </div>
         </div>
 
@@ -173,7 +232,11 @@ export default function Settings() {
           </h2>
           <div className="space-y-4">
             {/* Change Password */}
-            <button className="w-full px-4 py-3 text-left border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+            <button 
+              type="button"
+              onClick={() => setShowPasswordModal(true)}
+              className="w-full px-4 py-3 text-left border border-gray-300 rounded-lg hover:bg-gray-50 transition cursor-pointer"
+            >
               <p className="font-medium text-gray-900">Cambiar Contraseña</p>
               <p className="text-sm text-gray-600 mt-1">Actualiza tu contraseña regularmente</p>
             </button>
@@ -196,8 +259,15 @@ export default function Settings() {
             </div>
 
             {/* Active Sessions */}
-            <button className="w-full px-4 py-3 text-left border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-              <p className="font-medium text-gray-900">Sesiones Activas</p>
+            <button 
+              type="button"
+              onClick={handleLoadHistory}
+              disabled={loadingHistory}
+              className="w-full px-4 py-3 text-left border border-gray-300 rounded-lg hover:bg-gray-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <p className="font-medium text-gray-900">
+                {loadingHistory ? 'Cargando...' : 'Sesiones Activas'}
+              </p>
               <p className="text-sm text-gray-600 mt-1">Ver y cerrar tus sesiones activas</p>
             </button>
           </div>
@@ -211,7 +281,28 @@ export default function Settings() {
             Eliminar Cuenta Permanentemente
           </button>
         </div>
+
+        {/* Modales Reutilizables */}
+        <PasswordChangeModal
+          isOpen={showPasswordModal}
+          onClose={() => {
+            setShowPasswordModal(false);
+            resetPasswordData();
+          }}
+          passwordData={passwordData}
+          onPasswordDataChange={setPasswordData}
+          onSave={handlePasswordChangeClick}
+          saving={savingPassword}
+        />
+
+        <LoginHistoryModal
+          isOpen={showSessionsModal}
+          onClose={() => setShowSessionsModal(false)}
+          loginHistory={loginHistory}
+        />
       </div>
-    </DashboardLayout>
+    </MainLayout>
   );
 }
+
+export default Settings;

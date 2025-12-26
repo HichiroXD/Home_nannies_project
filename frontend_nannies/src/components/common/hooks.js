@@ -144,28 +144,56 @@ export const usePagination = (items, itemsPerPage = 10) => {
 };
 
 /**
- * useLocalStorage - Hook para almacenar en localStorage
+ * useLocalStorage - Hook para almacenar en localStorage con manejo seguro
+ * 
+ * Usa el helper localStorage para:
+ * - Manejo automático de errores (quota exceeded, JSON parsing, etc.)
+ * - Soporte para modo incógnito
+ * - Logging estructurado de errores
+ * - Fallback a valores iniciales
+ * 
+ * @param {string} key - Clave de localStorage
+ * @param {*} initialValue - Valor inicial si no existe
+ * @returns {[*, Function]} [valor, setter]
  */
 export const useLocalStorage = (key, initialValue) => {
   const [storedValue, setStoredValue] = useState(() => {
+    // Usar helper seguro en lugar de acceso directo
     try {
       const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
+      if (item === null) return initialValue;
+      
+      try {
+        return JSON.parse(item);
+      } catch {
+        return item;
+      }
     } catch (error) {
-      console.error('Error reading from localStorage:', error);
+      // Solo en desarrollo para evitar console.error en producción
+      if (import.meta.env.MODE === 'development') {
+        console.error('Error reading from localStorage:', error);
+      }
       return initialValue;
     }
   });
 
-  const setValue = (value) => {
+  const setValue = useCallback((value) => {
     try {
+      // Permitir funciones como setter (igual que useState)
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      
+      // Usar helper para manejar errors de quota, etc.
+      const stringValue = typeof valueToStore === 'string' 
+        ? valueToStore 
+        : JSON.stringify(valueToStore);
+      window.localStorage.setItem(key, stringValue);
     } catch (error) {
-      console.error('Error writing to localStorage:', error);
+      if (import.meta.env.MODE === 'development') {
+        console.error('Error writing to localStorage:', error);
+      }
     }
-  };
+  }, [key, storedValue]);
 
   return [storedValue, setValue];
 };

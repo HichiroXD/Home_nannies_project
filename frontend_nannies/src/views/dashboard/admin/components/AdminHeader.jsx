@@ -3,10 +3,28 @@
  */
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Avatar, Stack, Button } from '@mui/material';
 import { Settings, LogOut, Shield } from 'lucide-react';
+import useAuthStore from '@/stores/useAuthStore';
 
 export const AdminHeader = ({ admin = {} }) => {
+  const navigate = useNavigate();
+  const logout = useAuthStore(state => state.logout);
+
+  const handleLogout = () => {
+    // Usar store de Zustand para logout
+    logout();
+    
+    // Redirigir al login
+    navigate('/login');
+  };
+
+  const handleSettings = () => {
+    // Redirigir a la página de configuración
+    navigate('/settings');
+  };
+
   return (
     <Box
       sx={{
@@ -48,14 +66,14 @@ export const AdminHeader = ({ admin = {} }) => {
         <Button
           startIcon={<Settings size={18} />}
           sx={{ color: 'white', textTransform: 'none' }}
-          onClick={() => console.log('Settings')}
+          onClick={handleSettings}
         >
           Configuración
         </Button>
         <Button
           startIcon={<LogOut size={18} />}
           sx={{ color: 'white', textTransform: 'none' }}
-          onClick={() => console.log('Logout')}
+          onClick={handleLogout}
         >
           Salir
         </Button>
