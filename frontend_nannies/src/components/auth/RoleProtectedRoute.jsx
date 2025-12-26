@@ -1,4 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom';
+import useAuthStore from '@/stores/useAuthStore';
 
 /**
  * Componente para proteger rutas basado en roles de usuario
@@ -15,10 +16,13 @@ const RoleProtectedRoute = ({
   redirectTo = null 
 }) => {
   const location = useLocation();
+  
+  // Obtener estado de autenticación del store
+  const { isAuthenticated, accessToken, role } = useAuthStore();
 
   // Verificar autenticación
-  const token = localStorage.getItem('accessToken');
-  const userRole = localStorage.getItem('role');
+  const token = accessToken || localStorage.getItem('accessToken');
+  const userRole = role || localStorage.getItem('role');
 
   // Convertir allowedRoles a array si es string
   const rolesArray = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];

@@ -7,7 +7,7 @@ export default function MainLayout({ children }) {
   // Verificar si hay un usuario logueado desde el store
   const { isAuthenticated, username } = useAuthStore(state => ({
     isAuthenticated: state.isAuthenticated,
-    username: state.username
+    username: state.user?.username
   }));
 
   return (

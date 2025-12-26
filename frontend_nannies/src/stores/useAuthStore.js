@@ -151,7 +151,7 @@ const useAuthStore = create(
     }),
     {
       name: 'auth-storage', // Clave en localStorage
-      partializefalse: (state) => ({
+      partialize: (state) => ({
         // Solo persistir lo necesario
         user: state.user,
         accessToken: state.accessToken,
