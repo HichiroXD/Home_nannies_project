@@ -140,13 +140,44 @@ export default function ParentProfile() {
         formData.append('profile_photo', profilePhoto);
       }
       
+      console.log("FormData a enviar:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+      
       await updateParentProfile(formData);
       setAlert({ type: "success", message: "Perfil actualizado correctamente" });
       setIsEditing(false);
       setProfilePhoto(null);
       await loadProfile(); // Recargar datos actualizados
     } catch (error) {
-      setAlert({ type: "error", message: error.detail || "Error al guardar el perfil" });
+      console.error("Error al guardar perfil:", error);
+      
+      // Extraer mensaje de error específico
+      let errorMessage = "Error al guardar el perfil";
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Si hay errores de campo específicos
+        if (typeof errorData === 'object' && !errorData.detail && !errorData.error) {
+          const fieldErrors = Object.entries(errorData)
+            .map(([field, messages]) => {
+              const messageText = Array.isArray(messages) ? messages.join(', ') : messages;
+              return `${field}: ${messageText}`;
+            })
+            .join('\n');
+          errorMessage = `Errores de validación:\n${fieldErrors}`;
+        } else {
+          errorMessage = errorData.detail || errorData.error || errorMessage;
+        }
+      } else if (error.detail) {
+        errorMessage = error.detail;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setAlert({ type: "error", message: errorMessage });
     } finally {
       setSaving(false);
     }

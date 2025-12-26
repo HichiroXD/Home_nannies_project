@@ -43,40 +43,76 @@ def parent_profile(request):
     elif request.method in ['PUT', 'PATCH']:
         partial = request.method == 'PATCH'
         
-        # Debug: Ver qué datos llegan
-        print("=== DEBUG PARENT PROFILE UPDATE ===")
-        print("request.data:", dict(request.data))
-        print("request.FILES:", dict(request.FILES))
-        
-        # Preparar datos para el serializer, convirtiendo valores numéricos
+        # Preparar datos para el serializer
         data_to_update = {}
         for key, value in request.data.items():
-            print(f"Processing {key}: {value} (type: {type(value)})")
+            # Saltar archivos, se manejarán después desde request.FILES
+            if key == 'profile_photo':
+                continue
+                
+            # Extraer el primer elemento si viene como lista
+            if isinstance(value, list) and len(value) > 0:
+                value = value[0]
+            elif isinstance(value, list):
+                value = ''
             
             # Convertir children_count apropiadamente
             if key == 'children_count':
                 try:
                     data_to_update[key] = int(value) if value != '' else 1
-                except (ValueError, TypeError) as e:
-                    print(f"Error converting {key}: {e}")
+                except (ValueError, TypeError):
                     data_to_update[key] = 1
+            # Ignorar campos que pertenecen al usuario (se manejan aparte)
+            elif key in ['first_name', 'last_name']:
+                setattr(request.user, key, value)
+            # Limpiar phone si está vacío para evitar error de validación
+            elif key == 'phone':
+                if value == '' or value == 'null' or value == 'undefined' or value is None:
+                    data_to_update[key] = None
+                else:
+                    data_to_update[key] = value
             else:
                 data_to_update[key] = value
         
+        # Guardar cambios del usuario
+        try:
+            request.user.save()
+        except Exception as e:
+            logger.error(f"Error guardando usuario: {str(e)}")
+            return Response(
+                {'error': 'Error al actualizar información del usuario'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
         # Agregar archivos si existen
         if request.FILES:
-            data_to_update.update(request.FILES)
-        
-        print("data_to_update después de procesar:", data_to_update)
+            for key, file in request.FILES.items():
+                if isinstance(file, list) and len(file) > 0:
+                    data_to_update[key] = file[0]
+                else:
+                    data_to_update[key] = file
         
         serializer = ParentProfileSerializer(parent, data=data_to_update, partial=partial)
         
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            try:
+                serializer.save()
+                logger.info(f"Perfil de padre actualizado: {request.user.username}")
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Exception as e:
+                logger.error(f"Error al guardar perfil: {str(e)}")
+                return Response(
+                    {'error': 'Error al guardar el perfil'}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
         
-        print("Serializer errors:", serializer.errors)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        logger.error(f"Errores de validación en perfil de padre: {serializer.errors}")
+        error_detail = {
+            'errors': serializer.errors,
+            'message': 'Error de validación en los campos',
+            'fields': list(serializer.errors.keys())
+        }
+        return Response(error_detail, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])

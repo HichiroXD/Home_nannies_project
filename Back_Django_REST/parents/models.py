@@ -16,6 +16,7 @@ class ParentProfile(models.Model):
     phone = models.CharField(
         max_length=20, 
         blank=True,
+        null=True,
         validators=[validate_chilean_phone],
         help_text="Número telefónico chileno"
     )

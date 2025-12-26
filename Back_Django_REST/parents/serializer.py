@@ -30,14 +30,7 @@ class ParentProfileSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         # Actualizar datos del usuario si vienen
-        user_data = {}
-        if 'user' in validated_data:
-            user_data = validated_data.pop('user')
-        
-        # Debug
-        print("=== PARENT SERIALIZER UPDATE ===")
-        print("validated_data:", validated_data)
-        print("user_data:", user_data)
+        user_data = validated_data.pop('user', {})
         
         # Normalizar children_count en caso de que venga como array o string
         if 'children_count' in validated_data:
@@ -49,12 +42,9 @@ class ParentProfileSerializer(serializers.ModelSerializer):
             except (ValueError, TypeError):
                 validated_data['children_count'] = 1
         
-        # Limpiar campos vacíos que vienen como strings vacíos desde FormData
-        for field in ['phone', 'address', 'emergency_contact', 'preferences']:
-            if field in validated_data and validated_data[field] == '':
-                validated_data[field] = ''
-        
-        print("validated_data después de normalización:", validated_data)
+        # Convertir phone vacío a None para el validador
+        if 'phone' in validated_data and validated_data['phone'] == '':
+            validated_data['phone'] = None
         
         # Actualizar perfil de padre
         for attr, value in validated_data.items():
