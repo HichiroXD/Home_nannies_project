@@ -123,8 +123,8 @@ start_backend() {
     export DEBUG="True"
     export PYTHONUNBUFFERED="1"
     
-    # Iniciar servidor Django
-    python manage.py runserver --noreload 2>&1 | while IFS= read -r line; do
+    # Iniciar servidor Django en 0.0.0.0:8000
+    python manage.py runserver 0.0.0.0:8000 --noreload 2>&1 | while IFS= read -r line; do
         write_colored_output "$line" "BACKEND"
     done
 }
@@ -139,8 +139,8 @@ start_frontend() {
         npm install
     fi
     
-    # Iniciar servidor Vite
-    npm run dev 2>&1 | while IFS= read -r line; do
+    # Iniciar servidor Vite en 0.0.0.0:5173
+    npm run dev -- --host 0.0.0.0 2>&1 | while IFS= read -r line; do
         write_colored_output "$line" "FRONTEND"
     done
 }
@@ -149,7 +149,7 @@ start_frontend() {
 start_backend &
 BACKEND_PID=$!
 
-echo -e "\033[0;32m[OK] Backend Django iniciando en http://localhost:8000\033[0m"
+echo -e "\033[0;32m[OK] Backend Django iniciando en http://0.0.0.0:8000\033[0m"
 
 # Esperar un poco para que el backend inicie
 sleep 2
@@ -158,11 +158,11 @@ sleep 2
 start_frontend &
 FRONTEND_PID=$!
 
-echo -e "\033[0;32m[OK] Frontend React iniciando en http://localhost:5173\033[0m"
+echo -e "\033[0;32m[OK] Frontend React iniciando en http://0.0.0.0:5173\033[0m"
 echo ""
 echo -e "\033[0;33m=== Servicios iniciados ===\033[0m"
-echo -e "\033[0;37m   - Backend:  http://localhost:8000\033[0m"
-echo -e "\033[0;37m   - Frontend: http://localhost:5173\033[0m"
+echo -e "\033[0;37m   - Backend:  http://0.0.0.0:8000 (accesible desde cualquier interfaz)\033[0m"
+echo -e "\033[0;37m   - Frontend: http://0.0.0.0:5173 (accesible desde cualquier interfaz)\033[0m"
 echo -e "\033[0;37m   - Logs guardados en: $LOGS_PATH\033[0m"
 echo ""
 echo -e "\033[0;33m[INFO] Presiona Ctrl+C para detener ambos servicios\033[0m"
