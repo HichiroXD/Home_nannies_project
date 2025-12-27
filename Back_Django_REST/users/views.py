@@ -70,7 +70,7 @@ class RegisterView(generics.CreateAPIView):
         try:
             send_mail(
                 subject="Verifica tu cuenta en Home Nannies",
-                message=f"Hola {user.username}, haz clic en el siguiente enlace para verificar tu cuenta:\n\n{verify_url}\n\nGracias por unirte a Home Nannies 💜",
+                message=f"Hola {user.username}, haz clic en el siguiente enlace para verificar tu cuenta:\n\n{verify_url}\n\nGracias por unirte a Home Nannies!",
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
                 fail_silently=False,
@@ -375,7 +375,7 @@ class PasswordResetRequestView(APIView):
         try:
             send_mail(
                 subject="Recuperación de contraseña - Home Nannies",
-                message=f"Hola {user.username},\n\nHaz clic en el siguiente enlace para restablecer tu contraseña:\n\n{reset_url}\n\nEste enlace expirará en 24 horas.\n\nSi no solicitaste este cambio, ignora este correo.\n\nSaludos,\nEquipo de Home Nannies 💜",
+                message=f"Hola {user.username},\n\nHaz clic en el siguiente enlace para restablecer tu contraseña:\n\n{reset_url}\n\nEste enlace expirará en 24 horas.\n\nSi no solicitaste este cambio, ignora este correo.\n\nSaludos,\nEquipo de Home Nannies",
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
                 fail_silently=False,

@@ -31,13 +31,18 @@ export default function AvailabilityManagement() {
       console.log("Datos de disponibilidades recibidos:", data);
       console.log("Primer elemento (si existe):", data?.[0]);
       
-      // Filtrar solo fechas futuras o actuales y ordenar
+      // Filtrar y mostrar todas las disponibilidades desde hoy (incluyendo el día actual completo)
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Comenzar desde el inicio del día
       
       const filtered = (data || [])
         .filter(avail => {
-          const availDate = new Date(avail.day);
+          // Crear fecha del availability en zona horaria local
+          const [year, month, day] = avail.day.split('-');
+          const availDate = new Date(year, month - 1, day);
+          availDate.setHours(0, 0, 0, 0);
+          
+          // Incluir todas las franjas del día actual y futuras
           return availDate >= today;
         })
         .sort((a, b) => {
@@ -51,7 +56,7 @@ export default function AvailabilityManagement() {
           return a.start_time.localeCompare(b.start_time);
         });
       
-      console.log(`Mostrando ${filtered.length} de ${data?.length || 0} disponibilidades (solo futuras)`);
+      console.log(`Mostrando ${filtered.length} de ${data?.length || 0} disponibilidades (desde hoy)`);
       setAvailabilities(filtered);
     } catch (error) {
       setAlert({
@@ -414,7 +419,7 @@ export default function AvailabilityManagement() {
 
           {availabilities.length === 0 ? (
             <p className="text-gray-500 text-center py-8">
-              No tienes franjas de disponibilidad futuras. ¡Añade nuevas franjas para estar disponible!
+              No tienes franjas de disponibilidad. ¡Añade nuevas franjas para estar disponible!
             </p>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">

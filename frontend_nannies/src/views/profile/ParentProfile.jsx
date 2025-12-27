@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MainLayout, PageHeader, Loader, AlertToast, PageContainer } from "@components/layout";
-import { ProfileSection, FormInput, FormTextarea } from "@components/profile";
+import { ProfileSection, FormInput, FormTextarea, ChildrenManager } from "@components/profile";
 import ImageUploader from "@components/common/ImageUploader";
 import { PasswordChangeModal, LoginHistoryModal } from "@/components/security";
 import { usePasswordChange, useLoginHistory } from "@/hooks";
 import { getMediaUrl } from "@/config/constants";
 import { User, Mail, Phone, MapPin, Users } from "lucide-react";
 import { getParentProfile, updateParentProfile } from "@api/profileApi";
+import { getChildren, createChild, updateChild, deleteChild } from "@/api";
 
 export default function ParentProfile() {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ export default function ParentProfile() {
   const [alert, setAlert] = useState(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [children, setChildren] = useState([]);
 
   // Hooks personalizados para funcionalidad de seguridad
   const {
@@ -67,7 +69,56 @@ export default function ParentProfile() {
     }
 
     loadProfile();
+    loadChildren();
   }, [navigate]);
+
+  const loadChildren = async () => {
+    try {
+      const data = await getChildren();
+      setChildren(data);
+    } catch (error) {
+      console.error("Error al cargar hijos:", error);
+      // No mostramos error crítico ya que los hijos son opcionales
+    }
+  };
+
+  const handleAddChild = async (childData) => {
+    try {
+      const newChild = await createChild(childData);
+      setChildren((prev) => [...prev, newChild]);
+      setAlert({ type: "success", message: "Hijo agregado correctamente" });
+    } catch (error) {
+      console.error("Error al agregar hijo:", error);
+      setAlert({ type: "error", message: "Error al agregar hijo" });
+      throw error;
+    }
+  };
+
+  const handleUpdateChild = async (childId, childData) => {
+    try {
+      const updatedChild = await updateChild(childId, childData);
+      setChildren((prev) =>
+        prev.map((child) => (child.id === childId ? updatedChild : child))
+      );
+      setAlert({ type: "success", message: "Información actualizada correctamente" });
+    } catch (error) {
+      console.error("Error al actualizar hijo:", error);
+      setAlert({ type: "error", message: "Error al actualizar la información" });
+      throw error;
+    }
+  };
+
+  const handleDeleteChild = async (childId) => {
+    try {
+      await deleteChild(childId);
+      setChildren((prev) => prev.filter((child) => child.id !== childId));
+      setAlert({ type: "success", message: "Hijo eliminado correctamente" });
+    } catch (error) {
+      console.error("Error al eliminar hijo:", error);
+      setAlert({ type: "error", message: "Error al eliminar hijo" });
+      throw error;
+    }
+  };
 
   const loadProfile = async () => {
     try {
@@ -358,6 +409,23 @@ export default function ParentProfile() {
               </p>
             </div>
           </div>
+        </ProfileSection>
+
+        {/* Gestión de Hijos */}
+        <ProfileSection
+          title="Mis Hijos"
+          isEditing={isEditing}
+          onEdit={() => setIsEditing(!isEditing)}
+          onSave={handleSave}
+          isSaving={saving}
+        >
+          <ChildrenManager
+            children={children}
+            onAddChild={handleAddChild}
+            onUpdateChild={handleUpdateChild}
+            onDeleteChild={handleDeleteChild}
+            isEditing={isEditing}
+          />
         </ProfileSection>
 
         {/* Preferencias */}
