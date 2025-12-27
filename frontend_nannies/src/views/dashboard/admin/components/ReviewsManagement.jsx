@@ -41,7 +41,7 @@ export const ReviewsManagement = () => {
     const fetchReviews = async () => {
       try {
         setLoading(true);
-        const response = await API.get('/reviews/');
+        const response = await API.get('/reviews/admin/all/');
         setReviews(response.data || []);
       } catch (err) {
         console.error('Error fetching reviews:', err);
