@@ -43,15 +43,28 @@ export default function ChildrenManager({ children, onAddChild, onUpdateChild, o
     
     const today = new Date();
     const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
+    let years = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
     
     // Ajustar si aún no ha cumplido años este año
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
+      years--;
     }
     
-    return age;
+    // Si tiene menos de 1 año, calcular meses
+    if (years < 1) {
+      let months = monthDiff;
+      if (monthDiff < 0) {
+        months = 12 + monthDiff;
+      }
+      if (today.getDate() < birthDate.getDate()) {
+        months--;
+      }
+      if (months < 0) months = 0;
+      return `${months} meses`;
+    }
+    
+    return years;
   };
 
   const handleInputChange = (e) => {
@@ -191,19 +204,17 @@ export default function ChildrenManager({ children, onAddChild, onUpdateChild, o
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Edad (años)
+                  Edad
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   name="age"
                   value={formData.age}
-                  onChange={handleInputChange}
                   readOnly
-                  min="0"
-                  max="18"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                   placeholder="Se calcula automáticamente"
                 />
+                <p className="text-xs text-gray-500 mt-1">Incluye infantes (menores de 1 año)</p>
               </div>
 
               <div>

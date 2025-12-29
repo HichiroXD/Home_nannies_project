@@ -6,12 +6,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { MainLayout, PageHeader, Loader, AlertToast } from '@/components/layout';
+import { useApiData } from '@/hooks';
 import { Star, Calendar, MessageSquare, TrendingUp, Award } from 'lucide-react';
 import API from '@api/api';
 
 export const NannyReviews = () => {
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [stats, setStats] = useState({
     total: 0,
@@ -19,30 +18,25 @@ export const NannyReviews = () => {
     distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
   });
 
-  useEffect(() => {
-    fetchReviews();
-  }, []);
-
-  const fetchReviews = async () => {
-    try {
-      setLoading(true);
-      const response = await API.get('/reviews/');
-      const reviewsData = response.data;
-      setReviews(reviewsData);
-      
-      // Calcular estadísticas
-      calculateStats(reviewsData);
-      setError('');
-    } catch (err) {
-      console.error('Error al cargar reseñas:', err);
-      setError('No se pudieron cargar las reseñas');
-    } finally {
-      setLoading(false);
+  // Cargar reseñas con useApiData
+  const { 
+    data: reviews, 
+    loading 
+  } = useApiData(
+    async () => await API.get('/reviews/'),
+    [],
+    {
+      onSuccess: (reviewsData) => {
+        calculateStats(reviewsData);
+      },
+      onError: () => {
+        setError('No se pudieron cargar las reseñas');
+      },
     }
-  };
+  );
 
   const calculateStats = (reviewsData) => {
-    if (reviewsData.length === 0) {
+    if (!reviewsData || reviewsData.length === 0) {
       setStats({ total: 0, average: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } });
       return;
     }
@@ -189,22 +183,22 @@ export const NannyReviews = () => {
               >
                 {/* Información del padre */}
                 <div className="flex items-start gap-4 mb-4">
-                  {review.parent?.profile_photo ? (
+                  {review.parent_data?.profile_photo ? (
                     <img
-                      src={review.parent.profile_photo}
-                      alt={review.parent.username}
+                      src={review.parent_data.profile_photo}
+                      alt={review.parent_data.username}
                       className="w-12 h-12 rounded-full object-cover"
                     />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white text-lg font-bold">
-                      {review.parent?.first_name?.[0] || review.parent?.username?.[0] || 'P'}
+                      {review.parent_data?.first_name?.[0] || review.parent_data?.username?.[0] || 'P'}
                     </div>
                   )}
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-800">
-                      {review.parent?.first_name && review.parent?.last_name
-                        ? `${review.parent.first_name} ${review.parent.last_name}`
-                        : review.parent?.username || 'Usuario'}
+                      {review.parent_data?.first_name && review.parent_data?.last_name
+                        ? `${review.parent_data.first_name} ${review.parent_data.last_name}`
+                        : review.parent_data?.username || 'Usuario'}
                     </h4>
                     <div className="flex items-center gap-3 mt-1">
                       {renderStars(review.rating)}

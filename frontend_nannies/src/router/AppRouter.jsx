@@ -1,14 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import RoleProtectedRoute from "@components/auth/RoleProtectedRoute";
+import LoadingFallback from "@components/common/LoadingFallback";
+import ErrorBoundary from "@components/common/ErrorBoundary";
 import { useAutoLogout } from "@hooks/useAutoLogout";
-
-// Fallback component para lazy loading
-const LoadingFallback = () => (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-    <p>Cargando...</p>
-  </div>
-);
 
 // === LAZY LOADING: Vistas de autenticación ===
 const Landing = lazy(() => import("@views/Landing"));
@@ -192,7 +187,9 @@ const RouterContent = () => {
 export default function AppRouter() {
   return (
     <BrowserRouter>
-      <RouterContent />
+      <ErrorBoundary>
+        <RouterContent />
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

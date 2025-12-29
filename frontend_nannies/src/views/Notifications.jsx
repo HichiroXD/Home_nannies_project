@@ -1,48 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MainLayout, PageContainer, Loader, AlertToast } from "@components/layout";
 import { getNotifications, markNotificationsAsRead } from "@api/notificationApi";
+import { useApiData } from "@hooks";
 import { CheckCircle, AlertCircle, Info, Clock, Ban, X } from "lucide-react";
 
 export default function Notifications() {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState({ visible: false, message: "", type: "info" });
   const [filter, setFilter] = useState("all"); // all, unread, read
 
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      const data = await getNotifications();
-      
-      const formattedNotifications = (data || []).map((notif) => ({
-        id: notif.id,
-        title: notif.subject || getNotificationTitle(notif.message),
-        message: notif.message,
-        timestamp: new Date(notif.created_at),
-        read: notif.status === 'read',
-        type: getNotificationType(notif.message),
-        relatedBookingId: notif.related_booking_id,
-      }));
-      
-      setNotifications(formattedNotifications);
-    } catch (error) {
-      console.error("Error al cargar notificaciones:", error);
-      setAlert({ 
-        visible: true, 
-        message: "Error al cargar las notificaciones", 
-        type: "error" 
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Helper functions - declaradas antes de usarse
   const getNotificationTitle = (message) => {
     if (message.includes('confirmada')) return 'Reserva Confirmada';
     if (message.includes('rechazada')) return 'Reserva Rechazada';
@@ -60,11 +28,41 @@ export default function Notifications() {
     return 'info';
   };
 
+  // Cargar notificaciones usando hook genérico
+  const { 
+    data: rawNotifications, 
+    loading, 
+    setData: setRawNotifications 
+  } = useApiData(
+    getNotifications,
+    [],
+    {
+      onError: () => {
+        setAlert({ 
+          visible: true, 
+          message: "Error al cargar las notificaciones", 
+          type: "error" 
+        });
+      },
+    }
+  );
+
+  // Formatear notificaciones
+  const notifications = (rawNotifications || []).map((notif) => ({
+    id: notif.id,
+    title: notif.subject || getNotificationTitle(notif.message),
+    message: notif.message,
+    timestamp: new Date(notif.created_at),
+    read: notif.status === 'read',
+    type: getNotificationType(notif.message),
+    relatedBookingId: notif.related_booking_id,
+  }));
+
   const markAsRead = async (id) => {
     try {
       await markNotificationsAsRead([id]);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      setRawNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, status: 'read' } : n))
       );
     } catch (error) {
       console.error("Error al marcar notificación:", error);
@@ -77,7 +75,7 @@ export default function Notifications() {
       if (unreadIds.length === 0) return;
       
       await markNotificationsAsRead(unreadIds);
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setRawNotifications((prev) => prev.map((n) => ({ ...n, status: 'read' })));
       setAlert({ 
         visible: true, 
         message: "Todas las notificaciones marcadas como leídas", 

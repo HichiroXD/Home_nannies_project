@@ -5,15 +5,13 @@
 
 import React, { useState, memo } from 'react';
 import PropTypes from 'prop-types';
-import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Box,
-  Typography,
-  Stack,
-  Chip,
-} from '@mui/material';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Stack from '@mui/material/Stack';
+import Chip from '@mui/material/Chip';
 import { ChevronDown, AlertCircle, CheckCircle, Info } from 'lucide-react';
 
 export const AccordionComponent = ({

@@ -3,7 +3,11 @@
  */
 
 import React from 'react';
-import { Box, Typography, Avatar, Stack, Button } from '@mui/material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Avatar from '@mui/material/Avatar';
+import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 import { Settings, LogOut } from 'lucide-react';
 
 export const DashboardHeader = ({ user = {} }) => {

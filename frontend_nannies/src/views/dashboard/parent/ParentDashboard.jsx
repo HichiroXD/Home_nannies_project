@@ -3,24 +3,25 @@
  * Resumen de hijos, bookings activos, pagos y notificaciones
  */
 
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Container,
-  Stack,
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  Divider,
-  Alert as MuiAlert,
-} from '@mui/material';
+import React, { useState } from 'react';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import Divider from '@mui/material/Divider';
+import MuiAlert from '@mui/material/Alert';
 import { Plus, Calendar, CreditCard, Bell } from 'lucide-react';
 import {
   TabsComponent,
   useToggle,
 } from '@/components/common';
 import { MainLayout } from '@/components/layout';
+import { useApiData } from '@/hooks';
+import API from '@api/api';
+import logger from '@/utils/logger';
 
 // Componentes del dashboard
 import DashboardHeader from './components/DashboardHeader';
@@ -29,7 +30,6 @@ import KidsManagement from './components/KidsManagement';
 import BookingsPanel from './components/BookingsPanel';
 import PaymentsPanel from './components/PaymentsPanel';
 import ActivityFeed from './components/ActivityFeed';
-import API from '@api/api';
 
 /**
  * Dashboard principal para padres
@@ -37,35 +37,28 @@ import API from '@api/api';
  */
 export const ParentDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
-  const [showAddKid, setShowAddKid] = useToggle(false);
-  const [showSearchNanny, setShowSearchNanny] = useToggle(false);
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await API.get('/parents/dashboard/');
-        setDashboardData(response.data);
-      } catch (err) {
-        console.error('Error fetching dashboard:', err);
-        if (err.response?.status === 401) {
-          setError('Sesión expirada. Por favor inicia sesión nuevamente.');
-        } else if (err.response?.status === 404) {
-          setError('No se encontró tu perfil de padre. Por favor completa tu perfil.');
-        } else {
-          setError('Error de conexión con el servidor. Por favor intenta de nuevo.');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, []);
+  // Usar useApiData para cargar datos del dashboard
+  const {
+    data: dashboardData,
+    loading,
+    error,
+    refetch: refetchDashboard,
+  } = useApiData(
+    async () => {
+      const response = await API.get('/parents/dashboard/');
+      return response.data;
+    },
+    [], // sin dependencias - solo carga inicial
+    {
+      onSuccess: (data) => {
+        logger.info('Dashboard data loaded', { stats: data?.stats });
+      },
+      onError: (err) => {
+        logger.error('Error loading dashboard', { error: err });
+      },
+    }
+  );
 
   // Estado de demostración si no hay datos reales
   const demoData = {
@@ -191,14 +184,18 @@ export const ParentDashboard = () => {
 
         {/* Alertas/Notificaciones importantes */}
         {data.stats?.upcomingBookings > 0 && (
-          <MuiAlert severity="info" onClose={() => {}}>
+          <MuiAlert severity="info">
             Tienes {data.stats.upcomingBookings} bookings próximos esta semana
           </MuiAlert>
         )}
 
         {error && (
-          <MuiAlert severity="error" onClose={() => {}}>
-            Error cargando datos del dashboard
+          <MuiAlert severity="error">
+            {error.response?.status === 401 
+              ? 'Sesión expirada. Por favor inicia sesión nuevamente.'
+              : error.response?.status === 404
+              ? 'No se encontró tu perfil de padre. Por favor completa tu perfil.'
+              : 'Error de conexión con el servidor. Por favor intenta de nuevo.'}
           </MuiAlert>
         )}
 
@@ -214,9 +211,6 @@ export const ParentDashboard = () => {
               content: (
                 <KidsManagement
                   kids={data.kids}
-                  onAddKid={setShowAddKid}
-                  showAddForm={showAddKid}
-                  onCancel={() => setShowAddKid(false)}
                 />
               ),
             },
@@ -226,7 +220,6 @@ export const ParentDashboard = () => {
               content: (
                 <BookingsPanel
                   bookings={data.bookings}
-                  onSearchNanny={setShowSearchNanny}
                   onCancelBooking={(id) => console.log('Cancel:', id)}
                   onReschedule={(id) => console.log('Reschedule:', id)}
                 />
@@ -258,7 +251,7 @@ export const ParentDashboard = () => {
             variant="contained"
             size="large"
             startIcon={<Plus size={20} />}
-            onClick={setShowSearchNanny}
+            onClick={() => window.location.href = '/catalog'}
             sx={{
               backgroundColor: '#1976d2',
               '&:hover': {

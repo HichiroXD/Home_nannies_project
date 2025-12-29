@@ -5,18 +5,16 @@
 
 import React, { useState, memo, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import {
-  Box,
-  Button,
-  TextField,
-  Select,
-  MenuItem,
-  FormControlLabel,
-  Checkbox,
-  FormHelperText,
-  Stack,
-  Typography,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Checkbox from '@mui/material/Checkbox';
+import FormHelperText from '@mui/material/FormHelperText';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 
 export const FormBuilder = ({
   fields = [],

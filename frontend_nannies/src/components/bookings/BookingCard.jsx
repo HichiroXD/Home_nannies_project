@@ -73,7 +73,8 @@ export default function BookingCard({
 
   const isPending = booking.status === "pending";
   const isConfirmed = booking.status === "confirmed";
-  const isEditable = isPending || isConfirmed;
+  const isEditable = isPending; // Solo pendientes son editables
+  const isCompleted = booking.status === "completed";
 
   return (
     <div className={`border rounded-lg p-4 ${colors.bg} ${colors.border}`}>
@@ -127,7 +128,7 @@ export default function BookingCard({
       {/* Acciones */}
       <div className="flex gap-2 flex-wrap">
         {/* Editar - Solo padre/madre puede editar */}
-        {userRole === "parent" && isEditable && (
+        {userRole === "parent" && isEditable && onEdit && (
           <button
             onClick={() => onEdit(booking)}
             disabled={isLoading}
@@ -190,7 +191,7 @@ export default function BookingCard({
         )}
 
         {/* Calificar - Padre puede calificar si está completada y no tiene reseña */}
-        {userRole === "parent" && booking.status === "completed" && !booking.has_review && onReview && (
+        {userRole === "parent" && isCompleted && !booking.has_review && onReview && (
           <button
             onClick={() => onReview(booking)}
             disabled={isLoading}
@@ -199,6 +200,14 @@ export default function BookingCard({
             <Star size={14} />
             Calificar
           </button>
+        )}
+        
+        {/* Mensaje si ya dejó reseña */}
+        {userRole === "parent" && isCompleted && booking.has_review && (
+          <div className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+            <Star size={14} fill="currentColor" />
+            Reseña enviada
+          </div>
         )}
       </div>
     </div>

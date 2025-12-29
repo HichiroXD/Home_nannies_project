@@ -67,6 +67,14 @@ export default function HeaderLanding({ isLoggedIn, username }) {
             >
               Mis Reservas
             </button>
+            {(role && (role.includes("nanny") || role.includes("niñ"))) && (
+              <button
+                onClick={() => navigate("/reviews/nanny/")}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+              >
+                Mis Reseñas
+              </button>
+            )}
           </>
         )}
         {isLoggedIn ? (

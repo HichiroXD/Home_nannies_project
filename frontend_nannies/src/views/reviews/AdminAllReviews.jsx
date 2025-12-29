@@ -3,34 +3,29 @@
  * Muestra TODAS las reseñas del sistema (de todos los padres a todas las niñeras)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MainLayout, PageHeader, Loader, AlertToast } from '@/components/layout';
+import { useApiData } from '@/hooks';
 import { Star, Calendar, MessageSquare, User, Users, TrendingUp, Award } from 'lucide-react';
 import API from '@api/api';
 
 export const AdminAllReviews = () => {
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all'); // all, high, low
 
-  useEffect(() => {
-    fetchAllReviews();
-  }, []);
-
-  const fetchAllReviews = async () => {
-    try {
-      setLoading(true);
-      const response = await API.get('/reviews/admin/all/');
-      setReviews(response.data);
-      setError('');
-    } catch (err) {
-      console.error('Error al cargar todas las reseñas:', err);
-      setError('No se pudieron cargar las reseñas del sistema');
-    } finally {
-      setLoading(false);
+  // Cargar todas las reseñas con useApiData
+  const { 
+    data: reviews, 
+    loading 
+  } = useApiData(
+    async () => await API.get('/reviews/admin/all/'),
+    [],
+    {
+      onError: () => {
+        setError('No se pudieron cargar las reseñas del sistema');
+      },
     }
-  };
+  );
 
   const renderStars = (rating) => {
     return (
@@ -47,26 +42,28 @@ export const AdminAllReviews = () => {
   };
 
   const getFilteredReviews = () => {
+    const allReviews = reviews || [];
     switch (filter) {
       case 'high':
-        return reviews.filter(r => r.rating >= 4);
+        return allReviews.filter(r => r.rating >= 4);
       case 'low':
-        return reviews.filter(r => r.rating <= 2);
+        return allReviews.filter(r => r.rating <= 2);
       default:
-        return reviews;
+        return allReviews;
     }
   };
 
   const calculateStats = () => {
-    if (reviews.length === 0) {
+    const allReviews = reviews || [];
+    if (allReviews.length === 0) {
       return { total: 0, average: 0, highRating: 0, lowRating: 0 };
     }
 
-    const total = reviews.length;
-    const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+    const total = allReviews.length;
+    const sum = allReviews.reduce((acc, r) => acc + r.rating, 0);
     const average = (sum / total).toFixed(1);
-    const highRating = reviews.filter(r => r.rating >= 4).length;
-    const lowRating = reviews.filter(r => r.rating <= 2).length;
+    const highRating = allReviews.filter(r => r.rating >= 4).length;
+    const lowRating = allReviews.filter(r => r.rating <= 2).length;
 
     return { total, average, highRating, lowRating };
   };

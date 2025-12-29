@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MainLayout, PageHeader, Loader, AlertToast, PageContainer } from "@components/layout";
-import { ProfileSection, FormInput, FormTextarea, ChildrenManager } from "@components/profile";
+import { FormInput, FormTextarea, ChildrenManager } from "@components/profile";
 import ImageUploader from "@components/common/ImageUploader";
 import { PasswordChangeModal, LoginHistoryModal } from "@/components/security";
 import { usePasswordChange, useLoginHistory } from "@/hooks";
 import { getMediaUrl } from "@/config/constants";
-import { User, Mail, Phone, MapPin, Users } from "lucide-react";
+import { User, Mail, Phone, MapPin, Users, Save, X } from "lucide-react";
 import { getParentProfile, updateParentProfile } from "@api/profileApi";
 import { getChildren, createChild, updateChild, deleteChild } from "@/api";
 
@@ -234,16 +234,54 @@ export default function ParentProfile() {
     }
   };
 
+  const handleCancel = () => {
+    setIsEditing(false);
+    setProfilePhoto(null);
+    loadProfile(); // Recargar datos originales
+  };
+
   if (loading) return <Loader />;
 
   return (
     <MainLayout>
       <PageContainer>
         <div className="space-y-6">
-          <PageHeader
-            title="Mi Perfil"
-            description="Actualiza tu información personal"
-          />
+          <div className="flex items-center justify-between">
+            <PageHeader
+              title="Mi Perfil"
+              description="Actualiza tu información personal"
+            />
+            
+            {/* Botones de acción globales */}
+            <div className="flex gap-2">
+              {!isEditing ? (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                >
+                  Editar Perfil
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Save className="w-4 h-4" />
+                    {saving ? "Guardando..." : "Guardar Cambios"}
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    className="flex items-center gap-2 px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition font-medium"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancelar
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
 
         {alert && (
           <AlertToast
@@ -255,13 +293,8 @@ export default function ParentProfile() {
         )}
 
         {/* Información Personal */}
-        <ProfileSection
-          title="Información Personal"
-          isEditing={isEditing}
-          onEdit={() => setIsEditing(!isEditing)}
-          onSave={handleSave}
-          isSaving={saving}
-        >
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Información Personal</h2>
           {/* Foto de perfil - Siempre visible */}
           <div className="mb-6">
             {isEditing ? (
@@ -321,16 +354,11 @@ export default function ParentProfile() {
               disabled={!isEditing}
             />
           </div>
-        </ProfileSection>
+        </div>
 
         {/* Contacto */}
-        <ProfileSection
-          title="Información de Contacto"
-          isEditing={isEditing}
-          onEdit={() => setIsEditing(!isEditing)}
-          onSave={handleSave}
-          isSaving={saving}
-        >
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Información de Contacto</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
               label="Email"
@@ -351,16 +379,11 @@ export default function ParentProfile() {
               placeholder="+34 612 345 678"
             />
           </div>
-        </ProfileSection>
+        </div>
 
         {/* Ubicación y Emergencias */}
-        <ProfileSection
-          title="Ubicación y Emergencias"
-          isEditing={isEditing}
-          onEdit={() => setIsEditing(!isEditing)}
-          onSave={handleSave}
-          isSaving={saving}
-        >
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Ubicación y Emergencias</h2>
           <div className="grid grid-cols-1 gap-4">
             <FormInput
               label="Dirección"
@@ -379,26 +402,24 @@ export default function ParentProfile() {
               placeholder="Nombre y teléfono de emergencia"
             />
           </div>
-        </ProfileSection>
+        </div>
 
         {/* Información Familiar */}
-        <ProfileSection
-          title="Información Familiar"
-          isEditing={isEditing}
-          onEdit={() => setIsEditing(!isEditing)}
-          onSave={handleSave}
-          isSaving={saving}
-        >
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Información Familiar</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormInput
-              label="Número de Niños"
-              name="children_count"
-              type="number"
-              value={profile.children_count || 1}
-              onChange={handleChange}
-              disabled={!isEditing}
-              min="1"
-            />
+            <div className="bg-gray-50 p-4 rounded-lg border-2 border-blue-200">
+              <div className="flex items-center gap-2 text-gray-600 mb-1">
+                <Users className="w-4 h-4" />
+                <span className="text-sm font-medium">Número de Hijos</span>
+              </div>
+              <p className="text-3xl font-bold text-blue-600">
+                {children.length}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Calculado automáticamente
+              </p>
+            </div>
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex items-center gap-2 text-gray-600 mb-1">
                 <Users className="w-4 h-4" />
@@ -409,16 +430,11 @@ export default function ParentProfile() {
               </p>
             </div>
           </div>
-        </ProfileSection>
+        </div>
 
         {/* Gestión de Hijos */}
-        <ProfileSection
-          title="Mis Hijos"
-          isEditing={isEditing}
-          onEdit={() => setIsEditing(!isEditing)}
-          onSave={handleSave}
-          isSaving={saving}
-        >
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Mis Hijos</h2>
           <ChildrenManager
             children={children}
             onAddChild={handleAddChild}
@@ -426,16 +442,11 @@ export default function ParentProfile() {
             onDeleteChild={handleDeleteChild}
             isEditing={isEditing}
           />
-        </ProfileSection>
+        </div>
 
         {/* Preferencias */}
-        <ProfileSection
-          title="Preferencias y Notas"
-          isEditing={isEditing}
-          onEdit={() => setIsEditing(!isEditing)}
-          onSave={handleSave}
-          isSaving={saving}
-        >
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Preferencias y Notas</h2>
           <FormTextarea
             label="Preferencias"
             name="preferences"
@@ -449,7 +460,7 @@ export default function ParentProfile() {
           <p className="text-xs text-gray-500">
             Máximo 500 caracteres
           </p>
-        </ProfileSection>
+        </div>
 
         {/* Acciones de Cuenta */}
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">

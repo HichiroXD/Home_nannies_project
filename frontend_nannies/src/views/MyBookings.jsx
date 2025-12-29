@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { MainLayout, Loader, PageContainer } from "@components/layout";
 import { AlertToast, useAlert } from "@components/common";
 import { EditBookingModal, BookingCard, ConfirmationModal, ReviewModal } from "@components/bookings";
 import useAuthStore from "@/stores/useAuthStore";
+import { useApiData } from "@/hooks";
 import logger from "@/utils/logger";
 import {
   getBookings,
@@ -16,8 +17,6 @@ import { createReview } from "@api/reviewApi";
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, WARNING_MESSAGES } from "@constants/messages";
 
 export default function MyBookings() {
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const { showAlert, alert, setAlert } = useAlert();
   const [editingBooking, setEditingBooking] = useState(null);
@@ -30,37 +29,38 @@ export default function MyBookings() {
 
   const userRole = useAuthStore(state => state.role);
 
-  // Cargar reservas
-  const fetchBookings = async () => {
-    try {
-      setLoading(true);
-      const data = await getBookings();
-      logger.info('Reservas cargadas', { count: data.length, statuses: data.map(b => b.status) });
-      setBookings(data);
-    } catch (err) {
-      showAlert(ERROR_MESSAGES.generic, "error");
-    } finally {
-      setLoading(false);
+  // Cargar reservas con useApiData
+  const { 
+    data: bookings, 
+    loading, 
+    setData: setBookings,
+    refetch: fetchBookings 
+  } = useApiData(
+    getBookings,
+    [],
+    {
+      onSuccess: (data) => {
+        logger.info('Reservas cargadas', { count: data.length, statuses: data.map(b => b.status) });
+      },
+      onError: () => {
+        showAlert(ERROR_MESSAGES.generic, "error");
+      },
     }
-  };
-
-  useEffect(() => {
-    fetchBookings();
-  }, []);
+  );
 
   // Filtrar reservas
   const filteredBookings =
     filter === "all"
-      ? bookings
-      : bookings.filter((b) => b.status === filter);
+      ? (bookings || [])
+      : (bookings || []).filter((b) => b.status === filter);
 
   // Agrupar por estado para mejor visualización
   const groupedBookings = {
-    pending: filteredBookings.filter((b) => b.status === "pending"),
-    confirmed: filteredBookings.filter((b) => b.status === "confirmed"),
-    completed: filteredBookings.filter((b) => b.status === "completed"),
-    cancelled: filteredBookings.filter((b) => b.status === "cancelled"),
-    rejected: filteredBookings.filter((b) => b.status === "rejected"),
+    pending: filteredBookings.filter((b) => b.status === "pendiente"),
+    confirmed: filteredBookings.filter((b) => b.status === "confirmada"),
+    completed: filteredBookings.filter((b) => b.status === "completada"),
+    cancelled: filteredBookings.filter((b) => b.status === "cancelada"),
+    rejected: filteredBookings.filter((b) => b.status === "rechazada"),
   };
 
   // Verificar si se puede editar una reserva
@@ -359,7 +359,14 @@ export default function MyBookings() {
               <p className="text-gray-500 text-lg">
                 {filter === "all"
                   ? "No tienes reservas aún"
-                  : `No hay reservas con estado "${filter}"`}
+                  : `No hay reservas ${
+                      filter === "pending" ? "pendientes" :
+                      filter === "confirmed" ? "confirmadas" :
+                      filter === "completed" ? "completadas" :
+                      filter === "cancelled" ? "canceladas" :
+                      filter === "rejected" ? "rechazadas" :
+                      `con estado "${filter}"`
+                    }`}
               </p>
             </div>
           ) : (

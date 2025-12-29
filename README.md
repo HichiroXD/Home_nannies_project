@@ -49,6 +49,8 @@ DOCUMENTACION/
 │   └── PROXIMOS_PASOS_PHASE_4.md
 ├── API_ENDPOINTS.md                     ← 🆕 Documentación completa de API
 ├── COMPONENTS_GUIDE.md                  ← 🆕 Guía de componentes React
+├── OPTIMIZACIONES_COMPLETADAS.md       ← 🆕 Refactoring 2025 (useApiData + Material-UI)
+├── REFACTORING_USE_API_DATA.md         ← 🆕 Guía de migración a useApiData
 └── Análisis_y_cambios/                  ← Documentación técnica
     ├── 00_COMIENZA_AQUI.md              ← Portal de bienvenida
     ├── CHANGELOG_SPRINT_2.md            ← Changes & features

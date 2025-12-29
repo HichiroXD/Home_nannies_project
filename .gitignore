@@ -6,12 +6,6 @@ db.sqlite3
 *.log
 /staticfiles/
 media/
-.env.example
-.env.production.example
-load_programs.py
-migrate_to_postgresql.py
-profile_startup.py
-setup_admin.py
 *.pyo
 *.pyd
 *.sqlite3
@@ -23,6 +17,12 @@ staticfiles/
 Back_Django_REST/staticfiles/
 Back_Django_REST/media/
 Back_Django_REST/logs/
+Back_Django_REST/temp_ocr/
+Back_Django_REST/_scripts_historicos/
+
+# Documentación local (no subir a producción)
+DOCUMENTACION/
+logs/
 
 # Entorno virtual
 venv/

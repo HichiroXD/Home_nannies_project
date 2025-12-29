@@ -1,11 +1,11 @@
 import axios from "axios";
 import logger from "../utils/logger";
+import { API_CONFIG } from "../config/api.config";
 
 const API = axios.create({
-  baseURL: "http://localhost:8000/api",
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: API_CONFIG.baseURL,
+  timeout: API_CONFIG.timeout,
+  headers: API_CONFIG.headers,
 });
 
 // Interceptor para adjuntar el token en cada request

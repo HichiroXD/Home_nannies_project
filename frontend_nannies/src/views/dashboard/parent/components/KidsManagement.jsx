@@ -3,43 +3,22 @@
  */
 
 import React, { useState } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  Grid,
-  Typography,
-  Stack,
-  Button,
-  Avatar,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Grid from '@mui/material/Grid';
+import Typography from '@mui/material/Typography';
+import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
+import Avatar from '@mui/material/Avatar';
+import Chip from '@mui/material/Chip';
 import { Plus, Edit, Trash2 } from 'lucide-react';
-import { FormBuilder, useForm } from '@/components/common';
 
 export const KidsManagement = ({
   kids = [],
-  onAddKid,
-  showAddForm = false,
-  onCancel,
 }) => {
-  const [editingKid, setEditingKid] = useState(null);
-
-  const form = useForm(
-    {
-      name: editingKid?.name || '',
-      age: editingKid?.age || '',
-      interests: '',
-    },
-    (values) => {
-      console.log('Save kid:', values);
-      // Aquí iría la llamada a API para guardar
-    }
-  );
+  const navigate = useNavigate();
 
   return (
     <Stack spacing={3}>
@@ -50,7 +29,7 @@ export const KidsManagement = ({
         <Button
           variant="contained"
           startIcon={<Plus size={18} />}
-          onClick={onAddKid}
+          onClick={() => navigate('/profile/parent')}
           size="small"
         >
           Agregar Hijo
@@ -89,18 +68,12 @@ export const KidsManagement = ({
                       <Avatar sx={{ width: 56, height: 56 }}>
                         {kid.name?.charAt(0)}
                       </Avatar>
-                      <Stack direction="row" spacing={1}>
-                        <Button
-                          size="small"
-                          icon={<Edit size={16} />}
-                          onClick={() => setEditingKid(kid)}
-                        >
-                          <Edit size={16} />
-                        </Button>
-                        <Button size="small" color="error">
-                          <Trash2 size={16} />
-                        </Button>
-                      </Stack>
+                      <Button
+                        size="small"
+                        onClick={() => navigate('/profile/parent')}
+                      >
+                        <Edit size={16} />
+                      </Button>
                     </Box>
 
                     <Box>
@@ -131,52 +104,6 @@ export const KidsManagement = ({
           ))}
         </Grid>
       )}
-
-      {/* Dialog para agregar/editar hijo */}
-      <Dialog open={showAddForm} onClose={onCancel} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingKid ? 'Editar Hijo' : 'Agregar Nuevo Hijo'}
-        </DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <FormBuilder
-            fields={[
-              {
-                name: 'name',
-                label: 'Nombre',
-                type: 'text',
-                required: true,
-                value: form.values.name,
-              },
-              {
-                name: 'age',
-                label: 'Edad',
-                type: 'number',
-                required: true,
-                value: form.values.age,
-              },
-              {
-                name: 'interests',
-                label: 'Intereses (separados por coma)',
-                type: 'textarea',
-                value: form.values.interests,
-              },
-            ]}
-            onSubmit={(values) => {
-              console.log('Form submitted:', values);
-              onCancel?.();
-            }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onCancel}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={() => form.handleSubmit({ preventDefault: () => {} })}
-          >
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Stack>
   );
 };

@@ -1,32 +1,27 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getNannies } from "@api/nannyApi";
 import { addFavorite, deleteFavorite, getFavorites } from "@api/favoriteApi";
+import { useApiData } from "@/hooks";
 import { NannyFilters, NannyCard } from "@components/nanny";
 import { MainLayout } from "@components/layout";
 import { AlertToast, useAlert } from "@components/common";
 import { Loader } from "@components/layout";
 import useAuthStore from "@/stores/useAuthStore";
 import logger from "@/utils/logger";
-import {
-  Box,
-  Container,
-  Paper,
-  Typography,
-  Grid,
-  Button,
-  Alert,
-  Card,
-  CardContent,
-  Stack,
-} from "@mui/material";
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Stack from '@mui/material/Stack';
 
 export default function Catalog() {
-  const [nannies, setNannies] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  // store Favorite objects: { id, nanny, created_at }
-  const [favorites, setFavorites] = useState([]);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const { showAlert, alert, setAlert } = useAlert();
   const [filters, setFilters] = useState({
@@ -38,47 +33,52 @@ export default function Catalog() {
   const navigate = useNavigate();
   const { role: userRole, accessToken, isAuthenticated } = useAuthStore();
 
-  // Cargar niñeras
-  const fetchNannies = useCallback(async (appliedFilters = filters) => {
-    try {
-      setLoading(true);
+  // Cargar niñeras con useApiData
+  const { 
+    data: nannies, 
+    loading,
+    refetch: refetchNannies 
+  } = useApiData(
+    async () => {
       const params = {};
-      if (appliedFilters.search) params.search = appliedFilters.search;
-      if (appliedFilters.max_rate) params.max_rate = appliedFilters.max_rate;
-      if (appliedFilters.min_experience) params.min_experience = appliedFilters.min_experience;
-      if (appliedFilters.verified) params.verified = true;
-
-      const data = await getNannies(params);
-      setNannies(data);
-    } catch (err) {
-      showAlert("No se pudieron cargar las niñeras.", "error");
-    } finally {
-      setLoading(false);
+      if (filters.search) params.search = filters.search;
+      if (filters.max_rate) params.max_rate = filters.max_rate;
+      if (filters.min_experience) params.min_experience = filters.min_experience;
+      if (filters.verified) params.verified = true;
+      return await getNannies(params);
+    },
+    [filters.search, filters.max_rate, filters.min_experience, filters.verified],
+    {
+      onError: () => {
+        showAlert("No se pudieron cargar las niñeras.", "error");
+      },
     }
-  }, [showAlert]);
+  );
 
-  // Cargar favoritos del usuario (guardamos objetos completos)
-  const fetchFavorites = useCallback(async () => {
-    try {
-      if (!accessToken) return setFavorites([]);
-
+  // Cargar favoritos con useApiData
+  const { 
+    data: favorites, 
+    setData: setFavorites,
+    refetch: fetchFavorites 
+  } = useApiData(
+    async () => {
+      if (!accessToken) return [];
       const favs = await getFavorites();
-      if (Array.isArray(favs)) setFavorites(favs);
-      else {
+      if (!Array.isArray(favs)) {
         logger.warn('getFavorites returned unexpected payload', { favs });
-        setFavorites([]);
+        return [];
       }
-    } catch (err) {
-      logger.error('Error cargando favoritos', { error: err.message, data: err.response?.data });
-      // if 401 the api interceptor will redirect to login; keep favorites empty
-      setFavorites([]);
+      return favs;
+    },
+    [accessToken],
+    {
+      immediate: !!accessToken,
+      onError: (err) => {
+        logger.error('Error cargando favoritos', { error: err });
+        setFavorites([]);
+      },
     }
-  }, [accessToken]);
-
-  useEffect(() => {
-    fetchNannies();
-    fetchFavorites();
-  }, [fetchFavorites]);
+  );
 
   const handleFilterChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
@@ -90,8 +90,8 @@ export default function Catalog() {
 
   const handleSearch = useCallback((e) => {
     e.preventDefault();
-    fetchNannies(filters);
-  }, [filters, fetchNannies]);
+    refetchNannies();
+  }, [refetchNannies]);
 
   const handleFavorite = useCallback(async (nannyId) => {
     if (!isAuthenticated) {
@@ -102,17 +102,18 @@ export default function Catalog() {
 
     setFavoriteLoading(true);
     try {
+      const favList = favorites || [];
       // buscar favorito existente por nanny.id
-      const existing = favorites.find((f) => f.nanny?.id === nannyId);
+      const existing = favList.find((f) => f.nanny?.id === nannyId);
       if (existing) {
         // eliminar usando el id del Favorite
         await deleteFavorite(existing.id);
-        setFavorites(favorites.filter((f) => f.nanny?.id !== nannyId));
+        setFavorites(favList.filter((f) => f.nanny?.id !== nannyId));
         showAlert("Niñera eliminada de favoritos.", "info");
       } else {
         // crear favorito; backend devuelve el objeto Favorite
         const created = await addFavorite(nannyId);
-        if (created) setFavorites([...favorites, created]);
+        if (created) setFavorites([...favList, created]);
         showAlert("¡Niñera añadida a favoritos! ❤️", "success");
       }
     } catch (err) {
@@ -122,7 +123,7 @@ export default function Catalog() {
     } finally {
       setFavoriteLoading(false);
     }
-  }, [favorites, navigate, showAlert, isAuthenticated]);
+  }, [favorites, navigate, showAlert, isAuthenticated, setFavorites]);
 
   const handleBookingClick = useCallback((nannyId) => {
     if (!isAuthenticated) {
@@ -143,7 +144,8 @@ export default function Catalog() {
   // Memoizar nannies favoriteadas para evitar recalculos
   const nannyFavoriteStatusMap = useMemo(() => {
     const map = new Map();
-    favorites.forEach(fav => {
+    const favList = favorites || [];
+    favList.forEach(fav => {
       if (fav.nanny?.id) {
         map.set(fav.nanny.id, true);
       }

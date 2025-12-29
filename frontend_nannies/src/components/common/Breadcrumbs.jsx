@@ -5,13 +5,11 @@
 
 import React, { memo } from 'react';
 import PropTypes from 'prop-types';
-import {
-  Breadcrumbs as MuiBreadcrumbs,
-  Box,
-  Link,
-  Typography,
-  Stack,
-} from '@mui/material';
+import MuiBreadcrumbs from '@mui/material/Breadcrumbs';
+import Box from '@mui/material/Box';
+import Link from '@mui/material/Link';
+import Typography from '@mui/material/Typography';
+import Stack from '@mui/material/Stack';
 import { ChevronRight } from 'lucide-react';
 
 export const BreadcrumbsComponent = ({

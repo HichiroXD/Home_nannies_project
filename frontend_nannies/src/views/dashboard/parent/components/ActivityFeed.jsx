@@ -3,16 +3,14 @@
  */
 
 import React, { useMemo } from 'react';
-import {
-  Box,
-  Stack,
-  Typography,
-  Card,
-  CardContent,
-  Chip,
-  Avatar,
-  AvatarGroup,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Chip from '@mui/material/Chip';
+import Avatar from '@mui/material/Avatar';
+import AvatarGroup from '@mui/material/AvatarGroup';
 import {
   CheckCircle,
   Star,
