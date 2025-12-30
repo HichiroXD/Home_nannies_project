@@ -127,6 +127,7 @@ def parent_dashboard(request):
         from nannies.models import NannyProfile
         from .models import Child
         from datetime import datetime
+        from django.utils import timezone
         
         # Obtener perfil de padre
         try:
@@ -171,7 +172,7 @@ def parent_dashboard(request):
         active_bookings = bookings.filter(status__in=['pending', 'confirmed']).count()
         upcoming_bookings = bookings.filter(
             status='confirmed',
-            start_time__gt=datetime.now()
+            start_time__gt=timezone.now()
         ).count()
         
         # Calcular gasto total

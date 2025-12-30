@@ -3,7 +3,8 @@ from .views import (
     RegisterView, UserMeView, UserListView, UserDetailView, 
     LoginView, VerifyEmailView, DevVerifyUserView, PublicNannyListView,
     PasswordResetRequestView, PasswordResetConfirmView,
-    suspend_user, reactivate_user, approve_user, reject_user
+    suspend_user, reactivate_user, approve_user, reject_user,
+    SwitchRoleView, GetAvailableRolesView, AddRoleView
 )
 from .role_views import (
     get_user_roles, add_role, remove_role,
@@ -23,7 +24,12 @@ urlpatterns = [
     path('password-reset/', PasswordResetRequestView.as_view(), name='password-reset-request'),
     path('password-reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(), name='password-reset-confirm'),
 
-    # Gestión de roles múltiples (PHASE 4)
+    # Sistema de rol activo (SPRINT 3 PHASE 2 - Simplificado)
+    path('switch-role/', SwitchRoleView.as_view(), name='switch-role-v2'),
+    path('available-roles/', GetAvailableRolesView.as_view(), name='available-roles'),
+    path('add-role/', AddRoleView.as_view(), name='add-role-v2'),
+    
+    # Gestión de roles múltiples (PHASE 4 - Sistema antiguo)
     path('roles/', get_user_roles, name='user-roles'),
     path('roles/add/', add_role, name='add-role'),
     path('roles/remove/<str:role>/', remove_role, name='remove-role'),

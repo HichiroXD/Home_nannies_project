@@ -41,6 +41,21 @@ class User(AbstractUser):
     
     # Campo original (compatible con existente)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='parent')
+    
+    # Sistema de roles múltiples (NUEVO - Phase Sprint 3)
+    roles = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Lista de roles disponibles para el usuario: ['parent', 'nanny']"
+    )
+    active_role = models.CharField(
+        max_length=10, 
+        choices=ROLE_CHOICES, 
+        null=True,
+        blank=True,
+        help_text="Rol actualmente activo - determina permisos y vistas"
+    )
+    
     is_verified = models.BooleanField(default=False)  # Verificación de email
     pending_verification = models.BooleanField(default=True)  # Pendiente de verificación
     is_active = models.BooleanField(default=True)  # Activo/inactivo
@@ -200,6 +215,42 @@ class User(AbstractUser):
     def can_access_as(self, role):
         """Verifica si puede acceder con un rol específico"""
         return self.has_role(role) and self.is_active and not self.is_account_locked()
+    
+    # === MÉTODOS PARA SISTEMA DE ROL ACTIVO (SPRINT 3 PHASE 2) ===
+    
+    def get_available_roles(self):
+        """Obtiene todos los roles disponibles para el usuario"""
+        # Si tiene roles en JSONField, usar esos
+        if self.roles:
+            return self.roles
+        # Si no, devolver solo el rol principal
+        return [self.role]
+    
+    def can_switch_to_role(self, role):
+        """Verifica si el usuario puede cambiar a un rol específico"""
+        available_roles = self.get_available_roles()
+        return role in available_roles and role in dict(self.ROLE_CHOICES)
+    
+    def switch_active_role(self, role):
+        """Cambia el rol activo del usuario"""
+        if not self.can_switch_to_role(role):
+            raise ValueError(f"No tienes permiso para usar el rol '{role}'")
+        self.active_role = role
+        self.save(update_fields=['active_role'])
+        return True
+    
+    def get_active_role(self):
+        """Obtiene el rol activo actual (o el principal si no hay activo)"""
+        return self.active_role or self.role
+    
+    def ensure_roles_initialized(self):
+        """Asegura que el campo roles esté inicializado con al menos el rol principal"""
+        if not self.roles or not isinstance(self.roles, list):
+            self.roles = [self.role]
+            self.save(update_fields=['roles'])
+        elif self.role not in self.roles:
+            self.roles.append(self.role)
+            self.save(update_fields=['roles'])
 
     class Meta:
         verbose_name = "Usuario"

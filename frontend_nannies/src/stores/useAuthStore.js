@@ -23,6 +23,8 @@ const useAuthStore = create(
       accessToken: null,
       refreshToken: null,
       role: null,
+      activeRole: null, // Rol actualmente activo
+      availableRoles: [], // Roles disponibles para el usuario
       isAuthenticated: false,
       isLoading: false,
       error: null,
@@ -66,14 +68,140 @@ const useAuthStore = create(
         localStorage.removeItem('role');
         localStorage.removeItem('username');
         
+        // Limpiar estado persistido de Zustand
+        localStorage.removeItem('auth-storage');
+        
         set({
           user: null,
           accessToken: null,
           refreshToken: null,
           role: null,
+          activeRole: null,
+          availableRoles: [],
           isAuthenticated: false,
           error: null
         });
+      },
+      
+      /**
+       * Switch Role - Cambia el rol activo del usuario
+       * @param {string} newRole - Nuevo rol ('parent' | 'nanny')
+       */
+      switchRole: async (newRole) => {
+        try {
+          const { accessToken } = get();
+          if (!accessToken) {
+            throw new Error('No hay sesión activa');
+          }
+          
+          const response = await fetch('http://localhost:8000/api/users/switch-role/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({ role: newRole })
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al cambiar rol');
+          }
+          
+          const data = await response.json();
+          logger.info('Role switched', { activeRole: data.active_role });
+          
+          // Actualizar rol activo y disponibles
+          set({
+            activeRole: data.active_role,
+            availableRoles: data.available_roles,
+            role: data.active_role // Actualizar role para compatibilidad
+          });
+          
+          // Actualizar en localStorage
+          localStorage.setItem('role', data.active_role);
+          
+          return data;
+        } catch (error) {
+          logger.error('Failed to switch role', error);
+          set({ error: error.message });
+          throw error;
+        }
+      },
+      
+      /**
+       * Load Available Roles - Carga los roles disponibles del usuario
+       */
+      loadAvailableRoles: async () => {
+        try {
+          const { accessToken } = get();
+          if (!accessToken) {
+            return;
+          }
+          
+          const response = await fetch('http://localhost:8000/api/users/available-roles/', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error('Error al cargar roles');
+          }
+          
+          const data = await response.json();
+          
+          set({
+            activeRole: data.active_role,
+            availableRoles: data.available_roles,
+            role: data.active_role || data.role
+          });
+          
+          return data;
+        } catch (error) {
+          logger.error('Failed to load available roles', error);
+        }
+      },
+      
+      /**
+       * Add Role - Agrega un rol adicional al usuario
+       * @param {string} newRole - Rol a agregar ('parent' | 'nanny')
+       */
+      addRole: async (newRole) => {
+        try {
+          const { accessToken } = get();
+          if (!accessToken) {
+            throw new Error('No hay sesión activa');
+          }
+          
+          const response = await fetch('http://localhost:8000/api/users/add-role/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({ role: newRole })
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al agregar rol');
+          }
+          
+          const data = await response.json();
+          logger.info('Role added successfully', { newRole, availableRoles: data.available_roles });
+          
+          // Actualizar roles disponibles
+          set({
+            availableRoles: data.available_roles
+          });
+          
+          return data;
+        } catch (error) {
+          logger.error('Failed to add role', error);
+          throw error;
+        }
       },
 
       /**
@@ -194,9 +322,34 @@ const useAuthStore = create(
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         role: state.role,
+        activeRole: state.activeRole,
+        availableRoles: state.availableRoles,
         isAuthenticated: state.isAuthenticated
         // NO persistir: isLoading, error
-      })
+      }),
+      onRehydrateStorage: () => (state) => {
+        // Validar consistencia al restaurar estado desde localStorage
+        if (state) {
+          const localToken = localStorage.getItem('accessToken');
+          const localRole = localStorage.getItem('role');
+          
+          // Si el estado dice que está autenticado pero no hay token, limpiar estado
+          if (state.isAuthenticated && (!localToken || !state.accessToken)) {
+            logger.warn('State inconsistency detected - clearing auth state');
+            state.user = null;
+            state.accessToken = null;
+            state.refreshToken = null;
+            state.role = null;
+            state.isAuthenticated = false;
+            localStorage.removeItem('auth-storage');
+          }
+          // Sincronizar role si hay discrepancia
+          else if (state.role && localRole && state.role !== localRole) {
+            logger.warn('Role mismatch detected - syncing from localStorage');
+            state.role = localRole;
+          }
+        }
+      }
     }
   )
 );
