@@ -111,27 +111,29 @@ WSGI_APPLICATION = 'django_crud_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# SQLite para desarrollo local (activo)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+# Configuración dinámica: PostgreSQL o SQLite según entorno
+USE_POSTGRESQL = os.getenv("USE_POSTGRESQL", "False") == "True"
 
-# Configuración PostgreSQL para producción (comentada - descomentar para Railway)
-# if os.getenv("DATABASE_URL"):
-#     DATABASES = {
-#         'default': dj_database_url.parse(os.getenv("DATABASE_URL"), conn_max_age=600)
-#     }
-# else:
-#     # SQLite para desarrollo local
-#     DATABASES = {
-#         'default': {
-#             'ENGINE': 'django.db.backends.sqlite3',
-#             'NAME': BASE_DIR / 'db.sqlite3',
-#         }
-#     }
+if USE_POSTGRESQL:
+    # PostgreSQL para servidor/producción
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'home_nannies_db'),
+            'USER': os.getenv('DB_USER', 'morrigan'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
+    }
+else:
+    # SQLite para desarrollo local
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation

@@ -2,7 +2,15 @@
 *.pyc
 __pycache__/
 db.sqlite3
+# Archivos .env (CRÍTICO - NO SUBIR)
 .env
+.env.backup
+*.env
+# IMPORTANTE: Permitir templates de ejemplo
+!.env.example
+!.env.local
+!.env.server
+!.env.production.example
 *.log
 /staticfiles/
 media/
@@ -19,6 +27,8 @@ Back_Django_REST/media/
 Back_Django_REST/logs/
 Back_Django_REST/temp_ocr/
 Back_Django_REST/_scripts_historicos/
+Back_Django_REST/backups/
+!Back_Django_REST/backups/README.md
 
 # Documentación local (no subir a producción)
 DOCUMENTACION/

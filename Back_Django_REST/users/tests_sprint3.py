@@ -146,9 +146,9 @@ class ChildPrivacyTests(APITestCase):
             role='parent',
             is_verified=True
         )
-        self.parent_profile = ParentProfile.objects.create(
+        self.parent_profile, _ = ParentProfile.objects.get_or_create(
             user=self.parent,
-            phone='+56912345678'
+            defaults={'phone': '+56912345678'}
         )
         
         # Crear niñera
@@ -159,10 +159,9 @@ class ChildPrivacyTests(APITestCase):
             role='nanny',
             is_verified=True
         )
-        self.nanny_profile = NannyProfile.objects.create(
+        self.nanny_profile, _ = NannyProfile.objects.get_or_create(
             user=self.nanny,
-            phone='+56987654321',
-            hourly_rate=15000
+            defaults={'phone': '+56987654321', 'hourly_rate': 15000}
         )
         
         # Crear hijo
@@ -197,7 +196,7 @@ class ChildPrivacyTests(APITestCase):
         
         # Verificar que no hay info del niño
         self.assertFalse(response.data.get('child_info_available', True))
-        self.assertIn('privacy_message', response.data.get('child_privacy_message', '').lower())
+        self.assertIn('disponible', response.data.get('child_privacy_message', '').lower())
     
     def test_nanny_can_see_child_info_when_confirmed(self):
         """Niñera ve info del niño cuando booking está confirmado"""
@@ -322,7 +321,7 @@ class ChildModelTests(TestCase):
             password='ParentPass123!',
             role='parent'
         )
-        self.parent_profile = ParentProfile.objects.create(
+        self.parent_profile, _ = ParentProfile.objects.get_or_create(
             user=self.parent_user
         )
     
