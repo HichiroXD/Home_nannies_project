@@ -10,6 +10,7 @@ from .views import (
     AvailabilityDetailView,
     NotificationListView,
     NotificationDetailView,
+    PaymentReportView,
 )
 
 urlpatterns = [
@@ -29,6 +30,9 @@ urlpatterns = [
     # Notifications
     path('notifications/', NotificationListView.as_view(), name='notification-list'),
     path('notifications/<int:pk>/', NotificationDetailView.as_view(), name='notification-detail'),
+
+    # Payment Reports
+    path('payment-report/', PaymentReportView.as_view(), name='payment-report'),
 
     # Favorites handled by the dedicated `favorites` app at /api/favorites/
 ]

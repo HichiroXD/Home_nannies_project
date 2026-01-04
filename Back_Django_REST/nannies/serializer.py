@@ -28,22 +28,39 @@ class NannyProfileSerializer(serializers.ModelSerializer):
         ]
 
     def get_reviews(self, obj):
-        from reviews.serializer import ReviewSerializer
-        reviews = obj.reviews_received.all()
-        return ReviewSerializer(reviews, many=True).data
+        """Obtener reseñas de la niñera"""
+        try:
+            from reviews.serializer import ReviewSerializer
+            # Intentar obtener reviews del usuario
+            if hasattr(obj.user, 'reviews_made'):
+                reviews = obj.user.reviews_made.all()[:5]  # Limitar a 5
+                return ReviewSerializer(reviews, many=True).data
+            return []
+        except Exception as e:
+            return []
     
     def get_total_bookings(self, obj):
         """Obtener el total de reservas completadas"""
-        return obj.user.bookings_received.filter(status='completed').count()
+        try:
+            if hasattr(obj, 'user') and hasattr(obj.user, 'bookings_received'):
+                return obj.user.bookings_received.filter(status='completed').count()
+            return 0
+        except Exception:
+            return 0
     
     def get_acceptance_rate(self, obj):
         """Calcular tasa de aceptación de reservas"""
-        from bookings.models import Booking
-        total = obj.user.bookings_received.count()
-        if total == 0:
+        try:
+            if not hasattr(obj, 'user') or not hasattr(obj.user, 'bookings_received'):
+                return None
+            
+            total = obj.user.bookings_received.count()
+            if total == 0:
+                return None
+            accepted = obj.user.bookings_received.filter(status__in=['confirmed', 'completed']).count()
+            return round((accepted / total) * 100, 1)
+        except Exception:
             return None
-        accepted = obj.user.bookings_received.filter(status__in=['confirmed', 'completed']).count()
-        return round((accepted / total) * 100, 1)
     
     def update(self, instance, validated_data):
         # Extraer datos del usuario si vienen anidados

@@ -7,6 +7,11 @@ from .audit_views import (
     user_permissions_view,
     grant_permission_view
 )
+from .soft_delete_views import (
+    DeletedItemsView,
+    RestoreItemView,
+    HardDeleteItemView
+)
 
 app_name = 'core'
 
@@ -42,5 +47,10 @@ urlpatterns = [
     path('audit/stats/', audit_stats_view, name='audit_stats'),
     path('permissions/me/', user_permissions_view, name='user_permissions'),
     path('permissions/grant/', grant_permission_view, name='grant_permission'),
+    
+    # Sprint 4: Soft Delete Management
+    path('admin/deleted-items/', DeletedItemsView.as_view(), name='deleted_items'),
+    path('admin/restore-item/', RestoreItemView.as_view(), name='restore_item'),
+    path('admin/hard-delete-item/', HardDeleteItemView.as_view(), name='hard_delete_item'),
 ]
 

@@ -55,6 +55,9 @@ export default function Catalog() {
     }
   );
 
+  // Asegurar que nannies siempre sea un array
+  const safeNannies = nannies || [];
+
   // Cargar favoritos con useApiData
   const { 
     data: favorites, 
@@ -226,8 +229,8 @@ export default function Catalog() {
             >
               <CardContent sx={{ p: 3 }}>
                 <Grid container spacing={2}>
-                  {nannies.length > 0 ? (
-                    nannies.map((nanny) => (
+                  {safeNannies.length > 0 ? (
+                    safeNannies.map((nanny) => (
                       <Grid item xs={12} sm={6} lg={4} key={nanny.id}>
                         <NannyCard
                           nanny={nanny}
@@ -251,7 +254,7 @@ export default function Catalog() {
           )}
 
           {/* Botón cargar más */}
-          {!loading && nannies.length > 0 && (
+          {!loading && safeNannies.length > 0 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', pt: 2 }}>
               <Button
                 variant="outlined"

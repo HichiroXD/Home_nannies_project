@@ -1,12 +1,16 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema
 import logging
 from django.utils import timezone
+from datetime import datetime
 from core.mixins import RoleBasedQuerysetMixin
+from reports.exporters import CSVExporter, PDFExporter, ExcelExporter
 from .models import Booking, Availability
 from .serializer import BookingSerializer, AvailabilitySerializer, NotificationSerializer
+from .utils import PaymentReportGenerator
 from .constants import (
     BOOKING_STATUS_CONFIRMED,
     BOOKING_STATUS_REJECTED,
@@ -242,5 +246,153 @@ def complete_booking(request, pk):
 
     _update_booking_status(booking, BOOKING_STATUS_COMPLETED, request.user, 'parent')
     return Response({"message": BOOKING_MESSAGES['COMPLETED']}, status=status.HTTP_200_OK)
+
+
+# --- PAYMENT REPORTS ---
+class PaymentReportView(APIView):
+    """
+    Vista para generar reportes de pagos para padres.
+    
+    GET /api/bookings/payment-report/?format=csv&start_date=2026-01-01&end_date=2026-12-31
+    
+    Query params:
+    - format: csv, pdf, excel (default: csv)
+    - start_date: YYYY-MM-DD (optional)
+    - end_date: YYYY-MM-DD (optional)
+    - nanny_id: ID de niñera específica (optional)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @extend_schema(
+        summary="Generar reporte de pagos",
+        description="Genera un reporte de pagos en formato CSV, PDF o Excel para el padre autenticado",
+        parameters=[
+            {
+                'name': 'format',
+                'in': 'query',
+                'description': 'Formato del reporte: csv, pdf, excel',
+                'required': False,
+                'schema': {'type': 'string', 'enum': ['csv', 'pdf', 'excel']}
+            },
+            {
+                'name': 'start_date',
+                'in': 'query',
+                'description': 'Fecha de inicio (YYYY-MM-DD)',
+                'required': False,
+                'schema': {'type': 'string', 'format': 'date'}
+            },
+            {
+                'name': 'end_date',
+                'in': 'query',
+                'description': 'Fecha de fin (YYYY-MM-DD)',
+                'required': False,
+                'schema': {'type': 'string', 'format': 'date'}
+            },
+            {
+                'name': 'nanny_id',
+                'in': 'query',
+                'description': 'ID de niñera específica',
+                'required': False,
+                'schema': {'type': 'integer'}
+            }
+        ]
+    )
+    def get(self, request):
+        # Validar que el usuario es un padre
+        user = request.user
+        if not hasattr(user, 'parentprofile'):
+            return Response(
+                {"error": "Solo los padres pueden generar reportes de pagos"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Obtener parámetros
+        format_type = request.query_params.get('format', 'csv').lower()
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        nanny_id = request.query_params.get('nanny_id')
+        
+        # Validar formato
+        if format_type not in ['csv', 'pdf', 'excel']:
+            return Response(
+                {"error": "Formato inválido. Use: csv, pdf o excel"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Filtrar bookings del padre
+        bookings = Booking.objects.filter(parent=user).select_related('nanny', 'nanny__nannyprofile')
+        
+        # Aplicar filtros opcionales
+        if start_date:
+            try:
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+                bookings = bookings.filter(start_time__gte=start_dt)
+            except ValueError:
+                return Response(
+                    {"error": "Formato de fecha inválido para start_date. Use YYYY-MM-DD"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        if end_date:
+            try:
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+                # Agregar un día para incluir el end_date completo
+                end_dt = end_dt.replace(hour=23, minute=59, second=59)
+                bookings = bookings.filter(start_time__lte=end_dt)
+            except ValueError:
+                return Response(
+                    {"error": "Formato de fecha inválido para end_date. Use YYYY-MM-DD"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        if nanny_id:
+            bookings = bookings.filter(nanny_id=nanny_id)
+        
+        # Ordenar por fecha
+        bookings = bookings.order_by('-start_time')
+        
+        if not bookings.exists():
+            return Response(
+                {"error": "No se encontraron registros para generar el reporte"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Preparar datos
+        data = PaymentReportGenerator.prepare_payment_data(bookings)
+        headers = PaymentReportGenerator.get_headers()
+        
+        # Generar título
+        parent_name = user.get_full_name() or user.username
+        title = PaymentReportGenerator.generate_title(
+            parent_name,
+            start_date,
+            end_date
+        )
+        
+        # Generar nombre de archivo
+        date_str = datetime.now().strftime('%Y%m%d')
+        filename_base = f"reporte_pagos_{date_str}"
+        
+        # Generar reporte según formato
+        try:
+            if format_type == 'csv':
+                filename = f"{filename_base}.csv"
+                return CSVExporter.export(data, headers, filename)
+            
+            elif format_type == 'pdf':
+                filename = f"{filename_base}.pdf"
+                return PDFExporter.export(data, headers, title, filename)
+            
+            elif format_type == 'excel':
+                filename = f"{filename_base}.xlsx"
+                return ExcelExporter.export(data, headers, title, filename, sheet_name="Pagos")
+        
+        except Exception as e:
+            logger.error(f"Error generando reporte: {str(e)}", exc_info=True)
+            return Response(
+                {"error": "Error al generar el reporte. Intente nuevamente."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 # Favorites have been moved to the `favorites` app; use /api/favorites/ endpoints.
