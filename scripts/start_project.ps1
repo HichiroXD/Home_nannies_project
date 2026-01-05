@@ -6,8 +6,8 @@ Write-Host ""
 
 # Ruta del proyecto
 $projectRoot = $PSScriptRoot
-$backendPath = Join-Path $projectRoot "Back_Django_REST"
-$frontendPath = Join-Path $projectRoot "frontend_nannies"
+$backendPath = Join-Path $projectRoot "..\Back_Django_REST"
+$frontendPath = Join-Path $projectRoot "..\frontend_nannies"
 $logsPath = Join-Path $projectRoot "logs"
 
 # Crear carpeta de logs si no existe
