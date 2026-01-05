@@ -377,3 +377,52 @@ LOGGING = {
         },
     }
 }
+
+# ==============================================================================
+# CONFIGURACIÓN DE SEGURIDAD AVANZADA
+# ==============================================================================
+
+# Seguridad de Cookies y Sesiones
+# En producción (HTTPS), activar las opciones seguras
+SESSION_COOKIE_SECURE = not DEBUG  # Solo HTTPS en producción
+SESSION_COOKIE_HTTPONLY = True  # No accesible desde JavaScript
+SESSION_COOKIE_SAMESITE = 'Lax'  # Protección contra CSRF
+SESSION_COOKIE_AGE = 1209600  # 2 semanas
+
+CSRF_COOKIE_SECURE = not DEBUG  # Solo HTTPS en producción
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Headers de Seguridad HTTP
+if not DEBUG:
+    # HSTS: Forzar HTTPS por 1 año
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Redirigir HTTP a HTTPS
+    SECURE_SSL_REDIRECT = True
+    
+    # Proxy headers (para Railway, DigitalOcean, etc)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Headers de seguridad generales (desarrollo y producción)
+SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevenir MIME sniffing
+SECURE_BROWSER_XSS_FILTER = True  # XSS protection
+X_FRAME_OPTIONS = 'DENY'  # Prevenir clickjacking
+
+# Configuración de archivos subidos
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MB
+
+# Timeout de sesión por inactividad
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# Logging de seguridad mejorado
+import logging
+logger = logging.getLogger(__name__)
+if not DEBUG:
+    logger.info("Security settings configured for PRODUCTION mode")
+else:
+    logger.info("Security settings configured for DEVELOPMENT mode")

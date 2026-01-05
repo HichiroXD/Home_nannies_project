@@ -1,7 +1,7 @@
 # Home Nannies - Plataforma de Conexión Niñeras-Familias
 
-**Status**: ✅ Backend & Frontend Operativos | **Última Actualización**: 2 Dic 2025  
-**Versión:** 2.2.0 | **Build:** 🟢 STABLE | **Coverage:** 85%+ Backend | **Tests:** 19/19 ✅
+**Status**: ✅ Backend & Frontend Operativos | **Última Actualización**: 5 Ene 2026  
+**Versión:** 2.3.0 | **Build:** 🟢 STABLE | **Coverage:** 85%+ Backend | **Tests:** 19/19 ✅ | **Docs:** ✨ Reorganizadas
 
 ---
 
@@ -25,44 +25,66 @@
 
 ## 📚 DOCUMENTACIÓN COMPLETA
 
-Toda la documentación está organizada en carpetas por fase para fácil acceso:
+Toda la documentación está **reorganizada** en categorías temáticas para fácil navegación:
 
 ```
 DOCUMENTACION/
-├── INDEX.md                              ← ÍNDICE PRINCIPAL (👈 START HERE)
-├── PHASE_1/                              ← Phase 1: Validación institucional
-│   ├── PHASE_1_IMPLEMENTATION_SUMMARY.md
-│   ├── README_PHASE_1.md
-│   └── IMPLEMENTATION_COMPLETE.md
-├── PHASE_2/                              ← Phase 2: OCR simulado
-│   ├── RESUMEN_PHASE_2_COMPLETO.md
-│   ├── RESUMEN_VISUAL_PHASE_2.md
-│   └── CAMBIOS_SPRINT2_FASE_2_MODELS_VALIDATORS_SERIALIZERS.md
-├── PHASE_3/                              ← Phase 3: OCR real
-│   ├── FASE_3_RESUMEN_FINAL.md
-│   ├── ESPECIFICACIONES_FASE_3.md
-│   ├── PHASE_3_COMPLETION.md
-│   └── TASK_*_COMPLETION.md
-├── PHASE_4/                              ← Phase 4: Multi-rol & Tests (🆕)
-│   ├── PHASE_4_TASK_1_SUMMARY.md
-│   ├── CODE_REVIEW_FRONTEND_PHASE_4.md
-│   └── PROXIMOS_PASOS_PHASE_4.md
-├── API_ENDPOINTS.md                     ← 🆕 Documentación completa de API
-├── COMPONENTS_GUIDE.md                  ← 🆕 Guía de componentes React
-├── OPTIMIZACIONES_COMPLETADAS.md       ← 🆕 Refactoring 2025 (useApiData + Material-UI)
-├── REFACTORING_USE_API_DATA.md         ← 🆕 Guía de migración a useApiData
-└── Análisis_y_cambios/                  ← Documentación técnica
-    ├── 00_COMIENZA_AQUI.md              ← Portal de bienvenida
-    ├── CHANGELOG_SPRINT_2.md            ← Changes & features
-    ├── COMPONENTES_GUIA_EJEMPLOS.md     ← Components guide
-    ├── RESUMEN_EJECUTIVO.md
-    ├── GUIA_DESARROLLO.md
-    ├── MAPEO_ENDPOINTS_API.md
-    ├── QUICK_REFERENCE_CARD.md
-    └── (20+ documentos más...)
+├── 📋 README.md                          ← ÍNDICE COMPLETO (👈 START HERE)
+├── 📝 INDEX.md                           ← Navegación rápida
+├── 📊 ESTRUCTURA.md                      ← Árbol visual de documentos
+│
+├── 📁 01_PLANIFICACION/                  ← Planificación y análisis
+│   ├── ANALISIS_HISTORIAS_USUARIO_BACKLOG.md
+│   ├── ESTIMACION_PUNTOS_HISTORIA_SPRINTS.md
+│   └── PLAN_MEJORAS_SISTEMA.md
+│
+├── 📁 02_DESARROLLO/                     ← Desarrollo y arquitectura
+│   ├── API_ENDPOINTS.md                 (50+ endpoints documentados)
+│   ├── COMPONENTS_GUIDE.md              (Guía de componentes React)
+│   ├── NAVIGATION_MAP.md                (Mapa de navegación)
+│   └── REFACTORING_CODIGO_DUPLICADO.md
+│
+├── 📁 03_IMPLEMENTACION/                 ← Implementación y cambios
+│   ├── CAMBIOS_FASE_1_APLICADOS.md
+│   ├── CAMBIOS_FASE_2_APLICADOS.md
+│   ├── FASE_3_COMPLETADA.md
+│   ├── PHASE_4_COMPLETED.md             (Multi-rol & Tests)
+│   ├── GESTION_HIJOS_IMPLEMENTADA.md
+│   ├── AUTOSERVICIO_ROL_MULTIROLE.md
+│   ├── SISTEMA_ROL_ACTIVO.md
+│   └── MEJORAS_CRITICAS_IMPLEMENTADAS.md
+│
+├── 📁 04_SEGURIDAD/                      ← Seguridad y auditoría
+│   ├── AUDITORIA_SEGURIDAD.md
+│   ├── INSTRUCCIONES_AUDITORIA.md
+│   └── SISTEMA_PERMISOS_Y_AUDITORIA.md
+│
+├── 📁 05_GUIAS/                          ← Guías de usuario
+│   └── GUIA_PREFERENCIAS_NOTIFICACION.md
+│
+├── 📁 ARQUITECTURA/                      ← Arquitectura del sistema
+│   ├── Arquitectura_User_Profiles.md
+│   └── Análisis_y_cambios/              (Guías técnicas)
+│
+├── 📁 DEPLOYMENT/                        ← Despliegue
+│   ├── RAILWAY_DEPLOYMENT.md            (Guía completa Railway)
+│   ├── DEPLOYMENT_CHECKLIST.md
+│   └── COMANDOS_RAILWAY.md
+│
+├── 📁 TESTING/                           ← Testing y QA
+│   ├── FRONTEND_TESTING_COMPLETED.md
+│   └── TESTING_SPRINT.md
+│
+└── 📁 SPRINTS/                           ← Sprints de desarrollo
+    ├── SPRINT_1/ (Fundación)
+    ├── SPRINT_2/ (Features avanzadas)
+    ├── SPRINT_3/ (Integración)
+    └── SPRINT_4/ (Refinamiento)
 ```
 
-👉 **[VER ÍNDICE COMPLETO](./DOCUMENTACION/INDEX.md)**
+👉 **[VER ÍNDICE COMPLETO](./DOCUMENTACION/README.md)**  
+👉 **[NAVEGACIÓN RÁPIDA](./DOCUMENTACION/INDEX.md)**  
+👉 **[ESTRUCTURA VISUAL](./DOCUMENTACION/ESTRUCTURA.md)**
 
 ---
 
@@ -183,60 +205,105 @@ Password: admin123
 
 ### 👨‍💻 Para Desarrolladores
 
-**Configuración y Setup:**
-- [Guía de Desarrollo](./DOCUMENTACION/Análisis_y_cambios/GUIA_DESARROLLO.md) - Setup, convenciones, best practices
-- [Quick Reference Card](./DOCUMENTACION/Análisis_y_cambios/QUICK_REFERENCE_CARD.md) - Comandos frecuentes
+**Índices Principales:**
+- 📋 [Índice Completo](./DOCUMENTACION/README.md) - Toda la documentación organizada
+- 🗺️ [Navegación Rápida](./DOCUMENTACION/INDEX.md) - Acceso rápido por categoría
+- 📊 [Estructura Visual](./DOCUMENTACION/ESTRUCTURA.md) - Árbol de documentos
 
-**Componentes React:**
-- [Guía de Componentes & Ejemplos](./DOCUMENTACION/Análisis_y_cambios/COMPONENTES_GUIA_EJEMPLOS.md) - ⭐ NUEVO
-  - AlertToast, AvailabilitySelector, DataTable, Modal, FormBuilder
-  - Custom Hooks (useForm, useFetch, useDebounce, etc.)
-  - 10 ejemplos prácticos de integración
-- [Phase 4 - Componentes](./DOCUMENTACION/PHASE_4/PHASE_4_TASK_1_SUMMARY.md)
+**Desarrollo y Arquitectura:**
+- [API Endpoints](./DOCUMENTACION/02_DESARROLLO/API_ENDPOINTS.md) - 50+ endpoints documentados
+- [Guía de Componentes](./DOCUMENTACION/02_DESARROLLO/COMPONENTS_GUIDE.md) - Componentes React
+- [Mapa de Navegación](./DOCUMENTACION/02_DESARROLLO/NAVIGATION_MAP.md) - Estructura de rutas
+- [Refactoring](./DOCUMENTACION/02_DESARROLLO/REFACTORING_CODIGO_DUPLICADO.md) - Mejoras de código
 
-**Backend & API:**
-- [Phase 1 Summary](./DOCUMENTACION/PHASE_1/PHASE_1_IMPLEMENTATION_SUMMARY.md)
-- [Phase 2 Summary](./DOCUMENTACION/PHASE_2/RESUMEN_PHASE_2_COMPLETO.md)
-- [Phase 3 Summary](./DOCUMENTACION/PHASE_3/FASE_3_RESUMEN_FINAL.md)
-- [API Endpoints Reference](./DOCUMENTACION/Análisis_y_cambios/MAPEO_ENDPOINTS_API.md) - 40+ endpoints
+**Implementación:**
+- [Fase 1 Completada](./DOCUMENTACION/03_IMPLEMENTACION/CAMBIOS_FASE_1_APLICADOS.md)
+- [Fase 2 Completada](./DOCUMENTACION/03_IMPLEMENTACION/CAMBIOS_FASE_2_APLICADOS.md)
+- [Fase 3 Completada](./DOCUMENTACION/03_IMPLEMENTACION/FASE_3_COMPLETADA.md)
+- [Fase 4 Completada](./DOCUMENTACION/03_IMPLEMENTACION/PHASE_4_COMPLETED.md) - Multi-rol & Tests
+- [Sistema de Roles](./DOCUMENTACION/03_IMPLEMENTACION/SISTEMA_ROL_ACTIVO.md)
 
 **Testing:**
-- [Testing Guide](./DOCUMENTACION/Análisis_y_cambios/TESTING_GUIDE.md)
+- [Testing Frontend](./DOCUMENTACION/TESTING/FRONTEND_TESTING_COMPLETED.md)
+- [Testing Sprints](./DOCUMENTACION/TESTING/TESTING_SPRINT.md)
 - Backend Tests: `Back_Django_REST/core/tests.py` (143+ tests)
 
 ### 📊 Para Project Managers
 
-**Resúmenes Ejecutivos:**
-- [Resumen Ejecutivo](./DOCUMENTACION/Análisis_y_cambios/RESUMEN_EJECUTIVO.md) - Overview del proyecto
-- [Changelog Sprint 2](./DOCUMENTACION/Análisis_y_cambios/CHANGELOG_SPRINT_2.md) - ⭐ NUEVO
-  - Nuevas features, bugs fixes, optimizaciones
-  - Performance improvements (75% backend startup)
-  - Estadísticas de código y documentación
+**Planificación:**
+- [Historias de Usuario](./DOCUMENTACION/01_PLANIFICACION/ANALISIS_HISTORIAS_USUARIO_BACKLOG.md)
+- [Estimaciones y Sprints](./DOCUMENTACION/01_PLANIFICACION/ESTIMACION_PUNTOS_HISTORIA_SPRINTS.md)
+- [Plan de Mejoras](./DOCUMENTACION/01_PLANIFICACION/PLAN_MEJORAS_SISTEMA.md)
 
-**Métricas y Estadísticas:**
-- [Phase 2 Metrics](./DOCUMENTACION/PHASE_2/RESUMEN_VISUAL_PHASE_2.md)
-- [Estadísticas Finales Sprint 2](./DOCUMENTACION/Análisis_y_cambios/ESTADISTICAS_FINALES_SPRINT2.md)
+**Implementación por Fases:**
+- [Cambios Fase 1](./DOCUMENTACION/03_IMPLEMENTACION/CAMBIOS_FASE_1_APLICADOS.md)
+- [Cambios Fase 2](./DOCUMENTACION/03_IMPLEMENTACION/CAMBIOS_FASE_2_APLICADOS.md)
+- [Fase 3 Completada](./DOCUMENTACION/03_IMPLEMENTACION/FASE_3_COMPLETADA.md)
+- [Fase 4 Completada](./DOCUMENTACION/03_IMPLEMENTACION/PHASE_4_COMPLETED.md)
+- [Mejoras Críticas](./DOCUMENTACION/03_IMPLEMENTACION/MEJORAS_CRITICAS_IMPLEMENTADAS.md)
+
+**Sprints:**
+- [Sprint 1](./DOCUMENTACION/SPRINTS/SPRINT_1/) - Fundación
+- [Sprint 2](./DOCUMENTACION/SPRINTS/SPRINT_2/) - Features avanzadas
+- [Sprint 3](./DOCUMENTACION/SPRINTS/SPRINT_3/) - Integración
+- [Sprint 4](./DOCUMENTACION/SPRINTS/SPRINT_4/) - Refinamiento
 
 ### 🧪 Para QA/Testers
 
-- [Testing Guide](./DOCUMENTACION/Análisis_y_cambios/TESTING_GUIDE.md) - Casos de test, ejemplos cURL
-- Backend Tests: `Back_Django_REST/core/tests.py` (Run with `python manage.py test`)
-- [Phase 3 Completion](./DOCUMENTACION/PHASE_3/PHASE_3_COMPLETION.md) - Final status
+**Testing:**
+- [Frontend Testing](./DOCUMENTACION/TESTING/FRONTEND_TESTING_COMPLETED.md) - 91/97 tests ✅
+- [Testing Sprint](./DOCUMENTACION/TESTING/TESTING_SPRINT.md)
+- Backend Tests: `Back_Django_REST/core/tests.py` - 19/19 tests ✅
 
+### 🔒 Para Seguridad
+
+**Auditoría y Permisos:**
+- [Auditoría de Seguridad](./DOCUMENTACION/04_SEGURIDAD/AUDITORIA_SEGURIDAD.md)
+- [Instrucciones de Auditoría](./DOCUMENTACION/04_SEGURIDAD/INSTRUCCIONES_AUDITORIA.md)
+- [Sistema de Permisos](./DOCUMENTACION/04_SEGURIDAD/SISTEMA_PERMISOS_Y_AUDITORIA.md)
+
+### 🚢 Para DevOps
+
+**Despliegue:**
+- [Railway Deployment](./DOCUMENTACION/DEPLOYMENT/RAILWAY_DEPLOYMENT.md) - Guía completa
+- [Deployment Checklist](./DOCUMENTACION/DEPLOYMENT/DEPLOYMENT_CHECKLIST.md)
+- [Comandos Railway](./DOCUMENTACION/DEPLOYMENT/COMANDOS_RAILWAY.md)
 ---
 
 ## 🔧 Estructura del Proyecto
 
 ```
 Home_nannies_project/
-├── DOCUMENTACION/                       ← 📚 Documentación completa (43 archivos)
-│   ├── INDEX.md                         (Índice principal)
-│   ├── PHASE_1/ - PHASE_4/              (Documentación por fases)
-│   └── Análisis_y_cambios/              (Guías técnicas y referencias)
+├── DOCUMENTACION/                       ← 📚 Documentación completa reorganizada
+│   ├── README.md                        (Índice completo)
+│   ├── INDEX.md                         (Navegación rápida)
+│   ├── ESTRUCTURA.md                    (Árbol visual)
+│   ├── 01_PLANIFICACION/                (Planificación y análisis)
+│   ├── 02_DESARROLLO/                   (Desarrollo y arquitectura)
+│   ├── 03_IMPLEMENTACION/               (Implementación y cambios)
+│   ├── 04_SEGURIDAD/                    (Seguridad y auditoría)
+│   ├── 05_GUIAS/                        (Guías de usuario)
+│   ├── ARQUITECTURA/                    (Arquitectura del sistema)
+│   ├── DEPLOYMENT/                      (Despliegue)
+│   ├── TESTING/                         (Testing y QA)
+│   └── SPRINTS/                         (Sprints 1-4)
+│
+├── scripts/                             ← 🛠️ Scripts de gestión del proyecto
+│   ├── start_project.ps1/sh            (Iniciar proyecto)
+│   └── switch_environment.ps1/sh       (Cambiar entorno)
+│
+├── docs/                                ← 📖 Documentación técnica adicional
+│   ├── REFACTORING_2025.md
+│   ├── OPTIMIZACIONES_COMPLETADAS.md
+│   └── INICIO_RAPIDO_ENTORNOS.md
 │
 ├── Back_Django_REST/                    ← 🐍 Backend Django REST API
 │   ├── manage.py
 │   ├── requirements.txt
+│   ├── scripts/                         (Scripts organizados)
+│   │   ├── setup/                       (Configuración inicial)
+│   │   ├── maintenance/                 (Mantenimiento)
+│   │   └── testing/                     (Scripts de prueba)
 │   ├── django_crud_api/                 (Configuración principal)
 │   │   ├── settings.py
 │   │   ├── urls.py
@@ -517,9 +584,10 @@ CORS_ALLOWED_ORIGINS=https://tu-frontend.vercel.app
 ```
 
 #### 📚 Documentación Adicional
-- [Guía Completa Railway](./RAILWAY_DEPLOYMENT.md) - 500+ líneas de documentación
+- [Guía Completa Railway](./DOCUMENTACION/DEPLOYMENT/RAILWAY_DEPLOYMENT.md) - Guía detallada
+- [Deployment Checklist](./DOCUMENTACION/DEPLOYMENT/DEPLOYMENT_CHECKLIST.md)
+- [Comandos Railway](./DOCUMENTACION/DEPLOYMENT/COMANDOS_RAILWAY.md)
 - [Template Variables .env](./.env.example) - Todas las variables disponibles
-- [Django Deployment Checklist](https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/)
 
 ---
 
@@ -557,12 +625,18 @@ CORS_ALLOWED_ORIGINS=https://tu-frontend.vercel.app
 
 ### Versión Actual
 ```
-Versión:  2.1.0
+Versión:  2.3.0
 Status:   🟢 STABLE (Production Ready)
-Release:  23 de noviembre de 2025
+Release:  5 de enero de 2026
 ```
 
-### Características Destacadas v2.1
+### Características Destacadas v2.3
+- ✨ **Documentación Reorganizada**: Nueva estructura por categorías temáticas
+- 🗂️ **Índices Mejorados**: README principal, INDEX de navegación rápida, ESTRUCTURA visual
+- 📁 **Scripts Organizados**: Carpetas dedicadas para setup, maintenance y testing
+- 🛠️ **Mejor Navegación**: READMEs en cada categoría con guías específicas
+
+### Características Destacadas v2.1-2.2
 - ✨ Sistema completo de bookings con disponibilidad
 - 🎨 Dashboard administrativo con métricas en tiempo real
 - 📱 Interfaz responsive completamente funcional
@@ -628,16 +702,28 @@ GET    /api/users/active-role/         # Obtener rol actual
 
 Ver documentación completa en `PHASE_4_COMPLETED.md`
 
+### Documentación Reorganizada (Enero 2026) 🆕
+La documentación completa ha sido reorganizada en categorías temáticas:
+- 📋 **01_PLANIFICACION**: Planificación y análisis
+- 🛠️ **02_DESARROLLO**: Desarrollo y arquitectura  
+- ✅ **03_IMPLEMENTACION**: Implementación y cambios
+- 🔒 **04_SEGURIDAD**: Seguridad y auditoría
+- 📖 **05_GUIAS**: Guías de usuario
+- 🏗️ **ARQUITECTURA**, 🚢 **DEPLOYMENT**, 🧪 **TESTING**, 🏃 **SPRINTS**
+
+Ver [DOCUMENTACION/README.md](./DOCUMENTACION/README.md) para el índice completo.
+
 ### Mejoras de UX (Fase 3)
 - **ImageUploader**: Componente drag & drop para fotos de perfil
 - **RoleProtectedRoute**: Protección de rutas basada en roles
 - **Notificaciones mejoradas**: Soporte para reseñas
 - **Perfiles mejorados**: Foto siempre visible, mejor UX de edición
 
-### Documentación Nueva
-- 📖 `API_ENDPOINTS.md`: Documentación completa de todos los endpoints
-- 📖 `COMPONENTS_GUIDE.md`: Guía detallada de componentes React
-- 📖 `PHASE_4_COMPLETED.md`: Resumen de implementación Fase 4
+### Scripts Organizados 🆕
+- ✅ Carpeta `scripts/` en raíz con scripts de inicio y entorno
+- ✅ Carpeta `docs/` con documentación técnica adicional
+- ✅ Backend scripts organizados en `setup/`, `maintenance/`, `testing/`
+- ✅ READMEs explicativos en cada carpeta
 
 ---
 
@@ -689,6 +775,6 @@ Si encuentras algún bug, por favor:
 ---
 
 **Desarrollado por:** Equipo Home Nannies  
-**Última actualización:** 2 de diciembre de 2025  
-**Versión:** 2.2.0 - Multi-rol & Testing Suite  
-**Status:** ✅ PRODUCTION READY | **Tests:** 19/19 ✅
+**Última actualización:** 5 de enero de 2026  
+**Versión:** 2.3.0 - Documentación Reorganizada & Scripts Organizados  
+**Status:** ✅ PRODUCTION READY | **Tests:** 19/19 ✅ | **Docs:** Reorganizadas ✨
