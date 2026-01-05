@@ -190,7 +190,7 @@ export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = fal
             )}
 
             {/* Certificaciones */}
-            {nanny.certifications && nanny.certifications.length > 0 && (
+            {nanny.certifications && Array.isArray(nanny.certifications) && nanny.certifications.length > 0 && (
               <Box sx={{ mt: 1 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
                   Certificaciones:
@@ -222,7 +222,7 @@ export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = fal
             )}
 
             {/* Especialidades */}
-            {nanny.specialties && nanny.specialties.length > 0 && (
+            {nanny.specialties && Array.isArray(nanny.specialties) && nanny.specialties.length > 0 && (
               <Box sx={{ mt: 0.5 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
                   Especialidades:
