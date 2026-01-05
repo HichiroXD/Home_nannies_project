@@ -69,6 +69,9 @@ urlpatterns = [
     # Reportes y Análisis - Phase 3
     path('api/reports/', include('reports.urls')),
 
+    # Mensajería - Sprint 4
+    path('api/chat/', include('chat.urls')),
+
 ]
 
 # Servir archivos media en desarrollo

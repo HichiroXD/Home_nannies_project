@@ -68,6 +68,16 @@ export default function HeaderLanding({ isLoggedIn, username }) {
               </>
             )}
             
+            {/* Mensajes para padres y niñeras */}
+            {(role === 'parent' || role === 'nanny' || role?.includes('niñ')) && (
+              <button
+                onClick={() => navigate("/chat")}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+              >
+                Mensajes
+              </button>
+            )}
+            
             <button
               onClick={() => navigate("/bookings")}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"

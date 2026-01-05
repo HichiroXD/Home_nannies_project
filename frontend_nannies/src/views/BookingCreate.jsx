@@ -271,9 +271,16 @@ export default function BookingCreate() {
                     </div>
                   )}
 
-                  {/* Botón de mensaje (placeholder) */}
+                  {/* Botón de mensaje */}
                   <button
-                    onClick={() => setAlert({ visible: true, message: "Función de mensajería próximamente", type: "info" })}
+                    onClick={() => {
+                      if (nanny?.user_id) {
+                        navigate("/chat", { state: { userId: nanny.user_id } });
+                      } else {
+                        console.error('No se pudo obtener el user_id de la niñera');
+                        alert('Error: No se puede iniciar el chat con esta niñera');
+                      }
+                    }}
                     className="w-full py-2.5 px-4 bg-blue-500 text-white rounded-lg font-medium text-sm hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
                   >
                     <MessageCircle className="w-4 h-4" />

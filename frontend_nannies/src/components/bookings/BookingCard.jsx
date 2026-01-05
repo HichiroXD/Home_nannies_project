@@ -1,6 +1,8 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { Edit2, Trash2, Check, X, CheckCircle, Star } from "lucide-react";
+import { Edit2, Trash2, Check, X, CheckCircle, Star, MessageCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import chatApi from "@/api/chatApi";
 
 /**
  * Componente para mostrar una reserva con acciones
@@ -26,6 +28,8 @@ export default function BookingCard({
   userRole,
   isLoading = false,
 }) {
+  const navigate = useNavigate();
+  
   const startDate = new Date(booking.start_time);
   const endDate = new Date(booking.end_time);
   const duration = Math.round((endDate - startDate) / (1000 * 60)); // minutos
@@ -75,6 +79,17 @@ export default function BookingCard({
   const isConfirmed = booking.status === "confirmed";
   const isEditable = isPending; // Solo pendientes son editables
   const isCompleted = booking.status === "completed";
+
+  // Manejar click en botón de mensajes
+  const handleMessageClick = async () => {
+    // Determinar el ID del otro usuario
+    const otherUserId = userRole === "parent" 
+      ? booking.nanny.id 
+      : booking.parent.id;
+    
+    // Navegar al chat con el ID del usuario en el state
+    navigate("/chat", { state: { userId: otherUserId } });
+  };
 
   return (
     <div className={`border rounded-lg p-4 ${colors.bg} ${colors.border}`}>
@@ -127,6 +142,18 @@ export default function BookingCard({
 
       {/* Acciones */}
       <div className="flex gap-2 flex-wrap">
+        {/* Botón de Mensajes - Disponible para todos los estados excepto rechazada/cancelada */}
+        {!['rejected', 'cancelled'].includes(booking.status) && (
+          <button
+            onClick={handleMessageClick}
+            disabled={isLoading}
+            className="flex items-center gap-1 px-3 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            <MessageCircle size={14} />
+            Enviar mensaje
+          </button>
+        )}
+
         {/* Editar - Solo padre/madre puede editar */}
         {userRole === "parent" && isEditable && onEdit && (
           <button

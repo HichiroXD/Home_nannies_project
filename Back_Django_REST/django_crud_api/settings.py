@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'notifications',  # Phase 3: Notificaciones automáticas
     'academic',  # Phase 3: Validación académica
     'reports',  # Phase 3: Reportes y análisis
+    'chat',  # Sprint 4: Sistema de mensajería
 ]
 
 # Configuración REST Framework

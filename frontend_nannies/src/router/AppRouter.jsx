@@ -49,6 +49,9 @@ const ParentReviews = lazy(() => import("@views/reviews/ParentReviews"));
 const NannyReviews = lazy(() => import("@views/reviews/NannyReviews"));
 const AdminAllReviews = lazy(() => import("@views/reviews/AdminAllReviews"));
 
+// === LAZY LOADING: Chat ===
+const ChatView = lazy(() => import("@views/chat/ChatView"));
+
 // Componente interno que usa el hook dentro del contexto del Router
 const RouterContent = () => {
   // SPRINT 3: Auto-logout tras 15 minutos de inactividad
@@ -151,6 +154,14 @@ const RouterContent = () => {
 
         {/* ==================== NOTIFICACIONES ==================== */}
         <Route path="/notifications/" element={<Notifications />} />
+
+        {/* ==================== CHAT/MENSAJERÍA ==================== */}
+        {/* Chat para padres y niñeras */}
+        <Route path="/chat/" element={
+          <RoleProtectedRoute allowedRoles={['parent', 'nanny']}>
+            <ChatView />
+          </RoleProtectedRoute>
+        } />
 
         {/* ==================== RESEÑAS ==================== */}
         {/* Vista ADMIN: Todas las reseñas del sistema */}
