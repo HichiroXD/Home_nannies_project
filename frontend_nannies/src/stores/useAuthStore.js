@@ -14,6 +14,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import logger from '@/utils/logger';
+import { API_CONFIG } from '@/config/api.config';
 
 const useAuthStore = create(
   persist(
@@ -98,7 +99,7 @@ const useAuthStore = create(
           
           logger.info('Switching role', { from: get().activeRole || get().role, to: newRole });
           
-          const response = await fetch('http://localhost:8000/api/users/switch-role/', {
+          const response = await fetch(`${API_CONFIG.baseURL}/users/switch-role/`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -156,7 +157,7 @@ const useAuthStore = create(
             return;
           }
           
-          const response = await fetch('http://localhost:8000/api/users/available-roles/', {
+          const response = await fetch(`${API_CONFIG.baseURL}/users/available-roles/`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${accessToken}`
@@ -192,7 +193,7 @@ const useAuthStore = create(
             throw new Error('No hay sesión activa');
           }
           
-          const response = await fetch('http://localhost:8000/api/users/add-role/', {
+          const response = await fetch(`${API_CONFIG.baseURL}/users/add-role/`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
