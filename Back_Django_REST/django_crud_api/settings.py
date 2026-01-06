@@ -283,6 +283,16 @@ if not DEBUG:
     
     # Referrer policy
     SECURE_REFERRER_POLICY = 'same-origin'
+else:
+    # En desarrollo (DEBUG=True), desactivar headers que requieren HTTPS
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_BROWSER_XSS_FILTER = False
+    SECURE_CONTENT_TYPE_NOSNIFF = False
+    
+    # Desactivar Cross-Origin-Opener-Policy en desarrollo
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 # Configuración de drf-spectacular
 SPECTACULAR_SETTINGS = {
@@ -406,11 +416,20 @@ if not DEBUG:
     
     # Proxy headers (para Railway, DigitalOcean, etc)
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-# Headers de seguridad generales (desarrollo y producción)
-SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevenir MIME sniffing
-SECURE_BROWSER_XSS_FILTER = True  # XSS protection
-X_FRAME_OPTIONS = 'DENY'  # Prevenir clickjacking
+    
+    # Headers de seguridad generales en producción
+    SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevenir MIME sniffing
+    SECURE_BROWSER_XSS_FILTER = True  # XSS protection
+    X_FRAME_OPTIONS = 'DENY'  # Prevenir clickjacking
+else:
+    # En desarrollo (DEBUG=True), desactivar headers que causan warnings
+    SECURE_SSL_REDIRECT = False
+    SECURE_CONTENT_TYPE_NOSNIFF = False
+    SECURE_BROWSER_XSS_FILTER = False
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
+    
+    # Desactivar Cross-Origin-Opener-Policy en desarrollo HTTP
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 # Configuración de archivos subidos
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MB

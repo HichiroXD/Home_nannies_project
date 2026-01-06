@@ -33,7 +33,10 @@ nano .env
 **Configuración mínima necesaria:**
 
 ```env
-DEBUG=False
+# Para desarrollo con HTTP (sin SSL), usar DEBUG=True
+# Para producción con HTTPS, usar DEBUG=False
+DEBUG=True
+
 SECRET_KEY=GENERA-UNA-CLAVE-SECRETA-AQUI
 ALLOWED_HOSTS=104.248.213.225,localhost
 CORS_ALLOWED_ORIGINS=http://104.248.213.225:5173
