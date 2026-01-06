@@ -2,9 +2,12 @@
  * Configuración global de la aplicación
  */
 
-// URL base del backend API
-export const API_BASE_URL = "http://localhost:8000";
-export const API_URL = `${API_BASE_URL}/api`;
+// URL base del backend API - Usa variable de entorno si está disponible
+export const API_BASE_URL = import.meta.env.VITE_API_URL 
+  ? import.meta.env.VITE_API_URL.replace('/api', '')
+  : "http://localhost:8000";
+  
+export const API_URL = import.meta.env.VITE_API_URL || `${API_BASE_URL}/api`;
 
 /**
  * Construye la URL completa para archivos de medios

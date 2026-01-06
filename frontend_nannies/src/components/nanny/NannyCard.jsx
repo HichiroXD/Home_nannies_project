@@ -21,6 +21,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SchoolIcon from '@mui/icons-material/School';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import StarIcon from '@mui/icons-material/Star';
+import ChatIcon from '@mui/icons-material/Chat';
 
 /**
  * Componente NannyCard - Muestra información de una niñera
@@ -28,10 +29,11 @@ import StarIcon from '@mui/icons-material/Star';
  * @param {object} nanny - Datos de la niñera
  * @param {function} onFavorite - Callback para guardar/eliminar de favoritos
  * @param {function} onBook - Callback para agendar reserva
+ * @param {function} onMessage - Callback para enviar mensaje
  * @param {boolean} isFavorited - Indica si ya está en favoritos
  * @param {boolean} isLoading - Indica si se está procesando la acción
  */
-export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = false, isLoading = false }) {
+export default function NannyCard({ nanny, onFavorite, onBook, onMessage, isFavorited = false, isLoading = false }) {
   const userRole = localStorage.getItem('role');
   const isNanny = userRole === 'nanny';
   const [showImage, setShowImage] = useState(Boolean(nanny.profile_photo));
@@ -256,15 +258,27 @@ export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = fal
         </Stack>
       </CardContent>
 
-      <CardActions sx={{ px: 2, pb: 2 }}>
+      <CardActions sx={{ px: 2, pb: 2, gap: 1 }}>
+        <Button
+          fullWidth
+          variant="outlined"
+          color="primary"
+          startIcon={<ChatIcon />}
+          onClick={() => onMessage && onMessage(nanny.user_id || nanny.id)}
+          disabled={isLoading || !nanny.verified || isNanny}
+          sx={{ flex: 1 }}
+        >
+          Mensaje
+        </Button>
         <Button
           fullWidth
           variant="contained"
           color="primary"
           onClick={() => onBook(nanny.id)}
           disabled={isLoading || !nanny.verified || isNanny}
+          sx={{ flex: 1 }}
         >
-          {isLoading ? 'Procesando...' : isNanny ? 'No disponible para niñeras' : !nanny.verified ? 'No disponible' : 'Contactar'}
+          {isLoading ? 'Procesando...' : isNanny ? 'No disponible' : !nanny.verified ? 'No disponible' : 'Reservar'}
         </Button>
       </CardActions>
     </Card>
@@ -274,6 +288,7 @@ export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = fal
 NannyCard.propTypes = {
   nanny: PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    user_id: PropTypes.number,
     first_name: PropTypes.string,
     last_name: PropTypes.string,
     username: PropTypes.string,
@@ -291,6 +306,7 @@ NannyCard.propTypes = {
   }).isRequired,
   onFavorite: PropTypes.func.isRequired,
   onBook: PropTypes.func.isRequired,
+  onMessage: PropTypes.func,
   isFavorited: PropTypes.bool,
   isLoading: PropTypes.bool,
 };

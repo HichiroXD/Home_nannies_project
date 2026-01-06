@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getNannies } from "@api/nannyApi";
 import { addFavorite, deleteFavorite, getFavorites } from "@api/favoriteApi";
+import chatApi from "@api/chatApi";
 import { useApiData } from "@/hooks";
 import { NannyFilters, NannyCard } from "@components/nanny";
 import { MainLayout } from "@components/layout";
@@ -144,6 +145,32 @@ export default function Catalog() {
     navigate(`/bookings/create/${nannyId}`);
   }, [navigate, userRole, showAlert, isAuthenticated]);
 
+  const handleMessageClick = useCallback(async (nannyUserId) => {
+    if (!isAuthenticated) {
+      showAlert("Debes iniciar sesión para enviar mensajes.", "warning");
+      navigate("/login");
+      return;
+    }
+
+    // Verificar que el usuario no sea una niñera
+    if (userRole === "nanny") {
+      showAlert("Las niñeras no pueden contactar a otras niñeras", "error");
+      return;
+    }
+
+    try {
+      // Crear o obtener la conversación
+      const result = await chatApi.getOrCreateConversation(nannyUserId);
+      logger.info('Conversation created/retrieved', result);
+      
+      // Navegar al chat con la conversación seleccionada
+      navigate('/chat', { state: { conversationId: result.conversation_id } });
+    } catch (err) {
+      logger.error('Error al crear conversación', { error: err });
+      showAlert("No se pudo iniciar la conversación. Intenta nuevamente.", "error");
+    }
+  }, [navigate, userRole, showAlert, isAuthenticated]);
+
   // Memoizar nannies favoriteadas para evitar recalculos
   const nannyFavoriteStatusMap = useMemo(() => {
     const map = new Map();
@@ -236,6 +263,7 @@ export default function Catalog() {
                           nanny={nanny}
                           onFavorite={handleFavorite}
                           onBook={handleBookingClick}
+                          onMessage={handleMessageClick}
                           isFavorited={nannyFavoriteStatusMap.has(nanny.id)}
                           isLoading={favoriteLoading}
                         />

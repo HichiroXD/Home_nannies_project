@@ -33,6 +33,7 @@ import useAuthStore from '@/stores/useAuthStore';
 export const ChatView = () => {
   const location = useLocation();
   const userIdFromState = location.state?.userId;
+  const conversationIdFromState = location.state?.conversationId;
   const messagesEndRef = useRef(null);
   const userRole = useAuthStore(state => state.role);
   
@@ -45,6 +46,7 @@ export const ChatView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [pendingUserId, setPendingUserId] = useState(null);
   const [hasProcessedUserId, setHasProcessedUserId] = useState(false);
+  const [hasProcessedConversationId, setHasProcessedConversationId] = useState(false);
 
   // Auto-scroll al final de los mensajes
   const scrollToBottom = () => {
@@ -61,6 +63,18 @@ export const ChatView = () => {
     const interval = setInterval(loadConversations, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Si viene un conversationId desde navigation state, seleccionar esa conversación
+  useEffect(() => {
+    if (!conversationIdFromState || hasProcessedConversationId || conversations.length === 0) return;
+    
+    const conversation = conversations.find(conv => conv.id === conversationIdFromState);
+    
+    if (conversation) {
+      setSelectedConversation(conversation);
+      setHasProcessedConversationId(true);
+    }
+  }, [conversationIdFromState, conversations, hasProcessedConversationId]);
 
   // Si viene un userId desde navigation state, seleccionar esa conversación o preparar nueva
   useEffect(() => {
