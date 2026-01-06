@@ -1,2 +1,2 @@
 export { default as AvailabilityForm } from "./AvailabilityForm";
-export { default as AvailabilityCalendar } from "./AvailabilityCalendar";
+export { default as AvailabilityList } from "./AvailabilityList";

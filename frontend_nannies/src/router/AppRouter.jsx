@@ -1,14 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import RoleProtectedRoute from "@components/auth/RoleProtectedRoute";
+import LoadingFallback from "@components/common/LoadingFallback";
+import ErrorBoundary from "@components/common/ErrorBoundary";
 import { useAutoLogout } from "@hooks/useAutoLogout";
-
-// Fallback component para lazy loading
-const LoadingFallback = () => (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-    <p>Cargando...</p>
-  </div>
-);
 
 // === LAZY LOADING: Vistas de autenticación ===
 const Landing = lazy(() => import("@views/Landing"));
@@ -53,6 +48,9 @@ const Notifications = lazy(() => import("@views/Notifications"));
 const ParentReviews = lazy(() => import("@views/reviews/ParentReviews"));
 const NannyReviews = lazy(() => import("@views/reviews/NannyReviews"));
 const AdminAllReviews = lazy(() => import("@views/reviews/AdminAllReviews"));
+
+// === LAZY LOADING: Chat ===
+const ChatView = lazy(() => import("@views/chat/ChatView"));
 
 // Componente interno que usa el hook dentro del contexto del Router
 const RouterContent = () => {
@@ -157,6 +155,14 @@ const RouterContent = () => {
         {/* ==================== NOTIFICACIONES ==================== */}
         <Route path="/notifications/" element={<Notifications />} />
 
+        {/* ==================== CHAT/MENSAJERÍA ==================== */}
+        {/* Chat para padres y niñeras */}
+        <Route path="/chat/" element={
+          <RoleProtectedRoute allowedRoles={['parent', 'nanny']}>
+            <ChatView />
+          </RoleProtectedRoute>
+        } />
+
         {/* ==================== RESEÑAS ==================== */}
         {/* Vista ADMIN: Todas las reseñas del sistema */}
         <Route path="/reviews/admin/all/" element={
@@ -192,7 +198,9 @@ const RouterContent = () => {
 export default function AppRouter() {
   return (
     <BrowserRouter>
-      <RouterContent />
+      <ErrorBoundary>
+        <RouterContent />
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

@@ -1,21 +1,26 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { getMediaUrl } from '@/config/constants';
-import {
-  Card,
-  CardHeader,
-  Avatar,
-  CardContent,
-  CardActions,
-  IconButton,
-  Button,
-  Typography,
-  Box,
-  Chip,
-  Tooltip,
-} from '@mui/material';
+import Card from '@mui/material/Card';
+import CardHeader from '@mui/material/CardHeader';
+import Avatar from '@mui/material/Avatar';
+import CardContent from '@mui/material/CardContent';
+import CardActions from '@mui/material/CardActions';
+import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import Tooltip from '@mui/material/Tooltip';
+import Stack from '@mui/material/Stack';
+import Divider from '@mui/material/Divider';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import PersonIcon from '@mui/icons-material/Person';
+import WorkIcon from '@mui/icons-material/Work';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SchoolIcon from '@mui/icons-material/School';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import StarIcon from '@mui/icons-material/Star';
 
 /**
  * Componente NannyCard - Muestra información de una niñera
@@ -89,30 +94,166 @@ export default function NannyCard({ nanny, onFavorite, onBook, isFavorited = fal
         }
       />
 
-      <CardContent sx={{ pt: 0, pb: 1 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="caption" color="text.secondary"><strong>Tarifa por hora:</strong></Typography>
-            <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 700 }}>
-              ${typeof nanny.hourly_rate === 'number' ? nanny.hourly_rate.toLocaleString('es-CL') : (nanny.hourly_rate || 'N/A')} CLP
-            </Typography>
-            <Tooltip title="El costo total se calcula multiplicando la tarifa por hora por el número de horas contratadas">
-              <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>ℹ️</Typography>
-            </Tooltip>
+      <CardContent sx={{ pt: 0, pb: 1, px: 2 }}>
+        {/* Descripción breve */}
+        {nanny.bio && (
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ 
+              mb: 2, 
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              fontSize: '0.875rem'
+            }}
+          >
+            {nanny.bio}
+          </Typography>
+        )}
+        
+        <Stack spacing={1.5}>
+          {/* Tarifa por hora - Destacada */}
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 1,
+              p: 1.5,
+              bgcolor: 'rgba(103, 58, 183, 0.08)',
+              borderRadius: 1.5,
+              border: '1px solid rgba(103, 58, 183, 0.2)'
+            }}
+          >
+            <WorkIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                Tarifa por hora
+              </Typography>
+              <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 700, lineHeight: 1 }}>
+                ${typeof nanny.hourly_rate === 'number' ? nanny.hourly_rate.toLocaleString('es-CL') : (nanny.hourly_rate || 'N/A')} CLP
+              </Typography>
+            </Box>
           </Box>
 
-          <Typography variant="caption" color="text.secondary">
-            <strong>Experiencia:</strong>{' '}
-            <span style={{ color: 'rgba(0,0,0,0.87)' }}>{nanny.experience_years || 0} {nanny.experience_years === 1 ? 'año' : 'años'}</span>
-          </Typography>
+          {/* Información adicional */}
+          <Stack spacing={1}>
+            {/* Experiencia */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <StarIcon sx={{ fontSize: 18, color: '#f59e0b' }} />
+              <Typography variant="body2" color="text.secondary">
+                <strong>{nanny.experience_years || 0}</strong> {nanny.experience_years === 1 ? 'año' : 'años'} de experiencia
+              </Typography>
+            </Box>
 
-          {nanny.rating_avg && parseFloat(nanny.rating_avg) > 0 && (
-            <Typography variant="caption" color="text.secondary">
-              <strong>Calificación:</strong>{' '}
-              <span style={{ color: '#f59e0b', fontWeight: 700 }}>⭐ {parseFloat(nanny.rating_avg).toFixed(1)}</span>
-            </Typography>
-          )}
-        </Box>
+            {/* Calificación */}
+            {nanny.rating_avg && parseFloat(nanny.rating_avg) > 0 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  {[...Array(5)].map((_, i) => (
+                    <StarIcon 
+                      key={i} 
+                      sx={{ 
+                        fontSize: 16, 
+                        color: i < Math.round(parseFloat(nanny.rating_avg)) ? '#f59e0b' : '#e5e7eb' 
+                      }} 
+                    />
+                  ))}
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>{parseFloat(nanny.rating_avg).toFixed(1)}</strong>
+                  {nanny.total_reviews && ` (${nanny.total_reviews} ${nanny.total_reviews === 1 ? 'reseña' : 'reseñas'})`}
+                </Typography>
+              </Box>
+            )}
+
+            {/* Ubicación */}
+            {nanny.location && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <LocationOnIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                <Typography variant="body2" color="text.secondary">
+                  {nanny.location}
+                </Typography>
+              </Box>
+            )}
+
+            {/* Educación académica */}
+            {nanny.education_level && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <SchoolIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                <Typography variant="body2" color="text.secondary">
+                  {nanny.education_level}
+                </Typography>
+              </Box>
+            )}
+
+            {/* Certificaciones */}
+            {nanny.certifications && Array.isArray(nanny.certifications) && nanny.certifications.length > 0 && (
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                  Certificaciones:
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                  {nanny.certifications.slice(0, 3).map((cert, idx) => (
+                    <Chip 
+                      key={idx} 
+                      label={cert} 
+                      size="small" 
+                      sx={{ 
+                        fontSize: '0.7rem', 
+                        height: 20,
+                        bgcolor: 'rgba(16, 185, 129, 0.1)',
+                        color: '#059669',
+                        fontWeight: 600
+                      }} 
+                    />
+                  ))}
+                  {nanny.certifications.length > 3 && (
+                    <Chip 
+                      label={`+${nanny.certifications.length - 3}`} 
+                      size="small" 
+                      sx={{ fontSize: '0.7rem', height: 20 }} 
+                    />
+                  )}
+                </Box>
+              </Box>
+            )}
+
+            {/* Especialidades */}
+            {nanny.specialties && Array.isArray(nanny.specialties) && nanny.specialties.length > 0 && (
+              <Box sx={{ mt: 0.5 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                  Especialidades:
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                  {nanny.specialties.slice(0, 3).map((specialty, idx) => (
+                    <Chip 
+                      key={idx} 
+                      label={specialty} 
+                      size="small" 
+                      sx={{ 
+                        fontSize: '0.7rem', 
+                        height: 20,
+                        bgcolor: 'rgba(99, 102, 241, 0.1)',
+                        color: '#4f46e5',
+                        fontWeight: 600
+                      }} 
+                    />
+                  ))}
+                  {nanny.specialties.length > 3 && (
+                    <Chip 
+                      label={`+${nanny.specialties.length - 3}`} 
+                      size="small" 
+                      sx={{ fontSize: '0.7rem', height: 20 }} 
+                    />
+                  )}
+                </Box>
+              </Box>
+            )}
+          </Stack>
+        </Stack>
       </CardContent>
 
       <CardActions sx={{ px: 2, pb: 2 }}>
@@ -140,6 +281,12 @@ NannyCard.propTypes = {
     experience_years: PropTypes.number,
     verified: PropTypes.bool,
     rating_avg: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    total_reviews: PropTypes.number,
+    bio: PropTypes.string,
+    location: PropTypes.string,
+    education_level: PropTypes.string,
+    certifications: PropTypes.arrayOf(PropTypes.string),
+    specialties: PropTypes.arrayOf(PropTypes.string),
     profile_photo: PropTypes.string,
   }).isRequired,
   onFavorite: PropTypes.func.isRequired,
@@ -147,3 +294,4 @@ NannyCard.propTypes = {
   isFavorited: PropTypes.bool,
   isLoading: PropTypes.bool,
 };
+

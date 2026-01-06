@@ -5,22 +5,20 @@
 
 import React, { useState, useMemo, memo } from 'react';
 import PropTypes from 'prop-types';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Box,
-  IconButton,
-  TextField,
-  Stack,
-  Chip,
-  Paper,
-  CircularProgress,
-} from '@mui/material';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TablePagination from '@mui/material/TablePagination';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import TextField from '@mui/material/TextField';
+import Stack from '@mui/material/Stack';
+import Chip from '@mui/material/Chip';
+import Paper from '@mui/material/Paper';
+import CircularProgress from '@mui/material/CircularProgress';
 import { Search, Edit, Trash2, Eye } from 'lucide-react';
 
 export const DataTable = ({

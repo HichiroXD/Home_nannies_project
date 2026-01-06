@@ -161,7 +161,7 @@ export const NannyDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Calificación</p>
-                  <p className="text-3xl font-bold text-gray-800">{data.stats?.avgRating || 0.0}/5</p>
+                  <p className="text-3xl font-bold text-gray-800">{(data.stats?.avgRating || 0).toFixed(2)}/5</p>
                   <p className="text-xs text-gray-500 mt-1">Promedio</p>
                 </div>
                 <TrendingUp className="text-green-500" size={40} />

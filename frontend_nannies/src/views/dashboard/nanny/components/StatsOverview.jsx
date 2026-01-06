@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { Grid } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { StatCard, formatters } from '@/components/common';
 import { TrendingUp, Calendar, CheckCircle, Star } from 'lucide-react';
 

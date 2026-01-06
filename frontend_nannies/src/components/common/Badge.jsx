@@ -4,13 +4,11 @@
 
 import React, { memo } from 'react';
 import PropTypes from 'prop-types';
-import {
-  Chip,
-  Box,
-  Typography,
-  Stack,
-  Avatar,
-} from '@mui/material';
+import Chip from '@mui/material/Chip';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Stack from '@mui/material/Stack';
+import Avatar from '@mui/material/Avatar';
 import { X, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 
 const BadgeComponentBase = ({

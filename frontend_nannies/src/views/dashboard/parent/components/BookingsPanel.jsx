@@ -3,23 +3,21 @@
  */
 
 import React, { useState } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  Stack,
-  Typography,
-  Button,
-  Avatar,
-  Chip,
-  Grid,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Rating,
-  Divider,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Avatar from '@mui/material/Avatar';
+import Chip from '@mui/material/Chip';
+import Grid from '@mui/material/Grid';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Rating from '@mui/material/Rating';
+import Divider from '@mui/material/Divider';
 import { Calendar, Clock, Trash2, Edit, MessageSquare, Star } from 'lucide-react';
 import { formatters } from '@/components/common';
 import API from '@api/api';

@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'notifications',  # Phase 3: Notificaciones automáticas
     'academic',  # Phase 3: Validación académica
     'reports',  # Phase 3: Reportes y análisis
+    'chat',  # Sprint 4: Sistema de mensajería
 ]
 
 # Configuración REST Framework
@@ -84,6 +85,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'reports.middleware.DebugRequestMiddleware',  # 🔍 DEBUG: Middleware temporal para ver peticiones
     'core.audit_signals.AuditMiddleware',  # Middleware de auditoría
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -111,27 +113,29 @@ WSGI_APPLICATION = 'django_crud_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# SQLite para desarrollo local (activo)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+# Configuración dinámica: PostgreSQL o SQLite según entorno
+USE_POSTGRESQL = os.getenv("USE_POSTGRESQL", "False") == "True"
 
-# Configuración PostgreSQL para producción (comentada - descomentar para Railway)
-# if os.getenv("DATABASE_URL"):
-#     DATABASES = {
-#         'default': dj_database_url.parse(os.getenv("DATABASE_URL"), conn_max_age=600)
-#     }
-# else:
-#     # SQLite para desarrollo local
-#     DATABASES = {
-#         'default': {
-#             'ENGINE': 'django.db.backends.sqlite3',
-#             'NAME': BASE_DIR / 'db.sqlite3',
-#         }
-#     }
+if USE_POSTGRESQL:
+    # PostgreSQL para servidor/producción
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'home_nannies_db'),
+            'USER': os.getenv('DB_USER', 'morrigan'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
+    }
+else:
+    # SQLite para desarrollo local
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -374,3 +378,52 @@ LOGGING = {
         },
     }
 }
+
+# ==============================================================================
+# CONFIGURACIÓN DE SEGURIDAD AVANZADA
+# ==============================================================================
+
+# Seguridad de Cookies y Sesiones
+# En producción (HTTPS), activar las opciones seguras
+SESSION_COOKIE_SECURE = not DEBUG  # Solo HTTPS en producción
+SESSION_COOKIE_HTTPONLY = True  # No accesible desde JavaScript
+SESSION_COOKIE_SAMESITE = 'Lax'  # Protección contra CSRF
+SESSION_COOKIE_AGE = 1209600  # 2 semanas
+
+CSRF_COOKIE_SECURE = not DEBUG  # Solo HTTPS en producción
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Headers de Seguridad HTTP
+if not DEBUG:
+    # HSTS: Forzar HTTPS por 1 año
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Redirigir HTTP a HTTPS
+    SECURE_SSL_REDIRECT = True
+    
+    # Proxy headers (para Railway, DigitalOcean, etc)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Headers de seguridad generales (desarrollo y producción)
+SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevenir MIME sniffing
+SECURE_BROWSER_XSS_FILTER = True  # XSS protection
+X_FRAME_OPTIONS = 'DENY'  # Prevenir clickjacking
+
+# Configuración de archivos subidos
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MB
+
+# Timeout de sesión por inactividad
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# Logging de seguridad mejorado
+import logging
+logger = logging.getLogger(__name__)
+if not DEBUG:
+    logger.info("Security settings configured for PRODUCTION mode")
+else:
+    logger.info("Security settings configured for DEVELOPMENT mode")

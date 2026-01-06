@@ -6,7 +6,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.db.models import Q
-from datetime import datetime, timedelta
+from datetime import timedelta
+from django.utils import timezone
 from .audit_models import AuditLog, UserPermission
 from .audit_serializers import AuditLogSerializer, UserPermissionSerializer
 
@@ -93,7 +94,7 @@ def audit_stats_view(request):
         )
     
     # Estadísticas de los últimos 30 días
-    thirty_days_ago = datetime.now() - timedelta(days=30)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
     recent_logs = AuditLog.objects.filter(timestamp__gte=thirty_days_ago)
     
     # Contar por tipo de acción
@@ -119,7 +120,7 @@ def audit_stats_view(request):
         'recent_logs_30_days': recent_logs.count(),
         'actions_breakdown': action_counts,
         'most_active_users': list(active_users),
-        'generated_at': datetime.now().isoformat()
+        'generated_at': timezone.now().isoformat()
     }
     
     return Response(stats, status=status.HTTP_200_OK)

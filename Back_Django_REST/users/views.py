@@ -171,6 +171,9 @@ class LoginView(APIView):
             # Actualizar último IP del usuario
             user.last_login_ip = ip_address
             user.save(update_fields=['last_login_ip'])
+            
+            # Asegurar que el usuario tenga roles inicializados (para usuarios antiguos)
+            user.ensure_roles_initialized()
         except Exception as e:
             print(f"Error al registrar login exitoso: {e}")
 
@@ -234,6 +237,187 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAdminUser]
+
+# === SISTEMA DE ROL ACTIVO (SPRINT 3 PHASE 2) ===
+
+class SwitchRoleView(APIView):
+    """
+    Vista para cambiar el rol activo del usuario.
+    
+    POST:
+    - Cambia el rol activo si el usuario tiene ese rol disponible
+    - Permite a niñeras cambiar a modo padre y viceversa
+    - Retorna el nuevo rol activo y roles disponibles
+    
+    Body: {"role": "parent" | "nanny"}
+    
+    Response:
+    {
+        "message": "Rol cambiado exitosamente",
+        "active_role": "parent",
+        "available_roles": ["parent", "nanny"]
+    }
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        user = request.user
+        new_role = request.data.get('role')
+        
+        if not new_role:
+            return Response(
+                {"error": "El campo 'role' es requerido"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Asegurar que el usuario tenga roles inicializados
+        user.ensure_roles_initialized()
+        
+        # Verificar que puede cambiar a ese rol
+        if not user.can_switch_to_role(new_role):
+            return Response(
+                {
+                    "error": f"No tienes permiso para usar el rol '{new_role}'",
+                    "available_roles": user.get_available_roles()
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Cambiar el rol
+        try:
+            user.switch_active_role(new_role)
+            return Response({
+                "message": "Rol cambiado exitosamente",
+                "active_role": user.get_active_role(),
+                "available_roles": user.get_available_roles(),
+                "username": user.username
+            }, status=status.HTTP_200_OK)
+        except ValueError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+class GetAvailableRolesView(APIView):
+    """
+    Vista para obtener los roles disponibles del usuario actual.
+    
+    GET:
+    - Retorna el rol activo y todos los roles disponibles
+    
+    Response:
+    {
+        "active_role": "nanny",
+        "available_roles": ["parent", "nanny"],
+        "username": "usuario123"
+    }
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        user.ensure_roles_initialized()
+        
+        return Response({
+            "active_role": user.get_active_role(),
+            "available_roles": user.get_available_roles(),
+            "username": user.username,
+            "role": user.role  # Rol principal para compatibilidad
+        }, status=status.HTTP_200_OK)
+
+class AddRoleView(APIView):
+    """
+    Vista para que el usuario agregue un rol adicional a su cuenta.
+    
+    POST:
+    - Agrega un nuevo rol a los roles disponibles del usuario
+    - Crea el perfil correspondiente si no existe
+    - Solo permite agregar 'parent' a niñeras y viceversa
+    
+    Body: {"role": "parent" | "nanny"}
+    
+    Response:
+    {
+        "message": "Rol agregado exitosamente",
+        "available_roles": ["parent", "nanny"],
+        "profile_created": true
+    }
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        from parents.models import ParentProfile
+        from nannies.models import NannyProfile
+        
+        user = request.user
+        new_role = request.data.get('role')
+        
+        # Validar que el rol sea válido
+        if new_role not in ['parent', 'nanny']:
+            return Response(
+                {"error": "Rol inválido. Solo se permite 'parent' o 'nanny'"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # No permitir agregar 'admin'
+        if new_role == 'admin':
+            return Response(
+                {"error": "No puedes agregar el rol de administrador"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Inicializar roles si no existen
+        user.ensure_roles_initialized()
+        
+        # Verificar si ya tiene el rol
+        if new_role in user.get_available_roles():
+            return Response(
+                {
+                    "message": f"Ya tienes el rol '{new_role}'",
+                    "available_roles": user.get_available_roles()
+                },
+                status=status.HTTP_200_OK
+            )
+        
+        # Agregar el rol
+        user.roles.append(new_role)
+        user.save()
+        
+        profile_created = False
+        
+        # Crear el perfil correspondiente si no existe
+        try:
+            if new_role == 'parent':
+                if not hasattr(user, 'parent_profile'):
+                    ParentProfile.objects.create(user=user)
+                    profile_created = True
+                    logger.info('ParentProfile created', {'username': user.username})
+            elif new_role == 'nanny':
+                if not hasattr(user, 'nanny_profile'):
+                    NannyProfile.objects.create(user=user)
+                    profile_created = True
+                    logger.info('NannyProfile created', {'username': user.username})
+        except Exception as e:
+            logger.error('Error creating profile', {'error': str(e)})
+            # Revertir cambio en roles
+            user.roles.remove(new_role)
+            user.save()
+            return Response(
+                {"error": f"Error al crear perfil: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        logger.info('Role added successfully', {
+            'username': user.username,
+            'new_role': new_role,
+            'available_roles': user.get_available_roles()
+        })
+        
+        return Response({
+            "message": f"Rol '{new_role}' agregado exitosamente",
+            "available_roles": user.get_available_roles(),
+            "profile_created": profile_created
+        }, status=status.HTTP_201_CREATED)
 
 # Vista para verificar el email del usuario
 class VerifyEmailView(APIView):
@@ -517,7 +701,8 @@ def admin_dashboard(request):
             )
         
         from django.db.models import Count, Q
-        from datetime import datetime, timedelta
+        from datetime import timedelta
+        from django.utils import timezone
         
         # Estadísticas generales
         total_users = User.objects.count()
@@ -574,8 +759,8 @@ def admin_dashboard(request):
         # Reportes mensuales (últimos 6 meses)
         reports = []
         for i in range(5, -1, -1):
-            date = datetime.now() - timedelta(days=30*i)
-            month_start = date.replace(day=1)
+            date = timezone.now() - timedelta(days=30*i)
+            month_start = date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
             
             bookings_count = Booking.objects.filter(

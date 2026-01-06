@@ -5,14 +5,12 @@
 
 import React, { memo } from 'react';
 import PropTypes from 'prop-types';
-import {
-  Card,
-  CardContent,
-  Box,
-  Typography,
-  LinearProgress,
-  Stack,
-} from '@mui/material';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import LinearProgress from '@mui/material/LinearProgress';
+import Stack from '@mui/material/Stack';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
 export const StatCard = ({

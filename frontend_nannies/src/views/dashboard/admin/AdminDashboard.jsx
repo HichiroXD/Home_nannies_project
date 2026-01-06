@@ -4,16 +4,14 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Container,
-  Stack,
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  Alert as MuiAlert,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import MuiAlert from '@mui/material/Alert';
 import { Plus, Users, TrendingUp, AlertCircle, BarChart3, Settings, MessageSquare } from 'lucide-react';
 import {
   TabsComponent,

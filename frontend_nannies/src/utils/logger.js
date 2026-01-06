@@ -5,30 +5,51 @@
  * 
  * Características:
  * - Solo loguea en development
- * - Integración futura con Sentry/Datadog
+ * - Integración con servicios externos (Sentry, etc.)
  * - Niveles: error, warn, info, debug
  * - Context adicional para debugging
+ * - Performance monitoring
  */
 
 class Logger {
   constructor() {
     this.isDev = import.meta.env.MODE === 'development';
     this.sentry = null; // Placeholder para integración futura
+    this.isEnabled = import.meta.env.VITE_ENABLE_LOGGING !== 'false';
+  }
+
+  /**
+   * Obtiene timestamp formateado
+   */
+  _getTimestamp() {
+    return new Date().toISOString();
   }
 
   /**
    * Loguea errores críticos
    * @param {string} message - Mensaje descriptivo del error
-   * @param {Error} error - Objeto Error
+   * @param {Error|Object} error - Objeto Error o contexto
    * @param {Object} context - Context adicional (userId, action, etc.)
    */
-  error(message, error, context = {}) {
+  error(message, error = {}, context = {}) {
+    if (!this.isEnabled) return;
+
+    const logData = {
+      timestamp: this._getTimestamp(),
+      message,
+      error: error?.message || error,
+      stack: error?.stack,
+      ...context,
+    };
+
     if (this.isDev) {
-      console.error(`[ERROR] ${message}`, error, context);
-    } else if (this.sentry) {
-      // En producción: enviar a Sentry
-      this.sentry.captureException(error, {
-        extra: { message, ...context }
+      console.error(`[ERROR] ${message}`, logData);
+    }
+
+    // En producción: enviar a Sentry u otro servicio
+    if (this.sentry) {
+      this.sentry.captureException(error instanceof Error ? error : new Error(message), {
+        extra: logData
       });
     }
   }
@@ -39,9 +60,9 @@ class Logger {
    * @param {Object} context - Context adicional
    */
   warn(message, context = {}) {
-    if (this.isDev) {
-      console.warn(`[WARN] ${message}`, context);
-    }
+    if (!this.isEnabled || !this.isDev) return;
+    
+    console.warn(`[WARN] [${this._getTimestamp()}] ${message}`, context);
   }
 
   /**
@@ -50,9 +71,9 @@ class Logger {
    * @param {Object} context - Context adicional
    */
   info(message, context = {}) {
-    if (this.isDev) {
-      console.log(`[INFO] ${message}`, context);
-    }
+    if (!this.isEnabled || !this.isDev) return;
+    
+    console.log(`[INFO] [${this._getTimestamp()}] ${message}`, context);
   }
 
   /**
@@ -61,9 +82,40 @@ class Logger {
    * @param {*} data - Datos a inspeccionar
    */
   debug(message, data = {}) {
-    if (this.isDev) {
-      console.log(`[DEBUG] ${message}`, data);
+    if (!this.isEnabled || !this.isDev) return;
+    
+    console.log(`[DEBUG] [${this._getTimestamp()}] ${message}`, data);
+  }
+
+  /**
+   * Registra inicio de operación para medir performance
+   * @param {string} label - Etiqueta de la operación
+   * @returns {Function} - Función para finalizar y registrar tiempo
+   */
+  time(label) {
+    if (!this.isEnabled || !this.isDev) return () => {};
+    
+    const startTime = performance.now();
+    return () => {
+      const duration = performance.now() - startTime;
+      console.log(`[PERF] ${label}: ${duration.toFixed(2)}ms`);
+    };
+  }
+
+  /**
+   * Agrupa logs relacionados
+   * @param {string} groupName - Nombre del grupo
+   * @param {Function} callback - Función con logs a agrupar
+   */
+  group(groupName, callback) {
+    if (!this.isEnabled || !this.isDev) {
+      callback();
+      return;
     }
+
+    console.group(groupName);
+    callback();
+    console.groupEnd();
   }
 
   /**
@@ -72,6 +124,7 @@ class Logger {
    */
   initSentry(sentryClient) {
     this.sentry = sentryClient;
+    this.info('Sentry initialized');
   }
 }
 

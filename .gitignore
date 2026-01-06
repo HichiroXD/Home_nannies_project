@@ -2,16 +2,18 @@
 *.pyc
 __pycache__/
 db.sqlite3
+# Archivos .env (CRÍTICO - NO SUBIR)
 .env
+.env.backup
+*.env
+# IMPORTANTE: Permitir templates de ejemplo
+!.env.example
+!.env.local
+!.env.server
+!.env.production.example
 *.log
 /staticfiles/
 media/
-.env.example
-.env.production.example
-load_programs.py
-migrate_to_postgresql.py
-profile_startup.py
-setup_admin.py
 *.pyo
 *.pyd
 *.sqlite3
@@ -23,6 +25,14 @@ staticfiles/
 Back_Django_REST/staticfiles/
 Back_Django_REST/media/
 Back_Django_REST/logs/
+Back_Django_REST/temp_ocr/
+Back_Django_REST/_scripts_historicos/
+Back_Django_REST/backups/
+!Back_Django_REST/backups/README.md
+
+# Documentación local (no subir a producción)
+DOCUMENTACION/
+logs/
 
 # Entorno virtual
 venv/

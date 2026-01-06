@@ -5,13 +5,11 @@
 
 import React, { memo } from 'react';
 import PropTypes from 'prop-types';
-import {
-  Skeleton,
-  Box,
-  Stack,
-  Card,
-  CardContent,
-} from '@mui/material';
+import Skeleton from '@mui/material/Skeleton';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
 
 export const SkeletonLoader = ({ variant = 'text', count = 1, ...props }) => {
   return (

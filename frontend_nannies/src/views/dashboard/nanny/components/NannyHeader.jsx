@@ -42,7 +42,7 @@ export const NannyHeader = ({ nanny = {} }) => {
               ))}
             </div>
             <span className="text-sm opacity-90">
-              {rating}/5
+              {typeof rating === 'number' ? rating.toFixed(2) : rating}/5
             </span>
           </div>
           <p className="text-sm opacity-80 mt-1">

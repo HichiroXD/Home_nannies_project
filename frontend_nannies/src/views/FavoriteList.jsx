@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getFavorites, deleteFavorite } from "@api/favoriteApi";
+import { useApiData } from "@hooks";
 import {
   FavoriteCard,
   FavoriteListLayout,
@@ -9,28 +10,22 @@ import { MainLayout, Loader, PageContainer, AlertToast } from "@components/layou
 
 export default function FavoriteList() {
   const navigate = useNavigate();
-  const [favorites, setFavorites] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [alert, setAlert] = useState({ visible: false, message: "", type: "info" });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getFavorites();
-        setFavorites(data);
-      } catch (error) {
-        console.error("Error al cargar favoritos:", error);
+  // Usar el hook genérico para cargar favoritos
+  const { data: favorites, loading: isLoading, setData: setFavorites } = useApiData(
+    getFavorites,
+    [],
+    {
+      onError: (error) => {
         setAlert({
           visible: true,
           message: "Error al cargar favoritos.",
           type: "error",
         });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+      },
+    }
+  );
 
   const handleDelete = async (favoriteId) => {
     try {

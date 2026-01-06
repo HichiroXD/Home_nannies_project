@@ -27,32 +27,63 @@ import logger from '@/utils/logger';
  */
 export const useUserSync = ({ intervalMs = 5 * 60 * 1000, enabled = true } = {}) => {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const accessToken = useAuthStore(state => state.accessToken);
   const refreshUserData = useAuthStore(state => state.refreshUserData);
 
   const syncUser = useCallback(async () => {
-    if (!isAuthenticated) return;
+    // Verificar token en localStorage directamente (fuente de verdad)
+    const localToken = localStorage.getItem('accessToken');
+    
+    // Verificar autenticación Y token antes de intentar sincronizar
+    if (!isAuthenticated || !accessToken || !localToken) {
+      logger.debug('Skipping user sync - not authenticated or no token');
+      return;
+    }
     
     try {
       await refreshUserData();
       logger.info('User data synchronized');
     } catch (error) {
-      logger.error('Failed to sync user data', error);
+      // Solo loguear como warning si es error de token, error completo para otros casos
+      if (error.message?.includes('Token')) {
+        logger.warn('Sync skipped - token issue', error.message);
+      } else {
+        logger.error('Failed to sync user data', error);
+      }
     }
-  }, [isAuthenticated, refreshUserData]);
+  }, [isAuthenticated, accessToken, refreshUserData]);
 
   useEffect(() => {
-    if (!enabled || !isAuthenticated) return;
+    // Verificar token en localStorage directamente
+    const localToken = localStorage.getItem('accessToken');
+    
+    // No hacer nada si está deshabilitado, no autenticado, o no hay token
+    if (!enabled || !isAuthenticated || !accessToken || !localToken) return;
 
     // Sincronizar inmediatamente al montar
     syncUser();
 
     // Configurar sincronización periódica
-    const intervalId = setInterval(syncUser, intervalMs);
+    const intervalId = setInterval(() => {
+      // Verificar estado actual y token en localStorage antes de cada sync
+      const currentState = useAuthStore.getState();
+      const currentLocalToken = localStorage.getItem('accessToken');
+      
+      if (currentState.isAuthenticated && currentState.accessToken && currentLocalToken) {
+        syncUser();
+      }
+    }, intervalMs);
 
     // Sincronizar cuando la ventana recupera el foco
     const handleFocus = () => {
-      logger.info('Window focused, syncing user data');
-      syncUser();
+      // Verificar autenticación y token antes de sincronizar
+      const currentState = useAuthStore.getState();
+      const currentLocalToken = localStorage.getItem('accessToken');
+      
+      if (currentState.isAuthenticated && currentState.accessToken && currentLocalToken) {
+        logger.info('Window focused, syncing user data');
+        syncUser();
+      }
     };
     window.addEventListener('focus', handleFocus);
 
@@ -61,7 +92,7 @@ export const useUserSync = ({ intervalMs = 5 * 60 * 1000, enabled = true } = {})
       clearInterval(intervalId);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [enabled, isAuthenticated, syncUser, intervalMs]);
+  }, [enabled, isAuthenticated, accessToken, intervalMs]); // Removido syncUser de dependencias
 
   // Retornar función manual de sincronización
   return { syncUser };

@@ -6,7 +6,7 @@ import { Plus, Trash2, Clock, ArrowLeft, Edit2, X, Check, Copy, RefreshCw } from
 import { getAvailabilities, createAvailability, deleteAvailability, updateAvailability } from "@api/availabilityApi";
 import { AlertToast } from "@components/common";
 import { Loader, PageHeader, MainLayout } from "@components/layout";
-import { AvailabilityForm, AvailabilityCalendar } from "@components/availability";
+import { AvailabilityForm } from "@components/availability";
 
 export default function AvailabilityManagement() {
   const navigate = useNavigate();

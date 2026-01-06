@@ -5,13 +5,11 @@
 
 import React, { useState, memo } from 'react';
 import PropTypes from 'prop-types';
-import {
-  Box,
-  Tabs as MuiTabs,
-  Tab,
-  Typography,
-  Stack,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import MuiTabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Typography from '@mui/material/Typography';
+import Stack from '@mui/material/Stack';
 
 // Panel content wrapper - Custom implementation (not from MUI)
 const TabPanel = ({ children, value, index, ...other }) => (

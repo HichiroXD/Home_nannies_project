@@ -1,11 +1,12 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { NotificationCenter, UserProfileMenu } from "@components/layout";
+import { NotificationCenter, UserProfileMenu, RoleSwitcher } from "@components/layout";
+import useAuthStore from '@/stores/useAuthStore';
 
 export default function HeaderLanding({ isLoggedIn, username }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const rawRole = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
-  const role = rawRole ? String(rawRole).toLowerCase() : null;
+  // Obtener role directamente del store para evitar desincronización
+  const role = useAuthStore(state => state.role);
   
   // Detectar si estamos en páginas de autenticación
   const isAuthPage = ['/login/', '/register/', '/forgot-password/', '/reset-password/'].some(
@@ -49,28 +50,55 @@ export default function HeaderLanding({ isLoggedIn, username }) {
               </button>
             )}
             
-            <button
-              onClick={() => navigate("/catalog")}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
-            >
-              Catálogo
-            </button>
-            <button
-              onClick={() => navigate("/favorites")}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
-            >
-              Favoritos
-            </button>
+            {/* Solo mostrar Catálogo y Favoritos para padres */}
+            {role === 'parent' && (
+              <>
+                <button
+                  onClick={() => navigate("/catalog")}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+                >
+                  Catálogo
+                </button>
+                <button
+                  onClick={() => navigate("/favorites")}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+                >
+                  Favoritos
+                </button>
+              </>
+            )}
+            
+            {/* Mensajes para padres y niñeras */}
+            {(role === 'parent' || role === 'nanny' || role?.includes('niñ')) && (
+              <button
+                onClick={() => navigate("/chat")}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+              >
+                Mensajes
+              </button>
+            )}
+            
             <button
               onClick={() => navigate("/bookings")}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
             >
               Mis Reservas
             </button>
+            {(role && (role.includes("nanny") || role.includes("niñ"))) && (
+              <button
+                onClick={() => navigate("/reviews/nanny/")}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-pink-600 transition-colors"
+              >
+                Mis Reseñas
+              </button>
+            )}
           </>
         )}
         {isLoggedIn ? (
           <div className="flex items-center space-x-4 border-l border-gray-200 pl-4">
+            {/* Selector de Rol (si tiene múltiples roles) */}
+            <RoleSwitcher />
+            
             {/* Centro de Notificaciones */}
             <NotificationCenter />
             

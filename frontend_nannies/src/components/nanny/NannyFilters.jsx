@@ -1,15 +1,13 @@
 import React from 'react';
-import {
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Checkbox,
-  FormControlLabel,
-  Grid,
-  Typography,
-  Box,
-} from '@mui/material';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Grid from '@mui/material/Grid';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
 
 export default function NannyFilters({ filters, onChange, onSubmit }) {
   const handleMinExperienceChange = (e) => {

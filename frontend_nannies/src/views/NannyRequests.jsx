@@ -1,35 +1,33 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { getBookingsByNanny, acceptBooking, rejectBooking } from "@api/bookingApi";
+import { useApiData } from "@/hooks";
 import { AlertToast } from "@components/common";
 import { Loader, PageHeader, EmptyState } from "@components/layout";
 import { RequestCard } from "@components/bookings";
 
 export default function NannyRequests() {
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
 
-  useEffect(() => {
-    loadRequests();
-  }, []);
-
-  const loadRequests = async () => {
-    try {
-      setLoading(true);
-      const data = await getBookingsByNanny();
-      // Filtrar solo solicitudes pendientes
-      const pendingBookings = data.filter((b) => b.status === "pending");
-      setBookings(pendingBookings || []);
-    } catch (error) {
-      setAlert({
-        type: "error",
-        message: "Error al cargar solicitudes",
-      });
-      console.error(error);
-    } finally {
-      setLoading(false);
+  // Cargar solicitudes con useApiData
+  const { 
+    data: allBookings, 
+    loading, 
+    refetch: loadRequests 
+  } = useApiData(
+    getBookingsByNanny,
+    [],
+    {
+      onError: () => {
+        setAlert({
+          type: "error",
+          message: "Error al cargar solicitudes",
+        });
+      },
     }
-  };
+  );
+
+  // Filtrar solo solicitudes pendientes
+  const bookings = (allBookings || []).filter((b) => b.status === "pending");
 
   const handleAccept = async (bookingId) => {
     try {

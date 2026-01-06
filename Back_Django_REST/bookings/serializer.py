@@ -131,6 +131,24 @@ class BookingSerializer(serializers.ModelSerializer):
                             'notes': child.notes,
                         } for child in children]
         
+        # Verificar si el padre ya dejó una reseña para esta niñera
+        # Nota: El modelo Review no tiene relación directa con Booking
+        # Por ahora verificamos si existe alguna reseña del padre para la niñera
+        if instance.status == 'completed':
+            from reviews.models import Review
+            try:
+                nanny_profile = instance.nanny.nanny_profile
+                has_review = Review.objects.filter(
+                    parent=instance.parent,
+                    nanny=nanny_profile
+                ).exists()
+                rep['has_review'] = has_review
+            except AttributeError:
+                # El usuario niñera no tiene perfil de niñera
+                rep['has_review'] = False
+        else:
+            rep['has_review'] = False
+        
         return rep
 
 
@@ -147,9 +165,15 @@ class AvailabilitySerializer(serializers.ModelSerializer):
     def get_is_booked(self, obj):
         """Verifica si esta disponibilidad tiene una reserva confirmada o pendiente"""
         from datetime import datetime
-        # Convertir day y times a datetime para comparar
+        # Convertir day y times a datetime con timezone
         start_datetime = datetime.combine(obj.day, obj.start_time)
         end_datetime = datetime.combine(obj.day, obj.end_time)
+        
+        # Hacer timezone-aware si es necesario
+        if timezone.is_naive(start_datetime):
+            start_datetime = timezone.make_aware(start_datetime)
+        if timezone.is_naive(end_datetime):
+            end_datetime = timezone.make_aware(end_datetime)
         
         # Buscar reservas que se solapen con esta disponibilidad
         bookings = Booking.objects.filter(
@@ -169,6 +193,12 @@ class AvailabilitySerializer(serializers.ModelSerializer):
             
         start_datetime = datetime.combine(obj.day, obj.start_time)
         end_datetime = datetime.combine(obj.day, obj.end_time)
+        
+        # Hacer timezone-aware si es necesario
+        if timezone.is_naive(start_datetime):
+            start_datetime = timezone.make_aware(start_datetime)
+        if timezone.is_naive(end_datetime):
+            end_datetime = timezone.make_aware(end_datetime)
         
         bookings = Booking.objects.filter(
             nanny=obj.nanny,

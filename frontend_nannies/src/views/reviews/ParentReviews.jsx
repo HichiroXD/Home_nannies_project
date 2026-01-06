@@ -4,35 +4,32 @@
  * Permite eliminar reseñas
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MainLayout, PageHeader, Loader, AlertToast } from '@/components/layout';
+import { useApiData } from '@/hooks';
 import { Star, Trash2, Calendar, MessageSquare } from 'lucide-react';
 import API from '@api/api';
 
 export const ParentReviews = () => {
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(null);
 
-  useEffect(() => {
-    fetchReviews();
-  }, []);
-
-  const fetchReviews = async () => {
-    try {
-      setLoading(true);
-      const response = await API.get('/reviews/');
-      setReviews(response.data);
-      setError('');
-    } catch (err) {
-      console.error('Error al cargar reseñas:', err);
-      setError('No se pudieron cargar las reseñas');
-    } finally {
-      setLoading(false);
+  // Cargar reseñas con useApiData
+  const { 
+    data: reviews, 
+    loading, 
+    setData: setReviews,
+    refetch: fetchReviews 
+  } = useApiData(
+    async () => await API.get('/reviews/'),
+    [],
+    {
+      onError: () => {
+        setError('No se pudieron cargar las reseñas');
+      },
     }
-  };
+  );
 
   const handleDelete = async (reviewId) => {
     if (!window.confirm('¿Estás seguro de eliminar esta reseña?')) {
@@ -43,7 +40,7 @@ export const ParentReviews = () => {
       setDeleteLoading(reviewId);
       await API.delete(`/reviews/${reviewId}/`);
       setSuccessMessage('Reseña eliminada exitosamente');
-      setReviews(reviews.filter(r => r.id !== reviewId));
+      setReviews((reviews || []).filter(r => r.id !== reviewId));
     } catch (err) {
       console.error('Error al eliminar reseña:', err);
       setError('No se pudo eliminar la reseña');
