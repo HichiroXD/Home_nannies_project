@@ -71,7 +71,7 @@ def nanny_dashboard(request):
     """Endpoint para obtener datos del dashboard de la niñera."""
     try:
         # Verificar que el usuario tiene rol de niñera
-        if request.user.role != 'nanny':
+        if request.user.get_active_role() != 'nanny':
             return Response(
                 {'error': 'Solo las niñeras pueden acceder a este dashboard'},
                 status=status.HTTP_403_FORBIDDEN
@@ -245,7 +245,7 @@ def nanny_profile(request):
     """
     try:
         # Verificar que el usuario tiene rol de niñera
-        if request.user.role != 'nanny':
+        if request.user.get_active_role() != 'nanny':
             return Response(
                 {'error': 'Solo las niñeras pueden acceder a este perfil'},
                 status=status.HTTP_403_FORBIDDEN

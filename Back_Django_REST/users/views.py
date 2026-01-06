@@ -19,6 +19,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 from .serializer import RegisterSerializer, UserSerializer, UserListSerializer, LoginSerializer
 from .tokens import account_activation_token
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # Rate limiting classes para proteger endpoints sensibles
@@ -182,7 +185,9 @@ class LoginView(APIView):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
             "username": user.username,
-            "role": user.role
+            "role": user.get_active_role(),  # Usar rol activo
+            "active_role": user.get_active_role(),
+            "available_roles": user.get_available_roles()
         })
     
 # Perfil del usuario autenticado
@@ -264,6 +269,13 @@ class SwitchRoleView(APIView):
         user = request.user
         new_role = request.data.get('role')
         
+        logger.info('Switch role request', {
+            'username': user.username,
+            'current_role': user.get_active_role(),
+            'current_available_roles': user.get_available_roles(),
+            'requested_role': new_role
+        })
+        
         if not new_role:
             return Response(
                 {"error": "El campo 'role' es requerido"},
@@ -275,6 +287,11 @@ class SwitchRoleView(APIView):
         
         # Verificar que puede cambiar a ese rol
         if not user.can_switch_to_role(new_role):
+            logger.warning('Switch role denied', {
+                'username': user.username,
+                'requested_role': new_role,
+                'available_roles': user.get_available_roles()
+            })
             return Response(
                 {
                     "error": f"No tienes permiso para usar el rol '{new_role}'",
@@ -286,13 +303,24 @@ class SwitchRoleView(APIView):
         # Cambiar el rol
         try:
             user.switch_active_role(new_role)
-            return Response({
+            
+            response_data = {
                 "message": "Rol cambiado exitosamente",
                 "active_role": user.get_active_role(),
                 "available_roles": user.get_available_roles(),
                 "username": user.username
-            }, status=status.HTTP_200_OK)
+            }
+            
+            logger.info('Switch role successful', {
+                'username': user.username,
+                'new_active_role': user.get_active_role(),
+                'user_role_field': user.role,
+                'response': response_data
+            })
+            
+            return Response(response_data, status=status.HTTP_200_OK)
         except ValueError as e:
+            logger.error('Switch role error', {'error': str(e)})
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST

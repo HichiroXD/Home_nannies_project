@@ -21,7 +21,7 @@ def login_history(request):
     
     # Si se proporciona user_id, verificar que sea admin
     if user_id:
-        if not request.user.is_staff and request.user.role != 'admin':
+        if not request.user.is_staff and request.user.get_active_role() != 'admin':
             return Response(
                 {'error': 'No tienes permisos para ver el historial de otros usuarios'},
                 status=status.HTTP_403_FORBIDDEN

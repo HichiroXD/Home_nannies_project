@@ -232,11 +232,20 @@ class User(AbstractUser):
         return role in available_roles and role in dict(self.ROLE_CHOICES)
     
     def switch_active_role(self, role):
-        """Cambia el rol activo del usuario"""
+        """Cambia el rol activo del usuario y sincroniza el campo role para compatibilidad"""
         if not self.can_switch_to_role(role):
             raise ValueError(f"No tienes permiso para usar el rol '{role}'")
+        
+        old_role = self.active_role or self.role
         self.active_role = role
-        self.save(update_fields=['active_role'])
+        self.role = role  # Sincronizar role principal para compatibilidad con verificaciones existentes
+        self.save(update_fields=['active_role', 'role'])
+        
+        # Log para debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"User {self.username} switched role from {old_role} to {role}")
+        
         return True
     
     def get_active_role(self):

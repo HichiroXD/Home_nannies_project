@@ -29,7 +29,7 @@ def audit_logs_view(request):
     """
     
     # Verificar permisos
-    if request.user.role != 'admin':
+    if request.user.get_active_role() != 'admin':
         # Usuarios no-admin solo ven sus propios logs
         logs = AuditLog.objects.filter(user=request.user)
     else:
@@ -87,7 +87,7 @@ def audit_stats_view(request):
     Obtiene estadísticas de auditoría.
     Solo para administradores.
     """
-    if request.user.role != 'admin':
+    if request.user.get_active_role() != 'admin':
         return Response(
             {'error': 'No tienes permisos para ver estadísticas'},
             status=status.HTTP_403_FORBIDDEN
@@ -201,7 +201,7 @@ def grant_permission_view(request):
     Otorga un permiso personalizado a un usuario.
     Solo administradores pueden otorgar permisos.
     """
-    if request.user.role != 'admin':
+    if request.user.get_active_role() != 'admin':
         return Response(
             {'error': 'Solo administradores pueden otorgar permisos'},
             status=status.HTTP_403_FORBIDDEN

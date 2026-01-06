@@ -59,8 +59,10 @@ class RoleBasedQuerysetMixin:
         
         user = self.request.user
         
-        # Aplicar filtros según rol
-        if user.role == "parent":
+        # Aplicar filtros según rol activo
+        active_role = user.get_active_role()
+        
+        if active_role == "parent":
             if not self.parent_filter_field:
                 raise PermissionDenied(
                     f"{self.__class__.__name__} debe definir 'parent_filter_field'"
@@ -68,7 +70,7 @@ class RoleBasedQuerysetMixin:
             filter_kwargs = {self.parent_filter_field: user}
             queryset = queryset.filter(**filter_kwargs)
             
-        elif user.role == "nanny":
+        elif active_role == "nanny":
             if not self.nanny_filter_field:
                 raise PermissionDenied(
                     f"{self.__class__.__name__} debe definir 'nanny_filter_field'"
@@ -126,8 +128,10 @@ class RoleBasedQuerysetWithNestedMixin(RoleBasedQuerysetMixin):
         
         user = self.request.user
         
-        # Aplicar filtros según rol
-        if user.role == "parent":
+        # Aplicar filtros según rol activo
+        active_role = user.get_active_role()
+        
+        if active_role == "parent":
             if not self.parent_filter_field:
                 raise PermissionDenied(
                     f"{self.__class__.__name__} debe definir 'parent_filter_field'"
@@ -135,7 +139,7 @@ class RoleBasedQuerysetWithNestedMixin(RoleBasedQuerysetMixin):
             filter_kwargs = {self.parent_filter_field: user}
             queryset = queryset.filter(**filter_kwargs)
             
-        elif user.role == "nanny":
+        elif active_role == "nanny":
             # Usar campo nested si está definido
             field = self.nanny_nested_field or self.nanny_filter_field
             if not field:

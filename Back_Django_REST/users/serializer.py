@@ -3,10 +3,19 @@ from .models import User
 from django.contrib.auth.password_validation import validate_password
 
 class UserSerializer(serializers.ModelSerializer):
+    active_role = serializers.SerializerMethodField()
+    available_roles = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
-        fields = ["id", "username", "email", "role", "is_verified"]
-        read_only_fields = ["id", "is_verified"]
+        fields = ["id", "username", "email", "role", "active_role", "available_roles", "is_verified"]
+        read_only_fields = ["id", "is_verified", "active_role", "available_roles"]
+    
+    def get_active_role(self, obj):
+        return obj.get_active_role()
+    
+    def get_available_roles(self, obj):
+        return obj.get_available_roles()
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()

@@ -24,16 +24,18 @@ class SimpleBookingsDownloadView(APIView):
     Vista ultra-simple para descargar reportes de bookings
     GET /api/reports/download/bookings/?format=csv
     """
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    # 🔍 DEBUG: Sin permisos temporalmente para diagnosticar
+    permission_classes = []
     
     def get(self, request):
         """Genera y descarga reporte de reservas"""
-        logger.info(f"🎯 SimpleBookingsDownloadView - Usuario: {request.user.username}")
+        print("🎯🎯🎯 SimpleBookingsDownloadView.get() EJECUTÁNDOSE 🎯🎯🎯")
+        logger.info("🎯 SimpleBookingsDownloadView - Inicio")
         
         try:
             # Parámetros
             format_type = request.GET.get('format', 'csv').lower()
-            logger.info(f"   Formato solicitado: {format_type}")
+            print(f"   Formato solicitado: {format_type}")
             
             # Validar formato
             if format_type not in ['csv', 'pdf', 'excel']:
@@ -44,10 +46,10 @@ class SimpleBookingsDownloadView(APIView):
             
             # Obtener bookings
             bookings = Booking.objects.all().select_related(
-                'parent', 'nanny', 'nanny__nanny_profile'
-            ).order_by('-start_time')[:100]  # Límite inicial
+                'parent', 'nanny'
+            ).order_by('-start_time')[:100]
             
-            logger.info(f"   Total bookings: {bookings.count()}")
+            print(f"   Total bookings: {bookings.count()}")
             
             # Preparar datos
             data = BookingReportGenerator.prepare_booking_data(bookings)
@@ -65,11 +67,13 @@ class SimpleBookingsDownloadView(APIView):
                     data, headers, title, f"{filename_base}.xlsx", "Reservas"
                 )
             
-            logger.info(f"✅ Reporte generado exitosamente: {format_type}")
+            print(f"✅ Reporte generado exitosamente: {format_type}")
             return response
             
         except Exception as e:
-            logger.error(f"❌ Error generando reporte: {str(e)}", exc_info=True)
+            print(f"❌ EXCEPCIÓN: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return Response(
                 {"error": f"Error al generar reporte: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

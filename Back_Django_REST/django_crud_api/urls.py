@@ -24,6 +24,13 @@ from rest_framework_simplejwt.views import (
 )
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
+# Import para descargas de reportes
+from reports.report_downloads import (
+    download_bookings_report,
+    download_users_report, 
+    download_payments_report
+)
+
 urlpatterns = [
     path('admin/', admin.site.urls),
 
@@ -71,6 +78,11 @@ urlpatterns = [
 
     # Mensajería - Sprint 4
     path('api/chat/', include('chat.urls')),
+
+    # ============ DESCARGAS DE REPORTES ============
+    path('api/downloads/bookings/', download_bookings_report, name='download_bookings'),
+    path('api/downloads/users/', download_users_report, name='download_users'),
+    path('api/downloads/payments/', download_payments_report, name='download_payments'),
 
 ]
 

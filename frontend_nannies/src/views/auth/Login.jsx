@@ -52,10 +52,12 @@ export default function Login() {
         username: data.username,
         access: data.access,
         refresh: data.refresh,
-        role: data.role
+        role: data.role,
+        active_role: data.active_role,
+        available_roles: data.available_roles
       });
       
-      logger.info('Login exitoso', { username: data.username, role: data.role });
+      logger.info('Login exitoso', { username: data.username, role: data.role, activeRole: data.active_role });
       navigate("/catalog");
     } catch (err) {
       logger.error("Error en login", { error: err.message, status: err.response?.status });
