@@ -39,6 +39,18 @@ export const chatApi = {
   getUnreadCount: async () => {
     const response = await API.get('/chat/unread-count/');
     return response.data;
+  },
+
+  /**
+   * Obtiene o crea una conversación con otro usuario
+   * @param {number} otherUserId - ID del otro usuario
+   * @returns {Promise<{conversation_id: number, created: boolean, conversation: object}>}
+   */
+  getOrCreateConversation: async (otherUserId) => {
+    const response = await API.post('/chat/conversations/get-or-create/', {
+      other_user_id: otherUserId
+    });
+    return response.data;
   }
 };
 

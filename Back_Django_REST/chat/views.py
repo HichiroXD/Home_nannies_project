@@ -103,3 +103,75 @@ def unread_count(request):
     user = request.user
     count = Message.objects.filter(conversation__in=Conversation.objects.filter(Q(parent=user) | Q(nanny=user)), read=False).exclude(sender=user).count()
     return Response({'unread_count': count})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def get_or_create_conversation(request):
+    """
+    Obtiene o crea una conversación entre el usuario actual y otro usuario.
+    Útil para iniciar conversaciones desde el catálogo de niñeras.
+    
+    Body: { "other_user_id": <id> }
+    
+    Returns:
+    - conversation_id: ID de la conversación
+    - created: true si se creó nueva, false si ya existía
+    - other_user: información del otro usuario
+    """
+    other_user_id = request.data.get('other_user_id')
+    
+    if not other_user_id:
+        return Response(
+            {'error': 'other_user_id es requerido'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        other_user = User.objects.get(id=other_user_id)
+    except User.DoesNotExist:
+        return Response(
+            {'error': 'Usuario no encontrado'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    current_user = request.user
+    
+    # Validar que no sea el mismo usuario
+    if current_user.id == other_user.id:
+        return Response(
+            {'error': 'No puedes crear una conversación contigo mismo'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Obtener roles
+    current_role = current_user.get_active_role()
+    other_role = other_user.get_active_role()
+    
+    # Validar que sea comunicación parent-nanny
+    if not ((current_role == 'parent' and other_role == 'nanny') or 
+            (current_role == 'nanny' and other_role == 'parent')):
+        return Response({
+            'error': f'Solo puedes crear conversaciones entre padres y niñeras. Tu rol: {current_role}, otro usuario: {other_role}'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Determinar parent y nanny
+    if current_role == 'parent':
+        parent, nanny = current_user, other_user
+    else:
+        parent, nanny = other_user, current_user
+    
+    # Obtener o crear conversación
+    conversation, created = Conversation.objects.get_or_create(
+        parent=parent,
+        nanny=nanny
+    )
+    
+    # Serializar y devolver
+    serializer = ConversationSerializer(conversation, context={'request': request})
+    
+    return Response({
+        'conversation_id': conversation.id,
+        'created': created,
+        'conversation': serializer.data,
+        'message': 'Conversación creada' if created else 'Conversación existente'
+    }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
