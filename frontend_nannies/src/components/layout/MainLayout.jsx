@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { HeaderLanding, Footer } from '@components/layout';
 import useAuthStore from '@/stores/useAuthStore';
 
-export default function MainLayout({ children }) {
+export default function MainLayout({ children, hideFooter = false }) {
   // Verificar si hay un usuario logueado desde el store
   const { isAuthenticated, username, role } = useAuthStore(state => ({
     isAuthenticated: state.isAuthenticated,
@@ -17,11 +17,16 @@ export default function MainLayout({ children }) {
       <main className="flex-grow">
         {children}
       </main>
-      <Footer />
+      {!hideFooter && <Footer />}
     </div>
   );
 }
 
 MainLayout.propTypes = {
-  children: PropTypes.node.isRequired
+  children: PropTypes.node.isRequired,
+  hideFooter: PropTypes.bool,
+};
+
+MainLayout.defaultProps = {
+  hideFooter: false,
 };

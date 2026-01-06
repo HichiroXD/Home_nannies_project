@@ -256,7 +256,7 @@ export const ChatView = () => {
     : null;
 
   return (
-    <MainLayout>
+    <MainLayout hideFooter>
       <Box sx={{ height: 'calc(100vh - 100px)', p: 2 }}>
         <Grid container spacing={2} sx={{ height: '100%' }}>
           {/* Lista de conversaciones */}
