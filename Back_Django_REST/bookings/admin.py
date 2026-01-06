@@ -67,7 +67,7 @@ class BookingAdmin(admin.ModelAdmin):
     
     @admin.display(description='Padre', ordering='parent__username')
     def parent_link(self, obj):
-        url = reverse('admin:users_customuser_change', args=[obj.parent.pk])
+        url = reverse('admin:users_user_change', args=[obj.parent.pk])
         return format_html(
             '<a href="{}">{} {}</a>',
             url,
@@ -77,7 +77,7 @@ class BookingAdmin(admin.ModelAdmin):
     
     @admin.display(description='Niñera', ordering='nanny__username')
     def nanny_link(self, obj):
-        url = reverse('admin:users_customuser_change', args=[obj.nanny.pk])
+        url = reverse('admin:users_user_change', args=[obj.nanny.pk])
         return format_html(
             '<a href="{}">{} {}</a>',
             url,
