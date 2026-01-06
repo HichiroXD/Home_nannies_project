@@ -111,11 +111,8 @@ const metricsApi = {
    * @returns {Promise<Blob>} Report file
    */
   downloadBookingsReport: async (params = {}) => {
-    console.log('🔍 [DEBUG] downloadBookingsReport called with params:', params);
-    console.log('🔍 [DEBUG] Token from localStorage:', localStorage.getItem('accessToken')?.substring(0, 20) + '...');
-    
-    // 🆕 REFACTORED: Nueva URL simplificada
-    const response = await api.get('/reports/download/bookings/', {
+    // Nueva URL directa: /api/downloads/bookings/
+    const response = await api.get('/downloads/bookings/', {
       params: {
         format: params.format || 'csv',
         start_date: params.startDate,
@@ -135,8 +132,8 @@ const metricsApi = {
    * @returns {Promise<Blob>} Report file
    */
   downloadUsersReport: async (params = {}) => {
-    // 🆕 REFACTORED: Nueva URL simplificada
-    const response = await api.get('/reports/download/users/', {
+    // Nueva URL directa: /api/downloads/users/
+    const response = await api.get('/downloads/users/', {
       params: {
         format: params.format || 'csv',
         role: params.role,
@@ -154,8 +151,8 @@ const metricsApi = {
    * @returns {Promise<Blob>} Report file
    */
   downloadPaymentsReport: async (params = {}) => {
-    // 🆕 REFACTORED: Nueva URL simplificada  
-    const response = await api.get('/reports/download/payments/', {
+    // Nueva URL directa: /api/downloads/payments/
+    const response = await api.get('/downloads/payments/', {
       params: {
         format: params.format || 'csv',
         start_date: params.startDate,

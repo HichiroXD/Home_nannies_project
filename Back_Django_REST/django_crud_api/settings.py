@@ -85,7 +85,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'reports.middleware.DebugRequestMiddleware',  # 🔍 DEBUG: Middleware temporal para ver peticiones
+    # 'reports.middleware.DebugRequestMiddleware',  # 🔍 DESACTIVADO: Middleware de debug
     'core.audit_signals.AuditMiddleware',  # Middleware de auditoría
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

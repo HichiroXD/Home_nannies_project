@@ -31,15 +31,15 @@ const useAuthStore = create(
 
       /**
        * Login - Guarda tokens y usuario
-       * @param {Object} data - { access, refresh, username, role }
+       * @param {Object} data - { access, refresh, username, role, active_role, available_roles }
        */
       login: (data) => {
-        logger.info('User logged in', { username: data.username, role: data.role });
+        logger.info('User logged in', { username: data.username, role: data.role, activeRole: data.active_role });
         
         // Guardar en localStorage individual para compatibilidad con componentes existentes
         localStorage.setItem('accessToken', data.accessToken || data.access);
         localStorage.setItem('refreshToken', data.refreshToken || data.refresh);
-        localStorage.setItem('role', data.role);
+        localStorage.setItem('role', data.active_role || data.role);
         localStorage.setItem('username', data.user?.username || data.username);
         
         set({
@@ -49,7 +49,9 @@ const useAuthStore = create(
           },
           accessToken: data.accessToken || data.access,
           refreshToken: data.refreshToken || data.refresh,
-          role: data.role,
+          role: data.active_role || data.role,
+          activeRole: data.active_role || data.role,
+          availableRoles: data.available_roles || [data.role],
           isAuthenticated: true,
           error: null
         });
@@ -94,6 +96,8 @@ const useAuthStore = create(
             throw new Error('No hay sesión activa');
           }
           
+          logger.info('Switching role', { from: get().activeRole || get().role, to: newRole });
+          
           const response = await fetch('http://localhost:8000/api/users/switch-role/', {
             method: 'POST',
             headers: {
@@ -105,11 +109,16 @@ const useAuthStore = create(
           
           if (!response.ok) {
             const errorData = await response.json();
+            logger.error('Switch role failed', { error: errorData });
             throw new Error(errorData.error || 'Error al cambiar rol');
           }
           
           const data = await response.json();
-          logger.info('Role switched', { activeRole: data.active_role });
+          logger.info('Role switched successfully', { 
+            activeRole: data.active_role,
+            availableRoles: data.available_roles,
+            response: data
+          });
           
           // Actualizar rol activo y disponibles
           set({
@@ -118,8 +127,16 @@ const useAuthStore = create(
             role: data.active_role // Actualizar role para compatibilidad
           });
           
-          // Actualizar en localStorage
+          // Actualizar en localStorage para que persista
           localStorage.setItem('role', data.active_role);
+          
+          logger.info('Store updated', { 
+            newState: {
+              activeRole: get().activeRole,
+              role: get().role,
+              availableRoles: get().availableRoles
+            }
+          });
           
           return data;
         } catch (error) {
@@ -294,11 +311,17 @@ const useAuthStore = create(
           const { getProfile } = await import('@/api/userApi');
           const userData = await getProfile();
           
-          logger.info('User data refreshed', { username: userData.username, role: userData.role });
+          logger.info('User data refreshed', { 
+            username: userData.username, 
+            role: userData.role,
+            activeRole: userData.active_role,
+            availableRoles: userData.available_roles
+          });
           
           // Actualizar rol en localStorage para compatibilidad
-          if (userData.role) {
-            localStorage.setItem('role', userData.role);
+          const activeRole = userData.active_role || userData.role;
+          if (activeRole) {
+            localStorage.setItem('role', activeRole);
           }
           
           set({
@@ -306,7 +329,9 @@ const useAuthStore = create(
               username: userData.username,
               role: userData.role
             },
-            role: userData.role
+            role: activeRole,
+            activeRole: activeRole,
+            availableRoles: userData.available_roles || [userData.role]
           });
         } catch (error) {
           logger.error('Failed to refresh user data', error);

@@ -26,12 +26,6 @@ from .views import (
     VerificationMetricsView,
     NotificationMetricsView,
 )
-# Import new simple download views
-from .download_views import (
-    SimpleBookingsDownloadView,
-    SimpleUsersDownloadView,
-    SimplePaymentsDownloadView,
-)
 
 # Vista de prueba sin permisos
 class TestView(APIView):
@@ -39,6 +33,53 @@ class TestView(APIView):
     
     def get(self, request):
         return Response({"message": "Test endpoint funcionando"}, status=status.HTTP_200_OK)
+
+# 🔍 Vista de prueba para download - INLINE para diagnosticar
+class TestDownloadView(APIView):
+    permission_classes = []
+    
+    def get(self, request):
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info("🎯 TestDownloadView EJECUTÁNDOSE!")
+        
+        # Generar un CSV simple de prueba
+        from django.http import HttpResponse
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="test_report.csv"'
+        response.write("ID,Nombre,Estado\n")
+        response.write("1,Test,OK\n")
+        response.write("2,Prueba,Funcionando\n")
+        return response
+
+# 🆕 VISTAS INLINE DE DESCARGA (para evitar problemas de importación)
+class InlineBookingsDownloadView(APIView):
+    """Vista de descarga de bookings INLINE"""
+    permission_classes = []
+    
+    def get(self, request):
+        print("🎯 InlineBookingsDownloadView EJECUTÁNDOSE")
+        from django.http import HttpResponse
+        from bookings.models import Booking
+        from datetime import datetime
+        
+        format_type = request.GET.get('format', 'csv').lower()
+        
+        # Obtener datos
+        bookings = Booking.objects.all().select_related('parent', 'nanny')[:50]
+        
+        if format_type == 'csv':
+            response = HttpResponse(content_type='text/csv; charset=utf-8')
+            response['Content-Disposition'] = f'attachment; filename="reservas_{datetime.now().strftime("%Y%m%d")}.csv"'
+            response.write('\ufeff')  # BOM for Excel
+            response.write("ID,Padre,Niñera,Estado,Fecha Inicio,Fecha Fin\n")
+            for b in bookings:
+                parent_name = b.parent.username if b.parent else 'N/A'
+                nanny_name = b.nanny.username if b.nanny else 'N/A'
+                response.write(f"{b.id},{parent_name},{nanny_name},{b.status},{b.start_time},{b.end_time}\n")
+            return response
+        
+        return Response({"error": "Solo CSV disponible en modo test"}, status=400)
 
 # Vista de prueba de bookings sin permisos
 class TestBookingsView(APIView):
@@ -68,14 +109,13 @@ router.register(r'dashboard', DashboardViewSet, basename='dashboard')
 
 # Rutas específicas PRIMERO (más específicas tienen prioridad)
 urlpatterns = [
-    # 🆕 REFACTORED: Download URLs (nuevas vistas simples)
-    path('download/bookings/', SimpleBookingsDownloadView.as_view(), name='download-bookings'),
-    path('download/users/', SimpleUsersDownloadView.as_view(), name='download-users'),
-    path('download/payments/', SimplePaymentsDownloadView.as_view(), name='download-payments'),
+    # �️ ELIMINADAS: Las rutas download/* ahora están en django_crud_api/urls.py
+    # como /api/downloads/bookings/, /api/downloads/users/, /api/downloads/payments/
     
     # Vista de prueba - SIN PERMISOS para verificar routing
     path('test/', TestView.as_view(), name='test'),
     path('test-bookings/', TestBookingsView.as_view(), name='test-bookings'),
+    path('test-download/', TestDownloadView.as_view(), name='test-download'),
     
     # Sprint 4: Admin Reports - Primeras en la lista (LEGACY - mantener por compatibilidad)
     path('bookings-report/', BookingsReportView.as_view(), name='bookings-report'),

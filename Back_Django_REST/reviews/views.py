@@ -111,7 +111,7 @@ class AdminAllReviewsView(generics.ListAPIView):
     
     def get_queryset(self):
         # Verificar que el usuario sea administrador
-        if self.request.user.role != 'admin':
+        if self.request.user.get_active_role() != 'admin':
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("Solo los administradores pueden ver todas las reseñas.")
         return super().get_queryset()

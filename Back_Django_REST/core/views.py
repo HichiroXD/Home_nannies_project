@@ -251,7 +251,7 @@ class StudentVerificationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Filtrar según permisos"""
         user = self.request.user
-        if user.role == 'admin':
+        if user.get_active_role() == 'admin':
             return StudentVerification.objects.all()
         # Usuario regular solo ve su propia verificación
         return StudentVerification.objects.filter(user=user)
@@ -262,7 +262,7 @@ class StudentVerificationViewSet(viewsets.ModelViewSet):
         verification = self.get_object()
         
         # Solo admin
-        if request.user.role != 'admin':
+        if request.user.get_active_role() != 'admin':
             return Response(
                 {'error': 'No tiene permisos'},
                 status=status.HTTP_403_FORBIDDEN
@@ -381,7 +381,7 @@ class DocumentVerificationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Filtrar según permisos"""
         user = self.request.user
-        if user.role == 'admin':
+        if user.get_active_role() == 'admin':
             return DocumentVerification.objects.all()
         # Usuario regular solo ve sus propios documentos
         return DocumentVerification.objects.filter(user=user)
@@ -392,7 +392,7 @@ class DocumentVerificationViewSet(viewsets.ModelViewSet):
         doc = self.get_object()
         
         # Solo admin
-        if request.user.role != 'admin':
+        if request.user.get_active_role() != 'admin':
             return Response(
                 {'error': 'No tiene permisos'},
                 status=status.HTTP_403_FORBIDDEN
@@ -415,7 +415,7 @@ class DocumentVerificationViewSet(viewsets.ModelViewSet):
         doc = self.get_object()
         
         # Solo admin
-        if request.user.role != 'admin':
+        if request.user.get_active_role() != 'admin':
             return Response(
                 {'error': 'No tiene permisos'},
                 status=status.HTTP_403_FORBIDDEN
