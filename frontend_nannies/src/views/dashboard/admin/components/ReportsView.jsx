@@ -110,33 +110,53 @@ export const ReportsView = () => {
   const handleDownload = async (type, format) => {
     try {
       setDownloading(true);
-      let response;
+      let blob;
 
       switch (type) {
         case 'payments':
-          response = await metricsApi.downloadPaymentReport(format);
+          blob = await metricsApi.downloadPaymentReport({ format });
           break;
         case 'bookings':
-          response = await metricsApi.downloadBookingsReport(format);
+          blob = await metricsApi.downloadBookingsReport({ format });
           break;
         case 'users':
-          response = await metricsApi.downloadUsersReport(format);
+          blob = await metricsApi.downloadUsersReport({ format });
           break;
         default:
           return;
       }
 
       // Create download link
-      const blob = new Blob([response.data]);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${type}_report.${format}`);
+      
+      // Determine file extension
+      const extension = format === 'excel' ? 'xlsx' : format;
+      link.setAttribute('download', `${type}_report_${new Date().toISOString().split('T')[0]}.${extension}`);
+      
       document.body.appendChild(link);
       link.click();
       link.remove();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Error downloading report:', err);
+      console.error('❌ [ERROR] Error downloading report:', err);
+      
+      // Si el error tiene un blob JSON, intentar leerlo
+      if (err.data && err.data instanceof Blob && err.data.type === 'application/json') {
+        try {
+          const errorText = await err.data.text();
+          const errorJson = JSON.parse(errorText);
+          console.error('❌ [ERROR] Server error details:', errorJson);
+          alert(`Error al descargar el reporte: ${errorJson.detail || errorJson.message || err.message}`);
+          return;
+        } catch (parseError) {
+          console.error('❌ [ERROR] Could not parse error blob:', parseError);
+        }
+      }
+      
       alert(`Error al descargar el reporte: ${err.message}`);
     } finally {
       setDownloading(false);

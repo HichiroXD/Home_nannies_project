@@ -33,8 +33,8 @@ class BookingReportGenerator:
             
             # Get hourly rate
             hourly_rate = 0
-            if hasattr(booking.nanny, 'nannyprofile'):
-                hourly_rate = booking.nanny.nannyprofile.hourly_rate or 0
+            if hasattr(booking.nanny, 'nanny_profile'):
+                hourly_rate = booking.nanny.nanny_profile.hourly_rate or 0
             
             estimated_amount = duration * hourly_rate
             
@@ -114,7 +114,7 @@ class UserReportGenerator:
         for user in users:
             # Determine roles
             roles = []
-            if hasattr(user, 'nannyprofile'):
+            if hasattr(user, 'nanny_profile'):
                 roles.append('Niñera')
             if hasattr(user, 'parentprofile'):
                 roles.append('Padre/Madre')
@@ -123,15 +123,15 @@ class UserReportGenerator:
             
             # Verification status
             verified = 'No'
-            if hasattr(user, 'nannyprofile'):
-                verified = 'Sí' if user.nannyprofile.is_verified else 'No'
+            if hasattr(user, 'nanny_profile'):
+                verified = 'Sí' if user.nanny_profile.is_verified else 'No'
             
             # Activity stats
             bookings_made = 0
             bookings_received = 0
             if hasattr(user, 'parentprofile'):
                 bookings_made = user.bookings_made.count()
-            if hasattr(user, 'nannyprofile'):
+            if hasattr(user, 'nanny_profile'):
                 bookings_received = user.bookings_received.count()
             
             row = {
@@ -217,8 +217,8 @@ class PaymentReportGenerator:
             
             # Get hourly rate
             hourly_rate = 0
-            if hasattr(booking.nanny, 'nannyprofile'):
-                hourly_rate = booking.nanny.nannyprofile.hourly_rate or 0
+            if hasattr(booking.nanny, 'nanny_profile'):
+                hourly_rate = booking.nanny.nanny_profile.hourly_rate or 0
             
             total_amount = duration * hourly_rate
             
@@ -274,8 +274,8 @@ class PaymentReportGenerator:
             duration = (booking.end_time - booking.start_time).total_seconds() / 3600
             hourly_rate = 0
             
-            if hasattr(booking.nanny, 'nannyprofile'):
-                hourly_rate = booking.nanny.nannyprofile.hourly_rate or 0
+            if hasattr(booking.nanny, 'nanny_profile'):
+                hourly_rate = booking.nanny.nanny_profile.hourly_rate or 0
             
             amount = duration * hourly_rate
             commission = amount * 0.15
