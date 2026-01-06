@@ -3,14 +3,13 @@ Description=Gunicorn daemon for Home Nannies Django API
 After=network.target
 
 [Service]
-Type=notify
 User=root
 Group=root
 WorkingDirectory=/root/HNProject/Home_nannies_project/Back_Django_REST
 Environment="PATH=/root/HNProject/Home_nannies_project/Back_Django_REST/venv/bin"
 ExecStart=/root/HNProject/Home_nannies_project/Back_Django_REST/venv/bin/gunicorn \
           --workers 3 \
-          --bind 127.0.0.1:8000 \
+          --bind 0.0.0.0:8000 \
           --timeout 60 \
           --access-logfile /root/HNProject/Home_nannies_project/logs/gunicorn_access.log \
           --error-logfile /root/HNProject/Home_nannies_project/logs/gunicorn_error.log \
