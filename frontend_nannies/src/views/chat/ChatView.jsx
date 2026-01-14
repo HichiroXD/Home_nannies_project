@@ -3,7 +3,7 @@
  * Con fotos de perfil, indicadores de estado, timestamps mejorados y separadores de fecha
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Grid,
@@ -47,6 +47,8 @@ export const ChatView = () => {
   const [pendingUserId, setPendingUserId] = useState(null);
   const [hasProcessedUserId, setHasProcessedUserId] = useState(false);
   const [hasProcessedConversationId, setHasProcessedConversationId] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef(null);
 
   // Auto-scroll al final de los mensajes
   const scrollToBottom = () => {
@@ -57,12 +59,35 @@ export const ChatView = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Cargar conversaciones
+  // Cleanup de typing timeout al desmontar
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Cargar conversaciones con useCallback para evitar recreación
+  const loadConversations = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await chatApi.getConversations();
+      setConversations(data);
+    } catch (error) {
+      console.error('Error cargando conversaciones:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Cargar conversaciones - polling reducido a 10 segundos
   useEffect(() => {
     loadConversations();
-    const interval = setInterval(loadConversations, 5000);
+    // Reducir frecuencia de polling de 5s a 10s para menor carga
+    const interval = setInterval(loadConversations, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [loadConversations]);
 
   // Si viene un conversationId desde navigation state, seleccionar esa conversación
   useEffect(() => {
@@ -97,28 +122,8 @@ export const ChatView = () => {
     setHasProcessedUserId(true);
   }, [userIdFromState, conversations, hasProcessedUserId]);
 
-  // Cargar mensajes cuando se selecciona una conversación
-  useEffect(() => {
-    if (selectedConversation) {
-      loadMessages(selectedConversation.id);
-      const interval = setInterval(() => loadMessages(selectedConversation.id), 3000);
-      return () => clearInterval(interval);
-    }
-  }, [selectedConversation]);
-
-  const loadConversations = async () => {
-    try {
-      setLoading(true);
-      const data = await chatApi.getConversations();
-      setConversations(data);
-    } catch (error) {
-      console.error('Error cargando conversaciones:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadMessages = async (conversationId) => {
+  // Cargar mensajes con useCallback
+  const loadMessages = useCallback(async (conversationId) => {
     try {
       setLoadingMessages(true);
       const data = await chatApi.getMessages(conversationId);
@@ -128,11 +133,53 @@ export const ChatView = () => {
     } finally {
       setLoadingMessages(false);
     }
+  }, []);
+
+  // Cargar mensajes cuando se selecciona una conversación - polling reducido
+  useEffect(() => {
+    if (selectedConversation) {
+      loadMessages(selectedConversation.id);
+      
+      // Polling más inteligente: 8 segundos y solo si no está escribiendo
+      const interval = setInterval(() => {
+        if (!isTyping) {
+          loadMessages(selectedConversation.id);
+        }
+      }, 8000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [selectedConversation, loadMessages, isTyping]);
+
+  // Funciones loadConversations y loadMessages ahora están definidas arriba con useCallback
+
+  // Manejar cambios en el input para detectar escritura
+  const handleMessageChange = (e) => {
+    setNewMessage(e.target.value);
+    
+    // Marcar que está escribiendo
+    setIsTyping(true);
+    
+    // Limpiar timeout previo
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Después de 2 segundos sin escribir, marcar como no escribiendo
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 2000);
   };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
+    
+    // Resetear estado de escritura
+    setIsTyping(false);
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
 
     if (!selectedConversation && !pendingUserId) {
       console.error('No hay conversación ni usuario pendiente');
@@ -604,7 +651,7 @@ export const ChatView = () => {
                           fullWidth
                           placeholder="Escribe un mensaje..."
                           value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
+                          onChange={handleMessageChange}
                           size="small"
                           multiline
                           maxRows={4}

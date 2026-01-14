@@ -185,6 +185,8 @@ class LoginView(APIView):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
             "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
             "role": user.get_active_role(),  # Usar rol activo
             "active_role": user.get_active_role(),
             "available_roles": user.get_available_roles()

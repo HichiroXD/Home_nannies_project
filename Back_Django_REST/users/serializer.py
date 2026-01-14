@@ -8,7 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ["id", "username", "email", "role", "active_role", "available_roles", "is_verified"]
+        fields = ["id", "username", "email", "first_name", "last_name", "role", "active_role", "available_roles", "is_verified"]
         read_only_fields = ["id", "is_verified", "active_role", "available_roles"]
     
     def get_active_role(self, obj):
