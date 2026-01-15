@@ -46,6 +46,12 @@ class Message(models.Model):
     """
     Mensaje individual dentro de una conversación
     """
+    MESSAGE_TYPE_CHOICES = [
+        ('text', 'Texto'),
+        ('image', 'Imagen'),
+        ('file', 'Archivo'),
+    ]
+    
     conversation = models.ForeignKey(
         Conversation,
         on_delete=models.CASCADE,
@@ -56,7 +62,24 @@ class Message(models.Model):
         on_delete=models.CASCADE,
         related_name='sent_messages'
     )
-    content = models.TextField(help_text="Contenido del mensaje")
+    content = models.TextField(blank=True, help_text="Contenido del mensaje")
+    message_type = models.CharField(
+        max_length=10,
+        choices=MESSAGE_TYPE_CHOICES,
+        default='text',
+        help_text="Tipo de mensaje"
+    )
+    attachment = models.FileField(
+        upload_to='chat_attachments/%Y/%m/%d/',
+        null=True,
+        blank=True,
+        help_text="Archivo adjunto (imagen o documento)"
+    )
+    attachment_name = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Nombre original del archivo"
+    )
     read = models.BooleanField(default=False, help_text="Mensaje leído")
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -73,3 +96,21 @@ class Message(models.Model):
         if not self.read:
             self.read = True
             self.save(update_fields=['read'])
+    
+    def save(self, *args, **kwargs):
+        """Override save para detectar tipo de archivo automáticamente"""
+        if self.attachment:
+            # Guardar nombre original del archivo
+            if not self.attachment_name:
+                self.attachment_name = self.attachment.name
+            
+            # Detectar tipo basado en extensión
+            file_ext = self.attachment.name.lower().split('.')[-1]
+            image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']
+            
+            if file_ext in image_extensions:
+                self.message_type = 'image'
+            else:
+                self.message_type = 'file'
+        
+        super().save(*args, **kwargs)

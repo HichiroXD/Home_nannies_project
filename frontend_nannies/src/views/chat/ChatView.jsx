@@ -24,11 +24,13 @@ import {
   InputAdornment,
   Chip,
 } from '@mui/material';
-import { Send, MessageCircle, Search, Check, CheckCheck, Circle } from 'lucide-react';
+import { Send, MessageCircle, Search, Check, CheckCheck, Circle, Paperclip, X, Image as ImageIcon } from 'lucide-react';
 import { MainLayout } from '@/components/layout';
 import chatApi from '@/api/chatApi';
 import { useLocation } from 'react-router-dom';
 import useAuthStore from '@/stores/useAuthStore';
+import EmojiPickerComponent from '@/components/chat/EmojiPicker';
+import { FileUpload } from '@/components/chat/FileUpload';
 
 export const ChatView = () => {
   const location = useLocation();
@@ -49,6 +51,8 @@ export const ChatView = () => {
   const [hasProcessedConversationId, setHasProcessedConversationId] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [sending, setSending] = useState(false);
 
   // Auto-scroll al final de los mensajes
   const scrollToBottom = () => {
@@ -173,7 +177,9 @@ export const ChatView = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    
+    // Validar que haya contenido o archivo
+    if (!newMessage.trim() && !selectedFile) return;
     
     // Resetear estado de escritura
     setIsTyping(false);
@@ -185,6 +191,8 @@ export const ChatView = () => {
       console.error('No hay conversación ni usuario pendiente');
       return;
     }
+
+    setSending(true);
 
     try {
       let receiverId;
@@ -210,10 +218,21 @@ export const ChatView = () => {
         console.log('Using pending user ID:', receiverId);
       }
 
-      console.log('Enviando mensaje:', { receiverId, content: newMessage.trim() });
+      console.log('Enviando mensaje:', { 
+        receiverId, 
+        content: newMessage.trim(),
+        hasFile: !!selectedFile
+      });
       
-      await chatApi.sendMessage(receiverId, newMessage.trim());
+      // Enviar mensaje con o sin archivo
+      if (selectedFile) {
+        await chatApi.sendMessageWithFile(receiverId, newMessage.trim(), selectedFile);
+      } else {
+        await chatApi.sendMessage(receiverId, newMessage.trim());
+      }
+      
       setNewMessage('');
+      setSelectedFile(null);
       
       if (selectedConversation) {
         await loadMessages(selectedConversation.id);
@@ -242,6 +261,8 @@ export const ChatView = () => {
         console.error('Error configurando request:', error.message);
         alert('Error al enviar mensaje: ' + error.message);
       }
+    } finally {
+      setSending(false);
     }
   };
 
@@ -498,11 +519,15 @@ export const ChatView = () => {
                   {/* Mensajes con separadores de fecha */}
                   <Box sx={{ 
                     flex: 1, 
-                    overflow: 'auto', 
+                    overflow: 'auto',
+                    overflowY: 'scroll',
+                    maxHeight: 'calc(100vh - 280px)', // Altura fija para scroll interno
                     p: 3, 
                     bgcolor: '#F9FAFB',
                     backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)',
-                    backgroundSize: '20px 20px'
+                    backgroundSize: '20px 20px',
+                    display: 'flex',
+                    flexDirection: 'column'
                   }}>
                     {loadingMessages ? (
                       <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -593,9 +618,55 @@ export const ChatView = () => {
                                           : '0 2px 8px rgba(0,0,0,0.08)'
                                       }}
                                     >
-                                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mb: 0.5 }}>
-                                        {message.content}
-                                      </Typography>
+                                      {/* Renderizar imagen si existe */}
+                                      {message.message_type === 'image' && message.attachment_url && (
+                                        <Box 
+                                          component="img"
+                                          src={message.attachment_url}
+                                          alt={message.attachment_name || 'Imagen'}
+                                          sx={{
+                                            maxWidth: '100%',
+                                            maxHeight: '300px',
+                                            borderRadius: 2,
+                                            mb: message.content ? 1 : 0,
+                                            cursor: 'pointer',
+                                            '&:hover': { opacity: 0.9 }
+                                          }}
+                                          onClick={() => window.open(message.attachment_url, '_blank')}
+                                        />
+                                      )}
+                                      
+                                      {/* Renderizar archivo si existe */}
+                                      {message.message_type === 'file' && message.attachment_url && (
+                                        <Stack 
+                                          direction="row" 
+                                          spacing={1} 
+                                          alignItems="center"
+                                          sx={{
+                                            p: 1,
+                                            bgcolor: isOwn ? 'rgba(255,255,255,0.1)' : '#F7FAFC',
+                                            borderRadius: 2,
+                                            mb: message.content ? 1 : 0,
+                                            cursor: 'pointer',
+                                            '&:hover': { 
+                                              bgcolor: isOwn ? 'rgba(255,255,255,0.2)' : '#EDF2F7'
+                                            }
+                                          }}
+                                          onClick={() => window.open(message.attachment_url, '_blank')}
+                                        >
+                                          <Paperclip size={20} />
+                                          <Typography variant="body2" sx={{ flex: 1 }}>
+                                            {message.attachment_name || 'Archivo adjunto'}
+                                          </Typography>
+                                        </Stack>
+                                      )}
+                                      
+                                      {/* Contenido del texto */}
+                                      {message.content && (
+                                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mb: 0.5 }}>
+                                          {message.content}
+                                        </Typography>
+                                      )}
                                       <Stack 
                                         direction="row" 
                                         spacing={0.5} 
@@ -645,13 +716,39 @@ export const ChatView = () => {
                     bgcolor: 'white',
                     boxShadow: '0 -2px 8px rgba(0,0,0,0.05)'
                   }}>
+                    {/* Preview de archivo seleccionado */}
+                    {selectedFile && (
+                      <Box sx={{ mb: 2 }}>
+                        <FileUpload
+                          selectedFile={selectedFile}
+                          onClear={() => setSelectedFile(null)}
+                        />
+                      </Box>
+                    )}
+                    
                     <form onSubmit={handleSendMessage}>
                       <Stack direction="row" spacing={1} alignItems="flex-end">
+                        {/* Botón de emoji */}
+                        <EmojiPickerComponent 
+                          onEmojiSelect={(emoji) => {
+                            setNewMessage(prev => prev + emoji);
+                          }}
+                          disabled={sending}
+                        />
+                        
+                        {/* Botón de archivo */}
+                        <FileUpload
+                          compact
+                          onFileSelect={setSelectedFile}
+                          selectedFile={null}
+                        />
+                        
                         <TextField
                           fullWidth
-                          placeholder="Escribe un mensaje..."
+                          placeholder={selectedFile ? "Agrega un comentario (opcional)" : "Escribe un mensaje..."}
                           value={newMessage}
                           onChange={handleMessageChange}
+                          disabled={sending}
                           size="small"
                           multiline
                           maxRows={4}
@@ -667,7 +764,7 @@ export const ChatView = () => {
                         />
                         <IconButton
                           type="submit"
-                          disabled={!newMessage.trim()}
+                          disabled={(!newMessage.trim() && !selectedFile) || sending}
                           sx={{
                             bgcolor: '#667eea',
                             color: 'white',
@@ -687,7 +784,7 @@ export const ChatView = () => {
                             boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
                           }}
                         >
-                          <Send size={20} />
+                          {sending ? <CircularProgress size={20} color="inherit" /> : <Send size={20} />}
                         </IconButton>
                       </Stack>
                     </form>

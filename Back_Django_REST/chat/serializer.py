@@ -39,11 +39,25 @@ class UserBasicSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     """Serializer para mensajes individuales"""
     sender_info = UserBasicSerializer(source='sender', read_only=True)
+    attachment_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Message
-        fields = ['id', 'conversation', 'sender', 'sender_info', 'content', 'read', 'created_at']
-        read_only_fields = ['sender', 'created_at', 'sender_info']
+        fields = [
+            'id', 'conversation', 'sender', 'sender_info', 
+            'content', 'message_type', 'attachment', 'attachment_url', 
+            'attachment_name', 'read', 'created_at'
+        ]
+        read_only_fields = ['sender', 'created_at', 'sender_info', 'message_type']
+    
+    def get_attachment_url(self, obj):
+        """Retorna URL completa del archivo adjunto"""
+        if obj.attachment:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.attachment.url)
+            return obj.attachment.url
+        return None
 
 
 class ConversationSerializer(serializers.ModelSerializer):
@@ -69,9 +83,9 @@ class ConversationSerializer(serializers.ModelSerializer):
 
 
 class MessageCreateSerializer(serializers.Serializer):
-    """Serializer para crear mensajes"""
+    """Serializer para crear mensajes (texto simple)"""
     receiver_id = serializers.IntegerField(required=True, help_text="ID del usuario receptor")
-    content = serializers.CharField(required=True, max_length=2000, help_text="Contenido del mensaje")
+    content = serializers.CharField(required=False, allow_blank=True, max_length=2000, help_text="Contenido del mensaje")
     
     def validate_receiver_id(self, value):
         """Valida que el receptor exista"""
@@ -80,9 +94,31 @@ class MessageCreateSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError("El usuario receptor no existe")
         return value
+
+
+class MessageWithFileSerializer(serializers.ModelSerializer):
+    """Serializer para crear mensajes con archivos"""
+    receiver_id = serializers.IntegerField(write_only=True, required=True)
     
-    def validate_content(self, value):
-        """Valida el contenido del mensaje"""
-        if not value.strip():
-            raise serializers.ValidationError("El mensaje no puede estar vacío")
-        return value.strip()
+    class Meta:
+        model = Message
+        fields = ['receiver_id', 'content', 'attachment']
+    
+    def validate_attachment(self, value):
+        """Valida el archivo adjunto"""
+        if value:
+            # Validar tamaño (máximo 10MB)
+            if value.size > 10 * 1024 * 1024:
+                raise serializers.ValidationError("El archivo es demasiado grande. Máximo 10MB.")
+            
+            # Validar extensión
+            allowed_extensions = [
+                'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg',  # Imágenes
+                'pdf', 'doc', 'docx', 'txt', 'xlsx', 'xls'   # Documentos
+            ]
+            file_ext = value.name.lower().split('.')[-1]
+            if file_ext not in allowed_extensions:
+                raise serializers.ValidationError(
+                    f"Tipo de archivo no permitido. Extensiones permitidas: {', '.join(allowed_extensions)}"
+                )
+        return value
