@@ -23,12 +23,32 @@ export const chatApi = {
   },
 
   /**
-   * Envía un mensaje a otro usuario
+   * Envía un mensaje de texto a otro usuario
    */
   sendMessage: async (receiverId, content) => {
     const response = await API.post('/chat/send/', {
       receiver_id: receiverId,
       content
+    });
+    return response.data;
+  },
+
+  /**
+   * Envía un mensaje con archivo adjunto
+   * @param {number} receiverId - ID del receptor
+   * @param {string} content - Contenido del mensaje (opcional)
+   * @param {File} file - Archivo a adjuntar
+   */
+  sendMessageWithFile: async (receiverId, content, file) => {
+    const formData = new FormData();
+    formData.append('receiver_id', receiverId);
+    formData.append('content', content || '');
+    formData.append('attachment', file);
+
+    const response = await API.post('/chat/send-file/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     });
     return response.data;
   },

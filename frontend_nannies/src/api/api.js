@@ -13,6 +13,13 @@ API.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    logger.debug('Token attached to request', { 
+      url: config.url, 
+      hasToken: true,
+      tokenPreview: token.substring(0, 20) + '...' 
+    });
+  } else {
+    logger.warn('No access token found for request', { url: config.url });
   }
   
   // Debug: log the request data

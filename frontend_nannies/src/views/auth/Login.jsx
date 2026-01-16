@@ -50,6 +50,8 @@ export default function Login() {
       // Usar store de Zustand para gestionar auth
       login({
         username: data.username,
+        first_name: data.first_name,
+        last_name: data.last_name,
         access: data.access,
         refresh: data.refresh,
         role: data.role,

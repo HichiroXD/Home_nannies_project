@@ -1,12 +1,30 @@
 # chat/views.py  
 from rest_framework import generics, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from .models import Conversation, Message
-from .serializer import ConversationSerializer, MessageSerializer, MessageCreateSerializer
+from .serializer import ConversationSerializer, MessageSerializer, MessageCreateSerializer, MessageWithFileSerializer
+import sys
+
+
+def _safe_print(*args, **kwargs):
+    """Print helper that avoids UnicodeEncodeError on consoles with limited encodings.
+    It will replace unencodable characters when necessary.
+    """
+    enc = getattr(sys.stdout, 'encoding', None) or 'utf-8'
+    safe_args = []
+    for a in args:
+        s = str(a)
+        try:
+            s.encode(enc)
+        except Exception:
+            s = s.encode('utf-8', errors='replace').decode(enc, errors='replace')
+        safe_args.append(s)
+    print(*safe_args, **kwargs)
 
 User = get_user_model()
 
@@ -45,26 +63,31 @@ class MessageListView(generics.ListAPIView):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def send_message(request):
-    print(f"=== SEND MESSAGE DEBUG ===")
-    print(f"Request data: {request.data}")
-    print(f"User: {request.user}, ID: {request.user.id}")
+    """Enviar mensaje de texto simple"""
+    _safe_print(f"=== SEND MESSAGE DEBUG ===")
+    _safe_print(f"Request data: {request.data}")
+    _safe_print(f"User: {request.user}, ID: {request.user.id}")
     
     serializer = MessageCreateSerializer(data=request.data)
     if not serializer.is_valid():
-        print(f"Serializer errors: {serializer.errors}")
+        _safe_print(f"Serializer errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     sender = request.user
     receiver_id = serializer.validated_data['receiver_id']
-    content = serializer.validated_data['content']
+    content = serializer.validated_data.get('content', '').strip()
+    
+    # Validar que haya contenido
+    if not content:
+        return Response({'error': 'El mensaje no puede estar vacío'}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
         receiver = User.objects.get(id=receiver_id)
-        print(f"Receiver found: {receiver.username} (ID: {receiver.id})")
+        _safe_print(f"Receiver found: {receiver.username} (ID: {receiver.id})")
         
         # Verificar que no sea el mismo usuario
         if sender.id == receiver.id:
-            print(f"ERROR: Same user! Sender ID: {sender.id}, Receiver ID: {receiver.id}")
+            _safe_print(f"ERROR: Same user! Sender ID: {sender.id}, Receiver ID: {receiver.id}")
             return Response({'error': 'No puedes enviarte mensajes a ti mismo'}, status=status.HTTP_400_BAD_REQUEST)
             
     except User.DoesNotExist:
@@ -91,11 +114,96 @@ def send_message(request):
         parent, nanny = receiver, sender
     
     conversation, created = Conversation.objects.get_or_create(parent=parent, nanny=nanny)
-    message = Message.objects.create(conversation=conversation, sender=sender, content=content)
+    message = Message.objects.create(
+        conversation=conversation, 
+        sender=sender, 
+        content=content,
+        message_type='text'
+    )
     conversation.save()
     
     serializer = MessageSerializer(message, context={'request': request})
     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def send_message_with_file(request):
+    """Enviar mensaje con archivo adjunto"""
+    _safe_print(f"=== SEND MESSAGE WITH FILE DEBUG ===")
+    _safe_print(f"Request data: {request.data}")
+    _safe_print(f"Files: {request.FILES}")
+    
+    receiver_id = request.data.get('receiver_id')
+    if not receiver_id:
+        return Response({'error': 'receiver_id es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        receiver_id = int(receiver_id)
+    except (ValueError, TypeError):
+        return Response({'error': 'receiver_id debe ser un número'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    sender = request.user
+    
+    try:
+        receiver = User.objects.get(id=receiver_id)
+    except User.DoesNotExist:
+        return Response({'error': 'Usuario receptor no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Verificar que no sea el mismo usuario
+    if sender.id == receiver.id:
+        return Response({'error': 'No puedes enviarte mensajes a ti mismo'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validar roles
+    sender_role = getattr(sender, 'active_role', None) or getattr(sender, 'role', None)
+    receiver_role = getattr(receiver, 'active_role', None) or getattr(receiver, 'role', None)
+    
+    if not sender_role or not receiver_role:
+        return Response({'error': 'Los usuarios deben tener roles asignados'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not ((sender_role == 'parent' and receiver_role == 'nanny') or (sender_role == 'nanny' and receiver_role == 'parent')):
+        return Response({
+            'error': f'Solo puedes enviar mensajes entre padres y niñeras'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Determinar parent y nanny
+    if sender_role == 'parent':
+        parent, nanny = sender, receiver
+    else:
+        parent, nanny = receiver, sender
+    
+    # Crear/obtener conversación
+    conversation, created = Conversation.objects.get_or_create(parent=parent, nanny=nanny)
+    
+    # Crear mensaje con archivo
+    content = request.data.get('content', '')
+    attachment = request.FILES.get('attachment')
+    
+    if not attachment:
+        return Response({'error': 'Archivo adjunto es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validar archivo usando el serializer
+    serializer = MessageWithFileSerializer(data={
+        'receiver_id': receiver_id,
+        'content': content,
+        'attachment': attachment
+    })
+    
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Crear mensaje
+    message = Message.objects.create(
+        conversation=conversation,
+        sender=sender,
+        content=content,
+        attachment=attachment
+    )
+    conversation.save()
+    
+    response_serializer = MessageSerializer(message, context={'request': request})
+    return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

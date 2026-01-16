@@ -3,7 +3,7 @@
  * Con fotos de perfil, indicadores de estado, timestamps mejorados y separadores de fecha
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Grid,
@@ -24,17 +24,21 @@ import {
   InputAdornment,
   Chip,
 } from '@mui/material';
-import { Send, MessageCircle, Search, Check, CheckCheck, Circle } from 'lucide-react';
+import { Send, MessageCircle, Search, Check, CheckCheck, Circle, Paperclip, X, Image as ImageIcon } from 'lucide-react';
 import { MainLayout } from '@/components/layout';
 import chatApi from '@/api/chatApi';
 import { useLocation } from 'react-router-dom';
 import useAuthStore from '@/stores/useAuthStore';
+import EmojiPickerComponent from '@/components/chat/EmojiPicker';
+import { FileUpload } from '@/components/chat/FileUpload';
 
 export const ChatView = () => {
   const location = useLocation();
   const userIdFromState = location.state?.userId;
   const conversationIdFromState = location.state?.conversationId;
   const messagesEndRef = useRef(null);
+  const messagesCountRef = useRef(0);
+  const conversationsRef = useRef([]);
   const userRole = useAuthStore(state => state.role);
   
   const [conversations, setConversations] = useState([]);
@@ -47,22 +51,75 @@ export const ChatView = () => {
   const [pendingUserId, setPendingUserId] = useState(null);
   const [hasProcessedUserId, setHasProcessedUserId] = useState(false);
   const [hasProcessedConversationId, setHasProcessedConversationId] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [sending, setSending] = useState(false);
 
-  // Auto-scroll al final de los mensajes
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Auto-scroll al final solo cuando lleguen mensajes nuevos (evita parpadeo)
+  const scrollToBottom = (smooth = true) => {
+    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
   };
 
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > messagesCountRef.current) {
+      scrollToBottom();
+    }
+    messagesCountRef.current = messages.length;
   }, [messages]);
 
-  // Cargar conversaciones
+  // Mantener referencia actualizada de conversaciones para decidir mostrar spinner
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
+
+  // Cleanup de typing timeout al desmontar
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Cargar conversaciones con useCallback para evitar recreación
+  const loadConversations = useCallback(async () => {
+    try {
+      // Mostrar spinner solo en la primera carga
+      if (!conversationsRef.current || conversationsRef.current.length === 0) setLoading(true);
+      const data = await chatApi.getConversations();
+
+      setConversations((prev) => {
+        if (prev && prev.length === data.length) {
+          let identical = true;
+          for (let i = 0; i < prev.length; i++) {
+            const a = prev[i];
+            const b = data[i];
+            const lastA = a.last_message?.id || a.last_message?.created_at || null;
+            const lastB = b.last_message?.id || b.last_message?.created_at || null;
+            if (a.id !== b.id || lastA !== lastB || a.unread_count !== b.unread_count) {
+              identical = false;
+              break;
+            }
+          }
+          if (identical) return prev;
+        }
+        return data;
+      });
+    } catch (error) {
+      console.error('Error cargando conversaciones:', error);
+    } finally {
+      if (!conversationsRef.current || conversationsRef.current.length === 0) setLoading(false);
+    }
+  }, []);
+
+  // Cargar conversaciones - polling reducido a 10 segundos
   useEffect(() => {
     loadConversations();
-    const interval = setInterval(loadConversations, 5000);
+    // Reducir frecuencia de polling de 5s a 10s para menor carga
+    const interval = setInterval(loadConversations, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [loadConversations]);
 
   // Si viene un conversationId desde navigation state, seleccionar esa conversación
   useEffect(() => {
@@ -97,47 +154,161 @@ export const ChatView = () => {
     setHasProcessedUserId(true);
   }, [userIdFromState, conversations, hasProcessedUserId]);
 
-  // Cargar mensajes cuando se selecciona una conversación
-  useEffect(() => {
-    if (selectedConversation) {
-      loadMessages(selectedConversation.id);
-      const interval = setInterval(() => loadMessages(selectedConversation.id), 3000);
-      return () => clearInterval(interval);
-    }
-  }, [selectedConversation]);
-
-  const loadConversations = async () => {
+  // Cargar mensajes con useCallback
+  const loadMessages = useCallback(async (conversationId) => {
     try {
-      setLoading(true);
-      const data = await chatApi.getConversations();
-      setConversations(data);
-    } catch (error) {
-      console.error('Error cargando conversaciones:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadMessages = async (conversationId) => {
-    try {
-      setLoadingMessages(true);
+      // Mostrar spinner solo en la primera carga (cuando no hay mensajes)
+      if (messagesCountRef.current === 0) setLoadingMessages(true);
       const data = await chatApi.getMessages(conversationId);
-      setMessages(data);
+
+      // Fusionar cambios en lugar de reemplazar completamente el array
+      setMessages((prev) => {
+        if (!prev || prev.length !== data.length) {
+          return data;
+        }
+
+        let changed = false;
+        const merged = prev.map((oldItem, i) => {
+          const newItem = data[i];
+          // Campos relevantes a comparar (incluye 'read')
+          const relevant = ['id', 'content', 'attachment_url', 'message_type', 'read', 'updated_at'];
+          let equal = true;
+          for (const f of relevant) {
+            const a = oldItem?.[f];
+            const b = newItem?.[f];
+            if (a === b) continue;
+            equal = false;
+            break;
+          }
+          if (equal) return oldItem;
+          changed = true;
+          return { ...oldItem, ...newItem };
+        });
+
+        if (!changed) return prev;
+        return merged;
+      });
+
+      // Actualizar contador de no leídos en la conversación correspondiente
+      const conv = conversationsRef.current.find(c => c.id === conversationId);
+      const currentUserId = conv ? (userRole === 'parent' ? conv.parent : conv.nanny) : null;
+      const unreadCount = data.reduce((acc, m) => {
+        const senderId = m.sender ?? m.sender?.id ?? null;
+        const isOwn = senderId === currentUserId || m.sender?.id === currentUserId;
+        if (!m.read && !isOwn) return acc + 1;
+        return acc;
+      }, 0);
+
+      setConversations((prev) => {
+        if (!prev) return prev;
+        return prev.map(c => {
+          if (c.id !== conversationId) return c;
+          // Si el contador ya coincide, no reemplazamos ese objeto
+          if (c.unread_count === unreadCount) return c;
+          return { ...c, unread_count: unreadCount, last_message: data[data.length - 1] || c.last_message };
+        });
+      });
+
     } catch (error) {
       console.error('Error cargando mensajes:', error);
     } finally {
-      setLoadingMessages(false);
+      if (messagesCountRef.current === 0) setLoadingMessages(false);
     }
+  }, [userRole]);
+
+  // Helper: espera sin bloquear
+  const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+
+  // Polling parcial: obtiene mensajes nuevos y los añade al estado sin reemplazar todo el array.
+  // Se detiene cuando encuentra el mensaje enviado por el usuario o cuando se agotan los intentos.
+  const pollForNewMessages = async (conversationId, matchCriteria = {}, maxAttempts = 8, intervalMs = 800) => {
+    try {
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const data = await chatApi.getMessages(conversationId);
+
+        // Añadir solo mensajes nuevos (por id)
+        setMessages((prev) => {
+          if (!prev) return data;
+          const prevIds = new Set(prev.map(m => m.id));
+          const newMessages = data.filter(m => !prevIds.has(m.id));
+          if (newMessages.length === 0) return prev;
+          return [...prev, ...newMessages];
+        });
+
+        // Comprobar si alguna de las nuevas coincide con criterio (id/content+sender)
+        const found = data.some(m => {
+          if (matchCriteria.id && m.id === matchCriteria.id) return true;
+          if (matchCriteria.content && m.content === matchCriteria.content) {
+            if (!matchCriteria.sender) return true;
+            return (m.sender === matchCriteria.sender || m.sender?.id === matchCriteria.sender);
+          }
+          return false;
+        });
+
+        if (found) return true;
+
+        await sleep(intervalMs);
+      }
+    } catch (err) {
+      console.error('Error en pollForNewMessages:', err);
+    }
+    return false;
+  };
+
+  // Cargar mensajes cuando se selecciona una conversación - polling reducido
+  useEffect(() => {
+    if (selectedConversation) {
+      loadMessages(selectedConversation.id);
+      
+      // Polling más inteligente: 8 segundos y solo si no está escribiendo
+      const interval = setInterval(() => {
+        if (!isTyping) {
+          loadMessages(selectedConversation.id);
+        }
+      }, 8000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [selectedConversation, loadMessages, isTyping]);
+
+  // Funciones loadConversations y loadMessages ahora están definidas arriba con useCallback
+
+  // Manejar cambios en el input para detectar escritura
+  const handleMessageChange = (e) => {
+    setNewMessage(e.target.value);
+    
+    // Marcar que está escribiendo
+    setIsTyping(true);
+    
+    // Limpiar timeout previo
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Después de 2 segundos sin escribir, marcar como no escribiendo
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 2000);
   };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    
+    // Validar que haya contenido o archivo
+    if (!newMessage.trim() && !selectedFile) return;
+    
+    // Resetear estado de escritura
+    setIsTyping(false);
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
 
     if (!selectedConversation && !pendingUserId) {
       console.error('No hay conversación ni usuario pendiente');
       return;
     }
+
+    setSending(true);
 
     try {
       let receiverId;
@@ -163,13 +334,37 @@ export const ChatView = () => {
         console.log('Using pending user ID:', receiverId);
       }
 
-      console.log('Enviando mensaje:', { receiverId, content: newMessage.trim() });
-      
-      await chatApi.sendMessage(receiverId, newMessage.trim());
+      console.log('Enviando mensaje:', {
+        receiverId,
+        content: newMessage.trim(),
+        hasFile: !!selectedFile
+      });
+
+      // Enviar mensaje con o sin archivo
+      let serverMsg = null;
+      if (selectedFile) {
+        serverMsg = await chatApi.sendMessageWithFile(receiverId, newMessage.trim(), selectedFile);
+      } else {
+        serverMsg = await chatApi.sendMessage(receiverId, newMessage.trim());
+      }
+
+      // Limpiar input y archivo
       setNewMessage('');
-      
+      setSelectedFile(null);
+
       if (selectedConversation) {
+        // Recargar mensajes para sincronizar la vista del remitente
         await loadMessages(selectedConversation.id);
+
+        // Intentar polling parcial para añadir el mensaje en caso de latencia del backend
+        if (serverMsg) {
+          await pollForNewMessages(selectedConversation.id, { id: serverMsg.id, content: serverMsg.content, sender: currentUserId }, 6, 700);
+
+          // Actualizar last_message de la conversación si el servidor devolvió el mensaje
+          if (serverMsg.id) {
+            setConversations(prev => prev ? prev.map(c => c.id === selectedConversation.id ? { ...c, last_message: serverMsg } : c) : prev);
+          }
+        }
       } else {
         const updatedConversations = await chatApi.getConversations();
         const newConversation = updatedConversations.find(conv => {
@@ -195,6 +390,8 @@ export const ChatView = () => {
         console.error('Error configurando request:', error.message);
         alert('Error al enviar mensaje: ' + error.message);
       }
+    } finally {
+      setSending(false);
     }
   };
 
@@ -451,11 +648,15 @@ export const ChatView = () => {
                   {/* Mensajes con separadores de fecha */}
                   <Box sx={{ 
                     flex: 1, 
-                    overflow: 'auto', 
+                    overflow: 'auto',
+                    overflowY: 'scroll',
+                    maxHeight: 'calc(100vh - 280px)', // Altura fija para scroll interno
                     p: 3, 
                     bgcolor: '#F9FAFB',
                     backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)',
-                    backgroundSize: '20px 20px'
+                    backgroundSize: '20px 20px',
+                    display: 'flex',
+                    flexDirection: 'column'
                   }}>
                     {loadingMessages ? (
                       <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -546,9 +747,55 @@ export const ChatView = () => {
                                           : '0 2px 8px rgba(0,0,0,0.08)'
                                       }}
                                     >
-                                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mb: 0.5 }}>
-                                        {message.content}
-                                      </Typography>
+                                      {/* Renderizar imagen si existe */}
+                                      {message.message_type === 'image' && message.attachment_url && (
+                                        <Box 
+                                          component="img"
+                                          src={message.attachment_url}
+                                          alt={message.attachment_name || 'Imagen'}
+                                          sx={{
+                                            maxWidth: '100%',
+                                            maxHeight: '300px',
+                                            borderRadius: 2,
+                                            mb: message.content ? 1 : 0,
+                                            cursor: 'pointer',
+                                            '&:hover': { opacity: 0.9 }
+                                          }}
+                                          onClick={() => window.open(message.attachment_url, '_blank')}
+                                        />
+                                      )}
+                                      
+                                      {/* Renderizar archivo si existe */}
+                                      {message.message_type === 'file' && message.attachment_url && (
+                                        <Stack 
+                                          direction="row" 
+                                          spacing={1} 
+                                          alignItems="center"
+                                          sx={{
+                                            p: 1,
+                                            bgcolor: isOwn ? 'rgba(255,255,255,0.1)' : '#F7FAFC',
+                                            borderRadius: 2,
+                                            mb: message.content ? 1 : 0,
+                                            cursor: 'pointer',
+                                            '&:hover': { 
+                                              bgcolor: isOwn ? 'rgba(255,255,255,0.2)' : '#EDF2F7'
+                                            }
+                                          }}
+                                          onClick={() => window.open(message.attachment_url, '_blank')}
+                                        >
+                                          <Paperclip size={20} />
+                                          <Typography variant="body2" sx={{ flex: 1 }}>
+                                            {message.attachment_name || 'Archivo adjunto'}
+                                          </Typography>
+                                        </Stack>
+                                      )}
+                                      
+                                      {/* Contenido del texto */}
+                                      {message.content && (
+                                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mb: 0.5 }}>
+                                          {message.content}
+                                        </Typography>
+                                      )}
                                       <Stack 
                                         direction="row" 
                                         spacing={0.5} 
@@ -598,13 +845,39 @@ export const ChatView = () => {
                     bgcolor: 'white',
                     boxShadow: '0 -2px 8px rgba(0,0,0,0.05)'
                   }}>
+                    {/* Preview de archivo seleccionado */}
+                    {selectedFile && (
+                      <Box sx={{ mb: 2 }}>
+                        <FileUpload
+                          selectedFile={selectedFile}
+                          onClear={() => setSelectedFile(null)}
+                        />
+                      </Box>
+                    )}
+                    
                     <form onSubmit={handleSendMessage}>
                       <Stack direction="row" spacing={1} alignItems="flex-end">
+                        {/* Botón de emoji */}
+                        <EmojiPickerComponent 
+                          onEmojiSelect={(emoji) => {
+                            setNewMessage(prev => prev + emoji);
+                          }}
+                          disabled={sending}
+                        />
+                        
+                        {/* Botón de archivo */}
+                        <FileUpload
+                          compact
+                          onFileSelect={setSelectedFile}
+                          selectedFile={null}
+                        />
+                        
                         <TextField
                           fullWidth
-                          placeholder="Escribe un mensaje..."
+                          placeholder={selectedFile ? "Agrega un comentario (opcional)" : "Escribe un mensaje..."}
                           value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
+                          onChange={handleMessageChange}
+                          disabled={sending}
                           size="small"
                           multiline
                           maxRows={4}
@@ -620,7 +893,7 @@ export const ChatView = () => {
                         />
                         <IconButton
                           type="submit"
-                          disabled={!newMessage.trim()}
+                          disabled={(!newMessage.trim() && !selectedFile) || sending}
                           sx={{
                             bgcolor: '#667eea',
                             color: 'white',
@@ -640,7 +913,7 @@ export const ChatView = () => {
                             boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
                           }}
                         >
-                          <Send size={20} />
+                          {sending ? <CircularProgress size={20} color="inherit" /> : <Send size={20} />}
                         </IconButton>
                       </Stack>
                     </form>

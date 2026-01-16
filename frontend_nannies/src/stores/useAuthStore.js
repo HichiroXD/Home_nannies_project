@@ -32,20 +32,39 @@ const useAuthStore = create(
 
       /**
        * Login - Guarda tokens y usuario
-       * @param {Object} data - { access, refresh, username, role, active_role, available_roles }
+       * @param {Object} data - { access, refresh, username, first_name, last_name, role, active_role, available_roles }
        */
       login: (data) => {
-        logger.info('User logged in', { username: data.username, role: data.role, activeRole: data.active_role });
+        const accessToken = data.accessToken || data.access;
+        const refreshToken = data.refreshToken || data.refresh;
+        
+        logger.info('User logged in', { 
+          username: data.username, 
+          role: data.role, 
+          activeRole: data.active_role,
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken
+        });
         
         // Guardar en localStorage individual para compatibilidad con componentes existentes
-        localStorage.setItem('accessToken', data.accessToken || data.access);
-        localStorage.setItem('refreshToken', data.refreshToken || data.refresh);
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
         localStorage.setItem('role', data.active_role || data.role);
         localStorage.setItem('username', data.user?.username || data.username);
+        
+        // Verificar que se guardó correctamente
+        const savedToken = localStorage.getItem('accessToken');
+        if (!savedToken) {
+          logger.error('Failed to save access token to localStorage');
+        } else {
+          logger.debug('Access token saved successfully', { tokenPreview: savedToken.substring(0, 20) + '...' });
+        }
         
         set({
           user: {
             username: data.username,
+            first_name: data.first_name,
+            last_name: data.last_name,
             role: data.role
           },
           accessToken: data.accessToken || data.access,
@@ -83,6 +102,16 @@ const useAuthStore = create(
           availableRoles: [],
           isAuthenticated: false,
           error: null
+        });
+      },
+      
+      /**
+       * Update User - Actualiza los datos del usuario en el store
+       * @param {Object} userData - Datos actualizados del usuario
+       */
+      updateUser: (userData) => {
+        set({
+          user: userData
         });
       },
       

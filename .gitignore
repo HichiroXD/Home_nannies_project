@@ -105,5 +105,4 @@ pnpm-debug.log*
 lerna-debug.log*
 
 
-__pycache__/
-*.pyc
+feedback_proyecto_SP3/

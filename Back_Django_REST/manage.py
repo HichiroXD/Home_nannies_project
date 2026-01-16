@@ -2,6 +2,21 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+import io
+
+# Ensure UTF-8 for stdout/stderr to avoid UnicodeEncodeError when logging emojis
+# Try to reconfigure if available (Python 3.7+), otherwise wrap streams.
+os.environ.setdefault('PYTHONUTF8', '1')
+try:
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    else:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+except Exception:
+    # Best-effort; if this fails, let the process continue normally.
+    pass
 
 
 def main():
