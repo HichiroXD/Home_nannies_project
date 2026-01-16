@@ -37,6 +37,8 @@ export const ChatView = () => {
   const userIdFromState = location.state?.userId;
   const conversationIdFromState = location.state?.conversationId;
   const messagesEndRef = useRef(null);
+  const messagesCountRef = useRef(0);
+  const conversationsRef = useRef([]);
   const userRole = useAuthStore(state => state.role);
   
   const [conversations, setConversations] = useState([]);
@@ -54,14 +56,22 @@ export const ChatView = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [sending, setSending] = useState(false);
 
-  // Auto-scroll al final de los mensajes
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Auto-scroll al final solo cuando lleguen mensajes nuevos (evita parpadeo)
+  const scrollToBottom = (smooth = true) => {
+    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
   };
 
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > messagesCountRef.current) {
+      scrollToBottom();
+    }
+    messagesCountRef.current = messages.length;
   }, [messages]);
+
+  // Mantener referencia actualizada de conversaciones para decidir mostrar spinner
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
 
   // Cleanup de typing timeout al desmontar
   useEffect(() => {
@@ -75,13 +85,31 @@ export const ChatView = () => {
   // Cargar conversaciones con useCallback para evitar recreación
   const loadConversations = useCallback(async () => {
     try {
-      setLoading(true);
+      // Mostrar spinner solo en la primera carga
+      if (!conversationsRef.current || conversationsRef.current.length === 0) setLoading(true);
       const data = await chatApi.getConversations();
-      setConversations(data);
+
+      setConversations((prev) => {
+        if (prev && prev.length === data.length) {
+          let identical = true;
+          for (let i = 0; i < prev.length; i++) {
+            const a = prev[i];
+            const b = data[i];
+            const lastA = a.last_message?.id || a.last_message?.created_at || null;
+            const lastB = b.last_message?.id || b.last_message?.created_at || null;
+            if (a.id !== b.id || lastA !== lastB || a.unread_count !== b.unread_count) {
+              identical = false;
+              break;
+            }
+          }
+          if (identical) return prev;
+        }
+        return data;
+      });
     } catch (error) {
       console.error('Error cargando conversaciones:', error);
     } finally {
-      setLoading(false);
+      if (!conversationsRef.current || conversationsRef.current.length === 0) setLoading(false);
     }
   }, []);
 
@@ -129,15 +157,103 @@ export const ChatView = () => {
   // Cargar mensajes con useCallback
   const loadMessages = useCallback(async (conversationId) => {
     try {
-      setLoadingMessages(true);
+      // Mostrar spinner solo en la primera carga (cuando no hay mensajes)
+      if (messagesCountRef.current === 0) setLoadingMessages(true);
       const data = await chatApi.getMessages(conversationId);
-      setMessages(data);
+
+      // Fusionar cambios en lugar de reemplazar completamente el array
+      setMessages((prev) => {
+        if (!prev || prev.length !== data.length) {
+          return data;
+        }
+
+        let changed = false;
+        const merged = prev.map((oldItem, i) => {
+          const newItem = data[i];
+          // Campos relevantes a comparar (incluye 'read')
+          const relevant = ['id', 'content', 'attachment_url', 'message_type', 'read', 'updated_at'];
+          let equal = true;
+          for (const f of relevant) {
+            const a = oldItem?.[f];
+            const b = newItem?.[f];
+            if (a === b) continue;
+            equal = false;
+            break;
+          }
+          if (equal) return oldItem;
+          changed = true;
+          return { ...oldItem, ...newItem };
+        });
+
+        if (!changed) return prev;
+        return merged;
+      });
+
+      // Actualizar contador de no leídos en la conversación correspondiente
+      const conv = conversationsRef.current.find(c => c.id === conversationId);
+      const currentUserId = conv ? (userRole === 'parent' ? conv.parent : conv.nanny) : null;
+      const unreadCount = data.reduce((acc, m) => {
+        const senderId = m.sender ?? m.sender?.id ?? null;
+        const isOwn = senderId === currentUserId || m.sender?.id === currentUserId;
+        if (!m.read && !isOwn) return acc + 1;
+        return acc;
+      }, 0);
+
+      setConversations((prev) => {
+        if (!prev) return prev;
+        return prev.map(c => {
+          if (c.id !== conversationId) return c;
+          // Si el contador ya coincide, no reemplazamos ese objeto
+          if (c.unread_count === unreadCount) return c;
+          return { ...c, unread_count: unreadCount, last_message: data[data.length - 1] || c.last_message };
+        });
+      });
+
     } catch (error) {
       console.error('Error cargando mensajes:', error);
     } finally {
-      setLoadingMessages(false);
+      if (messagesCountRef.current === 0) setLoadingMessages(false);
     }
-  }, []);
+  }, [userRole]);
+
+  // Helper: espera sin bloquear
+  const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+
+  // Polling parcial: obtiene mensajes nuevos y los añade al estado sin reemplazar todo el array.
+  // Se detiene cuando encuentra el mensaje enviado por el usuario o cuando se agotan los intentos.
+  const pollForNewMessages = async (conversationId, matchCriteria = {}, maxAttempts = 8, intervalMs = 800) => {
+    try {
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const data = await chatApi.getMessages(conversationId);
+
+        // Añadir solo mensajes nuevos (por id)
+        setMessages((prev) => {
+          if (!prev) return data;
+          const prevIds = new Set(prev.map(m => m.id));
+          const newMessages = data.filter(m => !prevIds.has(m.id));
+          if (newMessages.length === 0) return prev;
+          return [...prev, ...newMessages];
+        });
+
+        // Comprobar si alguna de las nuevas coincide con criterio (id/content+sender)
+        const found = data.some(m => {
+          if (matchCriteria.id && m.id === matchCriteria.id) return true;
+          if (matchCriteria.content && m.content === matchCriteria.content) {
+            if (!matchCriteria.sender) return true;
+            return (m.sender === matchCriteria.sender || m.sender?.id === matchCriteria.sender);
+          }
+          return false;
+        });
+
+        if (found) return true;
+
+        await sleep(intervalMs);
+      }
+    } catch (err) {
+      console.error('Error en pollForNewMessages:', err);
+    }
+    return false;
+  };
 
   // Cargar mensajes cuando se selecciona una conversación - polling reducido
   useEffect(() => {
@@ -218,24 +334,37 @@ export const ChatView = () => {
         console.log('Using pending user ID:', receiverId);
       }
 
-      console.log('Enviando mensaje:', { 
-        receiverId, 
+      console.log('Enviando mensaje:', {
+        receiverId,
         content: newMessage.trim(),
         hasFile: !!selectedFile
       });
-      
+
       // Enviar mensaje con o sin archivo
+      let serverMsg = null;
       if (selectedFile) {
-        await chatApi.sendMessageWithFile(receiverId, newMessage.trim(), selectedFile);
+        serverMsg = await chatApi.sendMessageWithFile(receiverId, newMessage.trim(), selectedFile);
       } else {
-        await chatApi.sendMessage(receiverId, newMessage.trim());
+        serverMsg = await chatApi.sendMessage(receiverId, newMessage.trim());
       }
-      
+
+      // Limpiar input y archivo
       setNewMessage('');
       setSelectedFile(null);
-      
+
       if (selectedConversation) {
+        // Recargar mensajes para sincronizar la vista del remitente
         await loadMessages(selectedConversation.id);
+
+        // Intentar polling parcial para añadir el mensaje en caso de latencia del backend
+        if (serverMsg) {
+          await pollForNewMessages(selectedConversation.id, { id: serverMsg.id, content: serverMsg.content, sender: currentUserId }, 6, 700);
+
+          // Actualizar last_message de la conversación si el servidor devolvió el mensaje
+          if (serverMsg.id) {
+            setConversations(prev => prev ? prev.map(c => c.id === selectedConversation.id ? { ...c, last_message: serverMsg } : c) : prev);
+          }
+        }
       } else {
         const updatedConversations = await chatApi.getConversations();
         const newConversation = updatedConversations.find(conv => {
