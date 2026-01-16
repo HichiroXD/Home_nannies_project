@@ -1,0 +1,95 @@
+# Django backend
+*.pyc
+__pycache__/
+db.sqlite3
+# Archivos .env (CRÍTICO - NO SUBIR)
+.env
+.env.backup
+*.env
+# IMPORTANTE: Permitir templates de ejemplo
+!.env.example
+!.env.local
+!.env.server
+!.env.production.example
+*.log
+*.pyo
+*.pyd
+*.sqlite3
+*.sqlite3-journal
+local_settings.py
+settings_local.py
+
+# Directorios de Django
+/static/
+/staticfiles/
+/media/
+/logs/
+/temp_ocr/
+/backups/
+!backups/README.md
+
+# Documentación local (no subir a producción)
+/DOCUMENTACION/
+
+# Entorno virtual (por si alguien lo crea aquí)
+/venv/
+/.env/
+/.venv/
+/env/
+/ENV/
+
+# NO INCLUIR: node_modules es del frontend
+# Solo mantenemos reglas de Python aquí
+
+# Configuración de editores
+.vscode/
+.idea/
+*.swp
+*.iml
+.history
+.fleet/
+*.code-workspace
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Ignorar todas las migraciones excepto __init__.py
+**/migrations/*
+!**/migrations/__init__.py
+
+# Herramientas de Python
+.mypy_cache/
+.pytest_cache/
+.tox/
+.ruff_cache/
+.pyre/
+.pytype/
+.hypothesis/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+*.egg
+*.egg-info/
+.eggs/
+develop-eggs/
+wheels/
+
+# Variantes de entorno
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.staging
+.env.staging.local
+.env.production
+.env.production.local
+
+# Logs de gestores de paquetes
+npm-debug.log*
+yarn-error.log
+pnpm-debug.log*
+lerna-debug.log*
