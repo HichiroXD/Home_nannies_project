@@ -8,6 +8,23 @@ from django.db.models import Q
 from django.contrib.auth import get_user_model
 from .models import Conversation, Message
 from .serializer import ConversationSerializer, MessageSerializer, MessageCreateSerializer, MessageWithFileSerializer
+import sys
+
+
+def _safe_print(*args, **kwargs):
+    """Print helper that avoids UnicodeEncodeError on consoles with limited encodings.
+    It will replace unencodable characters when necessary.
+    """
+    enc = getattr(sys.stdout, 'encoding', None) or 'utf-8'
+    safe_args = []
+    for a in args:
+        s = str(a)
+        try:
+            s.encode(enc)
+        except Exception:
+            s = s.encode('utf-8', errors='replace').decode(enc, errors='replace')
+        safe_args.append(s)
+    print(*safe_args, **kwargs)
 
 User = get_user_model()
 
@@ -47,13 +64,13 @@ class MessageListView(generics.ListAPIView):
 @permission_classes([IsAuthenticated])
 def send_message(request):
     """Enviar mensaje de texto simple"""
-    print(f"=== SEND MESSAGE DEBUG ===")
-    print(f"Request data: {request.data}")
-    print(f"User: {request.user}, ID: {request.user.id}")
+    _safe_print(f"=== SEND MESSAGE DEBUG ===")
+    _safe_print(f"Request data: {request.data}")
+    _safe_print(f"User: {request.user}, ID: {request.user.id}")
     
     serializer = MessageCreateSerializer(data=request.data)
     if not serializer.is_valid():
-        print(f"Serializer errors: {serializer.errors}")
+        _safe_print(f"Serializer errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     sender = request.user
@@ -66,11 +83,11 @@ def send_message(request):
     
     try:
         receiver = User.objects.get(id=receiver_id)
-        print(f"Receiver found: {receiver.username} (ID: {receiver.id})")
+        _safe_print(f"Receiver found: {receiver.username} (ID: {receiver.id})")
         
         # Verificar que no sea el mismo usuario
         if sender.id == receiver.id:
-            print(f"ERROR: Same user! Sender ID: {sender.id}, Receiver ID: {receiver.id}")
+            _safe_print(f"ERROR: Same user! Sender ID: {sender.id}, Receiver ID: {receiver.id}")
             return Response({'error': 'No puedes enviarte mensajes a ti mismo'}, status=status.HTTP_400_BAD_REQUEST)
             
     except User.DoesNotExist:
@@ -114,9 +131,9 @@ def send_message(request):
 @parser_classes([MultiPartParser, FormParser])
 def send_message_with_file(request):
     """Enviar mensaje con archivo adjunto"""
-    print(f"=== SEND MESSAGE WITH FILE DEBUG ===")
-    print(f"Request data: {request.data}")
-    print(f"Files: {request.FILES}")
+    _safe_print(f"=== SEND MESSAGE WITH FILE DEBUG ===")
+    _safe_print(f"Request data: {request.data}")
+    _safe_print(f"Files: {request.FILES}")
     
     receiver_id = request.data.get('receiver_id')
     if not receiver_id:
