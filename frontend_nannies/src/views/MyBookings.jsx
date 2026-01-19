@@ -56,11 +56,13 @@ export default function MyBookings() {
 
   // Agrupar por estado para mejor visualización
   const groupedBookings = {
-    pending: filteredBookings.filter((b) => b.status === "pendiente"),
-    confirmed: filteredBookings.filter((b) => b.status === "confirmada"),
-    completed: filteredBookings.filter((b) => b.status === "completada"),
-    cancelled: filteredBookings.filter((b) => b.status === "cancelada"),
-    rejected: filteredBookings.filter((b) => b.status === "rechazada"),
+    // El backend usa estados en inglés (p.ej. 'pending', 'confirmed').
+    // Aceptamos también alias históricos como 'accepted' para compatibilidad.
+    pending: filteredBookings.filter((b) => b.status === "pending"),
+    confirmed: filteredBookings.filter((b) => b.status === "confirmed" || b.status === "accepted"),
+    completed: filteredBookings.filter((b) => b.status === "completed"),
+    cancelled: filteredBookings.filter((b) => b.status === "cancelled"),
+    rejected: filteredBookings.filter((b) => b.status === "rejected"),
   };
 
   // Verificar si se puede editar una reserva
