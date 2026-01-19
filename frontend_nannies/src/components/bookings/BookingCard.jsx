@@ -217,8 +217,8 @@ export default function BookingCard({
           </button>
         )}
 
-        {/* Calificar - Padre puede calificar si está completada y no tiene reseña */}
-        {userRole === "parent" && isCompleted && !booking.has_review && onReview && (
+        {/* Calificar - Mostrar siempre el botón para padres en reservas completadas (temporal) */}
+        {userRole === "parent" && isCompleted && onReview && (
           <button
             onClick={() => onReview(booking)}
             disabled={isLoading}
@@ -227,14 +227,6 @@ export default function BookingCard({
             <Star size={14} />
             Calificar
           </button>
-        )}
-        
-        {/* Mensaje si ya dejó reseña */}
-        {userRole === "parent" && isCompleted && booking.has_review && (
-          <div className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-            <Star size={14} fill="currentColor" />
-            Reseña enviada
-          </div>
         )}
       </div>
     </div>

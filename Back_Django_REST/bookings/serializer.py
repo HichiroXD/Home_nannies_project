@@ -131,16 +131,22 @@ class BookingSerializer(serializers.ModelSerializer):
                             'notes': child.notes,
                         } for child in children]
         
-        # Verificar si el padre ya dejó una reseña para esta niñera
-        # Nota: El modelo Review no tiene relación directa con Booking
-        # Por ahora verificamos si existe alguna reseña del padre para la niñera
+        # Verificar si el padre dejó una reseña relacionada a ESTA reserva
+        # Nota: El modelo Review no está relacionado con Booking. Para evitar
+        # marcar como reseñada una reserva cuando el padre ya dejó una reseña
+        # antigua para la misma niñera, consideramos que una reseña pertenece
+        # a esta reserva si fue creada después del `end_time` de la reserva.
         if instance.status == 'completed':
             from reviews.models import Review
             try:
                 nanny_profile = instance.nanny.nanny_profile
+                # Buscar reseñas del mismo padre a la misma niñera ***después***
+                # de que terminó la reserva. Esto evita falsos positivos cuando
+                # el padre ya había reseñado a la niñera en el pasado.
                 has_review = Review.objects.filter(
                     parent=instance.parent,
-                    nanny=nanny_profile
+                    nanny=nanny_profile,
+                    created_at__gte=instance.end_time
                 ).exists()
                 rep['has_review'] = has_review
             except AttributeError:
